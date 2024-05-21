@@ -1,11 +1,10 @@
-import './assets/main.css'
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+import { supabase } from './supabase';
 
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
+const app = createApp(App);
+app.config.globalProperties.$supabase = supabase;
+app.use(router);
 
-const app = createApp(App)
-
-app.use(router)
-
-app.mount('#app')
+app.mount('#app');
