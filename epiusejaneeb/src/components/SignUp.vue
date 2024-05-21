@@ -1,17 +1,16 @@
-<!-- src/components/SignIn.vue -->
 <template>
-    <div>
-      <h1>Sign In</h1>
-      <form @submit.prevent="signIn">
-        <div>
+    <div class="sign-up-container">
+      <h1>Sign Up</h1>
+      <form @submit.prevent="signUp" class="sign-up-form">
+        <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" v-model="email" required />
+          <input type="email" id="email" v-model="email" required class="form-control" />
         </div>
-        <div>
+        <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" v-model="password" required />
+          <input type="password" id="password" v-model="password" required class="form-control" />
         </div>
-        <button type="submit">Sign In</button>
+        <button type="submit" class="sign-up-button">Sign Up</button>
       </form>
     </div>
   </template>
@@ -25,16 +24,22 @@
       };
     },
     methods: {
-      async signIn() {
-        const { user, error } = await this.$supabase.auth.signInWithPassword({
-          email: this.email,
-          password: this.password
-        });
-        if (error) {
-          alert(error.message);
-        } else {
-            console.log(user);
-          alert('Sign in successful!');
+      async signUp() {
+        try {
+          const { user, error } = await this.$supabase.auth.signUp({
+            email: this.email,
+            password: this.password
+          });
+          if (error) {
+            alert(error.message);
+          } else {
+            console.log('User signed up:', user);
+            alert('Sign up successful!');
+            this.$router.push({ name: 'home' }); // Navigate to the login page after successful sign-up
+          }
+        } catch (error) {
+          console.error('Error signing up:', error);
+          alert('Error signing up.');
         }
       }
     }
@@ -42,7 +47,7 @@
   </script>
   
   <style scoped>
-  .sign-in-container {
+  .sign-up-container {
     max-width: 400px;
     margin: 50px auto;
     padding: 20px;
@@ -59,7 +64,7 @@
     color: #333;
   }
   
-  .sign-in-form {
+  .sign-up-form {
     display: flex;
     flex-direction: column;
   }
@@ -83,19 +88,19 @@
     font-size: 16px;
   }
   
-  .sign-in-button {
+  .sign-up-button {
     padding: 10px;
     font-size: 16px;
     color: #fff;
-    background-color: #007bff;
+    background-color: #28a745;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
   }
   
-  .sign-in-button:hover {
-    background-color: #0056b3;
+  .sign-up-button:hover {
+    background-color: #218838;
   }
   </style>
   
