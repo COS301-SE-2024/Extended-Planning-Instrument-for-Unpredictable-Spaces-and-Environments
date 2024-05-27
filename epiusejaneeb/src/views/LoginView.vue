@@ -17,10 +17,9 @@ const toggleDark = () => {
     <div
       :class="[
         isDark ? 'bg-zinc-800' : 'bg-white',
-        'sign-in-container w-[500px] h-auto mx-auto p-14   rounded-xl shadow-xl font-sf-compact'
+        'sign-in-container w-[500px] h-auto mx-auto p-14 rounded-xl shadow-xl font-sf-compact'
       ]"
     >
-      <!-- :class="[]" -->
       <i
         :class="[isDark ? 'text-zinc-300' : 'text-gray-700', 'mb-6 pi pi-truck']"
         style="font-size: 2rem"
@@ -49,7 +48,7 @@ const toggleDark = () => {
               isDark
                 ? 'text-white border-gray-500 bg-zinc-900'
                 : 'border border-gray-300 bg-white text-zinc-800',
-              'mt-2 form-control w-full px-3 py-2 border   rounded-lg   focus:outline-none  focus:border-yellow-600'
+              'mt-2 form-control w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-600'
             ]"
           />
         </div>
@@ -71,7 +70,6 @@ const toggleDark = () => {
           class="mb-6 sign-in-button w-full py-2 bg-yellow-600 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
         >
           Sign In
-          <!-- <div :class="[isDark ? '' : '',  -->
         </button>
         <div class="flex items-center justify-center mb-6">
           <div :class="[isDark ? 'bg-zinc-500' : ' bg-gray-300', '  h-0.5 w-[45%]']"></div>
@@ -124,6 +122,7 @@ const toggleDark = () => {
         isDark ? 'bg-zinc-800' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
         'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
       ]"
+      class="dark-mode-toggle"
     >
       <p class="mr-4 text-gray-500 dark:text-gray-400 text-left">Dark Mode Toggle</p>
       <button class="focus:outline-none">
@@ -135,6 +134,7 @@ const toggleDark = () => {
 
 <script>
 import '../assets/tailwind.css'
+import { Password } from 'primevue/password'; // Ensure you import Password component
 
 export default {
   data() {
@@ -146,6 +146,7 @@ export default {
   },
   methods: {
     async signIn() {
+      console.log('signIn method called'); // Add this line
       const { user, error } = await this.$supabase.auth.signInWithPassword({
         email: this.email,
         password: this.password
@@ -157,9 +158,13 @@ export default {
         this.$router.push({ name: 'home' })
       }
     }
+  },
+  components: {
+    Password, // Register the Password component
   }
 }
 </script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=SF+Compact&display=swap');
 
@@ -200,7 +205,6 @@ export default {
 
 .dark .p-password input {
   background-color: rgb(24 24 27);
-
   color: white;
   border: 1px solid rgb(107 114 128);
 }
@@ -212,6 +216,7 @@ export default {
 .dark .p-password .p-password-toggle-icon {
   color: gray;
 }
+
 /* Light mode InputSwitch styles */
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
   background-color: orange; /* Change this to your desired orange color */
