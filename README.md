@@ -4,6 +4,24 @@
 
 **Logistics Optimization System** - Unlocking the potential within South Africa's logistics juggernaut: 1.5 billion tonnes of goods annually, 10% of the nation's GDP, and a million-strong workforce. In this landscape of untapped opportunities, our mission is clear – design a system that transforms inefficiency into a symphony of precision. Imagine a logistics realm where every truck is a marvel of intelligent packing and optimal space management. This project isn't just an upgrade; it's a revolution in efficiency.
 
+### Code Quality Badges 🛡️
+
+#### Code Coverage 📊
+- [![Coverage Status](https://coveralls.io/repos/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/badge.svg?branch=main)](https://coveralls.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments?branch=main)
+- [![Codecov](https://codecov.io/gh/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/branch/main/graph/badge.svg)](https://codecov.io/gh/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments)
+
+#### Build 🏗️
+- [![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/main.yml/badge.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions)
+
+#### Requirements 📋
+- [![Requirements Status](https://requires.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/requirements.svg?branch=main)](https://requires.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/requirements/?branch=main)
+
+#### Issue Tracking 🐛
+- [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)
+
+#### Monitoring 📈
+- [![Uptime Robot](https://img.shields.io/uptimerobot/ratio/7/m778918918.svg)](https://uptimerobot.com/dashboard#778918918)
+
 ## Demo Video 🎥
 
 [MP6-Demo1](https://link-to-demo-video)
@@ -50,22 +68,4 @@ When developing new features or components, team members should adhere to the fo
 
 ### Merging to Main 🔗
 Once the Development branch is stable and has undergone thorough testing, it is merged back into the Main branch for release. This ensures that the Main branch always contains a stable version of the application ready for deployment.
-
-### Code Quality Badges 🛡️
-
-#### Code Coverage 📊
-- [![Coverage Status](https://coveralls.io/repos/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/badge.svg?branch=main)](https://coveralls.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments?branch=main)
-- [![Codecov](https://codecov.io/gh/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/branch/main/graph/badge.svg)](https://codecov.io/gh/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments)
-
-#### Build 🏗️
-- [![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/main.yml/badge.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions)
-
-#### Requirements 📋
-- [![Requirements Status](https://requires.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/requirements.svg?branch=main)](https://requires.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/requirements/?branch=main)
-
-#### Issue Tracking 🐛
-- [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)
-
-#### Monitoring 📈
-- [![Uptime Robot](https://img.shields.io/uptimerobot/ratio/7/m778918918.svg)](https://uptimerobot.com/dashboard#778918918)
 
