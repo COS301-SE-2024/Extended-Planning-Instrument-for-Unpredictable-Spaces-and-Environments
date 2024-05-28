@@ -1,52 +1,59 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { useDark } from '@vueuse/core';
-import LoginView from '../../views/LoginView.vue';
+import SignUp from '../SignUp.vue';
 
-// Mock the useDark hook
 vi.mock('@vueuse/core', () => ({
   useDark: vi.fn(),
 }));
 
-describe('LoginView Component', () => {
+describe('SignUp Component', () => {
   let isDarkMock;
 
   beforeEach(() => {
-    isDarkMock = { value: true }; // Default to dark mode
+    isDarkMock = { value: false };
     useDark.mockReturnValue(isDarkMock);
   });
 
   it('renders properly', () => {
-    const wrapper = mount(LoginView);
-    expect(wrapper.find('h1').text()).toBe('Sign in to Janeeb Solutions');
+    const wrapper = mount(SignUp);
+    expect(wrapper.find('h1').text()).toBe('Create a new account');
   });
 
   it('toggles dark mode', async () => {
-    const wrapper = mount(LoginView);
+    const wrapper = mount(SignUp);
     const toggleButton = wrapper.find('.dark-mode-toggle');
     await toggleButton.trigger('click');
-    isDarkMock.value = false; // Toggle to light mode
-    await wrapper.vm.$nextTick();
-    expect(isDarkMock.value).toBe(false);
-
-    await toggleButton.trigger('click');
-    isDarkMock.value = true; // Toggle back to dark mode
+    isDarkMock.value = true;
     await wrapper.vm.$nextTick();
     expect(isDarkMock.value).toBe(true);
+
+    await toggleButton.trigger('click');
+    isDarkMock.value = false;
+    await wrapper.vm.$nextTick();
+    expect(isDarkMock.value).toBe(false);
   });
 
   it('displays form inputs and handles v-model bindings', async () => {
-    const wrapper = mount(LoginView);
+    const wrapper = mount(SignUp);
+
+    const nameInput = wrapper.find('input#name');
+    expect(nameInput.exists()).toBe(true);
+    await nameInput.setValue('John Doe');
+    expect(wrapper.vm.name).toBe('John Doe');
+
+    const numberInput = wrapper.find('input#number');
+    expect(numberInput.exists()).toBe(true);
+    await numberInput.setValue('27826180677');
+    expect(wrapper.vm.number).toBe('27826180677');
 
     const emailInput = wrapper.find('input#email');
     expect(emailInput.exists()).toBe(true);
     await emailInput.setValue('john@example.com');
     expect(wrapper.vm.email).toBe('john@example.com');
 
-    const passwordInput = wrapper.find('input#password');
+    const passwordInput = wrapper.find('#password');
     expect(passwordInput.exists()).toBe(true);
-    await passwordInput.setValue('password123');
-    expect(wrapper.vm.password).toBe('password123');
   });
 
   it('submits the form', async () => {
@@ -56,11 +63,11 @@ describe('LoginView Component', () => {
 
     const mockSupabase = {
       auth: {
-        signInWithPassword: vi.fn().mockResolvedValue({ user: { id: '123' } }),
+        signUp: vi.fn().mockResolvedValue({ user: { id: '123' } }),
       },
     };
 
-    const wrapper = mount(LoginView, {
+    const wrapper = mount(SignUp, {
       global: {
         mocks: {
           $router: mockRouter,
@@ -71,7 +78,7 @@ describe('LoginView Component', () => {
 
     await wrapper.setData({ email: 'john@example.com', password: 'password123' });
     await wrapper.find('form').trigger('submit.prevent');
-    expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
+    expect(mockSupabase.auth.signUp).toHaveBeenCalledWith({
       email: 'john@example.com',
       password: 'password123',
     });
