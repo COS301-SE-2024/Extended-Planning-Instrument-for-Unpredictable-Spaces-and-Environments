@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { useDark } from '@vueuse/core';
-import LoginView from '../LoginView.vue';
+import LoginView from '../../views/LoginView.vue';
 
+// Mock the useDark hook
 vi.mock('@vueuse/core', () => ({
   useDark: vi.fn(),
 }));
@@ -11,7 +12,7 @@ describe('LoginView Component', () => {
   let isDarkMock;
 
   beforeEach(() => {
-    isDarkMock = { value: false };
+    isDarkMock = { value: true }; // Default to dark mode
     useDark.mockReturnValue(isDarkMock);
   });
 
@@ -24,14 +25,14 @@ describe('LoginView Component', () => {
     const wrapper = mount(LoginView);
     const toggleButton = wrapper.find('.dark-mode-toggle');
     await toggleButton.trigger('click');
-    isDarkMock.value = true;
-    await wrapper.vm.$nextTick();
-    expect(isDarkMock.value).toBe(true);
-
-    await toggleButton.trigger('click');
-    isDarkMock.value = false;
+    isDarkMock.value = false; // Toggle to light mode
     await wrapper.vm.$nextTick();
     expect(isDarkMock.value).toBe(false);
+
+    await toggleButton.trigger('click');
+    isDarkMock.value = true; // Toggle back to dark mode
+    await wrapper.vm.$nextTick();
+    expect(isDarkMock.value).toBe(true);
   });
 
   it('displays form inputs and handles v-model bindings', async () => {

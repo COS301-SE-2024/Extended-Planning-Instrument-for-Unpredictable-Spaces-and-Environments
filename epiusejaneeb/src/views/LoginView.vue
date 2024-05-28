@@ -36,9 +36,9 @@ const toggleDark = () => {
 
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
-          <label for="email" :class="[isDark ? 'text-white' : 'text-zinc-800', 'block font-bold']"
-            >Email</label
-          >
+          <label for="email" :class="[isDark ? 'text-white' : 'text-zinc-800', 'block font-bold']">
+            Email
+          </label>
           <input
             type="email"
             id="email"
@@ -53,16 +53,18 @@ const toggleDark = () => {
           />
         </div>
 
-        <label for="password" :class="[isDark ? 'text-white' : 'text-zinc-800', 'block font-bold']"
-          >Password</label
-        >
-        <Password
+        <label for="password" :class="[isDark ? 'text-white' : 'text-zinc-800', 'block font-bold']">
+          Password
+        </label>
+        <input
+          type="password"
           id="password"
           v-model="password"
-          toggleMask
           required
-          :feedback="false"
-          :class="[!isDark ? 'text-black' : '', 'focus:ring-0 hover:ring-0 mb-8 mt-2']"
+          :class="[
+            isDark ? 'text-white border-gray-500 bg-zinc-900' : 'border border-gray-300 bg-white text-zinc-800',
+            'mt-2 form-control w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-yellow-600'
+          ]"
         />
 
         <button
@@ -72,16 +74,16 @@ const toggleDark = () => {
           Sign In
         </button>
         <div class="flex items-center justify-center mb-6">
-          <div :class="[isDark ? 'bg-zinc-500' : ' bg-gray-300', '  h-0.5 w-[45%]']"></div>
+          <div :class="[isDark ? 'bg-zinc-500' : ' bg-gray-300', 'h-0.5 w-[45%]']"></div>
           <p class="mr-4 ml-4 text-gray-500 dark:text-gray-400 mx-2">or</p>
-          <div :class="[isDark ? 'bg-zinc-500' : ' bg-gray-300', '  h-0.5 w-[45%]']"></div>
+          <div :class="[isDark ? 'bg-zinc-500' : ' bg-gray-300', 'h-0.5 w-[45%]']"></div>
         </div>
 
         <div class="flex justify-center mb-8">
           <button
             :class="[
-              isDark ? ' bg-zinc-900' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
-              'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
+              isDark ? 'bg-zinc-900' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
+              'flex-grow w-[30%] h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
             ]"
           >
             <div class="flex items-center justify-center">
@@ -90,8 +92,8 @@ const toggleDark = () => {
           </button>
           <button
             :class="[
-              isDark ? ' bg-zinc-900' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
-              'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
+              isDark ? 'bg-zinc-900' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
+              'flex-grow w-[30%] h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
             ]"
           >
             <div class="flex items-center justify-center">
@@ -100,8 +102,8 @@ const toggleDark = () => {
           </button>
           <button
             :class="[
-              isDark ? ' bg-zinc-900' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
-              'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
+              isDark ? 'bg-zinc-900' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
+              'flex-grow w-[30%] h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
             ]"
           >
             <div class="flex items-center justify-center">
@@ -120,9 +122,8 @@ const toggleDark = () => {
       @click="toggleDark"
       :class="[
         isDark ? 'bg-zinc-800' : 'text-zinc-800 bg-white shadow-sm border border-gray-300',
-        'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
+        'dark-mode-toggle w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
       ]"
-      class="dark-mode-toggle"
     >
       <p class="mr-4 text-gray-500 dark:text-gray-400 text-left">Dark Mode Toggle</p>
       <button class="focus:outline-none">
@@ -134,19 +135,16 @@ const toggleDark = () => {
 
 <script>
 import '../assets/tailwind.css'
-import { Password } from 'primevue/password'; // Ensure you import Password component
 
 export default {
   data() {
     return {
       email: '',
-      password: '',
-      isDark: true // Default to dark mode
+      password: ''
     }
   },
   methods: {
     async signIn() {
-      console.log('signIn method called'); // Add this line
       const { user, error } = await this.$supabase.auth.signInWithPassword({
         email: this.email,
         password: this.password
@@ -158,9 +156,6 @@ export default {
         this.$router.push({ name: 'home' })
       }
     }
-  },
-  components: {
-    Password, // Register the Password component
   }
 }
 </script>
@@ -175,9 +170,6 @@ export default {
 .custom-icon-width {
   width: 50px; /* Adjust the width as needed */
 }
-
-/* Define specific styles for the Password component */
-/* LIGHT MODE INPUT */
 
 .p-password input {
   background-color: rgb(24 24 27);
@@ -205,6 +197,7 @@ export default {
 
 .dark .p-password input {
   background-color: rgb(24 24 27);
+
   color: white;
   border: 1px solid rgb(107 114 128);
 }
@@ -217,7 +210,6 @@ export default {
   color: gray;
 }
 
-/* Light mode InputSwitch styles */
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
   background-color: orange; /* Change this to your desired orange color */
 }
