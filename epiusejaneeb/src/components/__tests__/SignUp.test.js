@@ -11,7 +11,7 @@ describe('SignUp Component', () => {
   let isDarkMock;
 
   beforeEach(() => {
-    isDarkMock = { value: false };
+    isDarkMock = { value: true }; // Assuming the page starts in dark mode
     useDark.mockReturnValue(isDarkMock);
   });
 
@@ -22,16 +22,16 @@ describe('SignUp Component', () => {
 
   it('toggles dark mode', async () => {
     const wrapper = mount(SignUp);
-    const toggleButton = wrapper.find('.dark-mode-toggle');
-    await toggleButton.trigger('click');
-    isDarkMock.value = true;
-    await wrapper.vm.$nextTick();
+    const toggleButton = wrapper.find('.cursor-pointer'); // Updated to find the correct button
+    expect(toggleButton.exists()).toBe(true); // Check if the button exists
+
+    // Initial state is dark mode
     expect(isDarkMock.value).toBe(true);
+    await toggleButton.trigger('click');
+    expect(isDarkMock.value).toBe(false);
 
     await toggleButton.trigger('click');
-    isDarkMock.value = false;
-    await wrapper.vm.$nextTick();
-    expect(isDarkMock.value).toBe(false);
+    expect(isDarkMock.value).toBe(true);
   });
 
   it('displays form inputs and handles v-model bindings', async () => {
@@ -57,31 +57,43 @@ describe('SignUp Component', () => {
   });
 
   it('submits the form', async () => {
-    const mockRouter = {
-      push: vi.fn(),
-    };
-
     const mockSupabase = {
       auth: {
-        signUp: vi.fn().mockResolvedValue({ user: { id: '123' } }),
+        signUp: vi.fn().mockResolvedValue({ user: { email: 'john@example.com' }, error: null }),
       },
     };
 
     const wrapper = mount(SignUp, {
       global: {
         mocks: {
-          $router: mockRouter,
           $supabase: mockSupabase,
+          $router: {
+            push: vi.fn(),
+          },
         },
       },
     });
 
-    await wrapper.setData({ email: 'john@example.com', password: 'password123' });
+    const nameInput = wrapper.find('input#name');
+    await nameInput.setValue('John Doe');
+
+    const numberInput = wrapper.find('input#number');
+    await numberInput.setValue('27826180677');
+
+    const emailInput = wrapper.find('input#email');
+    await emailInput.setValue('john@example.com');
+
+    const passwordComponent = wrapper.find('#password');
+    const passwordInput = passwordComponent.find('input[type="password"]');
+    await passwordInput.setValue('password123');
+
     await wrapper.find('form').trigger('submit.prevent');
+    await wrapper.vm.$nextTick(); // Ensure all async actions are completed
+
     expect(mockSupabase.auth.signUp).toHaveBeenCalledWith({
       email: 'john@example.com',
       password: 'password123',
     });
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'home' });
+    expect(wrapper.vm.$router.push).toHaveBeenCalledWith({ name: 'home' });
   });
 });
