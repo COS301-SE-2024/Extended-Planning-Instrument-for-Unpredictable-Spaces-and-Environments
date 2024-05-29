@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Bin Packing Visualization</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: white;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+    <script>
+      let container, scene, camera, renderer;
+      const socket = io();
+
+      function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+
+        scene.background = new THREE.Color(0xffffff);
+        // Position the camera
+        camera.position.set(0, 2, 20);
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Center the container in the middle of the screen
+        window.addEventListener("resize", onWindowResize);
+        onWindowResize();
+
+        socket.emit("get_data"); // Request initial data
+        socket.on("update_data", updateData);
+        animate();
+      }
+
+      function onWindowResize() {
+        const aspectRatio = window.innerWidth / window.innerHeight;
+        camera.aspect = aspectRatio;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function updateData(data) {
+        console.log("Data received:", data);
+
+        // Clear previous objects
+        while (scene.children.length > 0) {
+          scene.remove(scene.children[0]);
+        }
+
+        const containerGeometry = new THREE.BoxGeometry(
+          data.container.width,
+          data.container.height,
+          data.container.length
+        );
+        const containerMaterial = new THREE.MeshBasicMaterial({
+          color: 0x000000,
+          wireframe: true,
+        });
+        container = new THREE.Mesh(containerGeometry, containerMaterial);
+        scene.add(container);
+
+        data.boxes.forEach((box, index) => {
+          const boxGeometry = new THREE.BoxGeometry(
+            box.width,
+            box.height,
+            box.length
+          );
+          const boxMaterial = new THREE.MeshBasicMaterial({
+            color: index === data.boxes.length - 1 ? 0xff0000 : 0x0000ff,
+            transparent: true,
+            opacity: 0.7,
+          });
+          const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
+
+          // Position the box from the back left corner of the container
+          mesh.position.set(
+            box.x - data.container.width / 2 + box.width / 2,
+            box.y - data.container.height / 2 + box.height / 2,
+            box.z - data.container.length / 2 + box.length / 2
+          );
+          scene.add(mesh);
+        });
+
+        // console.log("Scene updated with new boxes");
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      window.onload = init;
+    </script>
+  </body>
+</html>
