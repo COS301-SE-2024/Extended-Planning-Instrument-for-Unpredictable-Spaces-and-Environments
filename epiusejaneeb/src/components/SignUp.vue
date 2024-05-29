@@ -1,10 +1,15 @@
 <script setup>
+import { ref } from 'vue';
 import { useDark } from '@vueuse/core'
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+const name = ref('');
+const number = ref('');
+const email = ref('');
+const password = ref('');
 </script>
 
 <template>
@@ -157,6 +162,8 @@ const toggleDark = () => {
 export default {
   data() {
     return {
+      name: '',
+      number: '',
       email: '',
       password: ''
     }
