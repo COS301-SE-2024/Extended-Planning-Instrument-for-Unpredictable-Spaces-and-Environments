@@ -12,6 +12,7 @@ module.exports = {
     ecmaVersion: 'latest'
   },
   rules: {
-    'vue/comment-directive': 'off' // Disable comment-directive rule if not necessary
+    'vue/comment-directive': 'off', 
+    'vue/multi-word-component-names': 'off'
   }
 };

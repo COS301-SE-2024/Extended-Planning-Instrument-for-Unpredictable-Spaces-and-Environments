@@ -1,10 +1,10 @@
 <script setup>
-import { useDark } from '@vueuse/core'
-const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
+// import { useDark } from '@vueuse/core'
+// const isDark = useDark()
+// const toggleDark = () => {
+//   isDark.value = !isDark.value
+//   console.log('Dark mode:', isDark.value ? 'on' : 'off')
+// }
 </script>
 
 <template>
