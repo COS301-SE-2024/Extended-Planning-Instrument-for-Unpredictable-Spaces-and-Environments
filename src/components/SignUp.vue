@@ -164,6 +164,7 @@ export default {
     return {
       name: '',
       number: '',
+      phone:'',
       email: '',
       password: ''
     }
@@ -173,7 +174,8 @@ export default {
       try {
         const { user, error } = await this.$supabase.auth.signUp({
           email: this.email,
-          password: this.password
+          password: this.password,
+          phone: this.number
         })
         if (error) {
           alert(error.message)
