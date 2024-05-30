@@ -1,11 +1,17 @@
 <script setup>
+import { ref } from 'vue';
 import { useDark } from '@vueuse/core'
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+const name = ref('');
+const number = ref('');
+const email = ref('');
+const password = ref('');
 </script>
+
 <template>
   <div
     :class="[
@@ -105,7 +111,7 @@ const toggleDark = () => {
             id="password"
             toggleMask
             required
-            class="w-full"
+            class="w-full p-password"
             :class="[!isDark ? 'text-black bg-white' : '', 'focus:ring-0 hover:ring-0 mb-8 mt-2']"
           >
             <template #header>
@@ -156,6 +162,8 @@ const toggleDark = () => {
 export default {
   data() {
     return {
+      name: '',
+      number: '',
       email: '',
       password: ''
     }
