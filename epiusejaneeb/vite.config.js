@@ -3,7 +3,11 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from 'tailwindcss'
-import path from 'path' // Import path module
+import path from 'path'
+import { fileURLToPath } from 'url' // Import fileURLToPath
+
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
 
 export default defineConfig({
   plugins: [vue(), vueJsx(), VueDevTools()],
@@ -14,7 +18,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(dirname, './src')
     }
   }
 })
