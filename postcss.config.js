@@ -1,7 +1,6 @@
 // postcss.config.js
-module.exports = {
-  darkMode: 'class', // Enable dark mode via a class
-
+export default {
+  darkMode: 'class',
   plugins: {
     tailwindcss: {},
     autoprefixer: {}
