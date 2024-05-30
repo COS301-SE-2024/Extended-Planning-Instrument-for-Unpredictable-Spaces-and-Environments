@@ -32,7 +32,7 @@
 
 ## Project Management 📋
 
-[GitHub Project Board]([https://github.com/MP6-Logistics/Project-Board](https://github.com/orgs/COS301-SE-2024/projects/87))
+[GitHub Project Board](https://github.com/orgs/COS301-SE-2024/projects/87)
 
 ## Team Profiles 👥
 
