@@ -1,16 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { useDark } from '@vueuse/core';
-import SignUp from '../SignUp.vue';
+import LoginView from '@/views/LoginView.vue';
 import PrimeVue from 'primevue/config';
-import Divider from 'primevue/divider';
 import Password from 'primevue/password';
 import { createRouter, createWebHistory } from 'vue-router';
 
-// Mock useDark from @vueuse/core
+// Mock useDark from '@vueuse/core'
 vi.mock('@vueuse/core', () => ({
   useDark: vi.fn(),
 }));
+
+// Mock Supabase
+const supabaseMock = {
+  auth: {
+    signInWithPassword: vi.fn().mockResolvedValue({ user: {}, error: null }),
+  },
+};
 
 const routes = [
   { path: '/', name: 'home', component: { template: '<div>Home</div>' } },
@@ -21,7 +27,7 @@ const router = createRouter({
   routes,
 });
 
-describe('SignUp Component', () => {
+describe('LoginView Component', () => {
   let isDarkMock;
 
   beforeEach(() => {
@@ -30,11 +36,13 @@ describe('SignUp Component', () => {
   });
 
   const createWrapper = () => {
-    return mount(SignUp, {
+    return mount(LoginView, {
       global: {
         plugins: [PrimeVue, router],
+        provide: {
+          supabase: supabaseMock,
+        },
         components: {
-          Divider,
           Password,
           'router-link': {
             template: '<a><slot /></a>',
@@ -46,7 +54,7 @@ describe('SignUp Component', () => {
 
   it('renders properly', () => {
     const wrapper = createWrapper();
-    expect(wrapper.find('h1').text()).toBe('Create a new account');
+    expect(wrapper.find('h1').text()).toBe('Sign in to Janeeb Solutions');
   });
 
   it('toggles dark mode', async () => {
@@ -65,16 +73,6 @@ describe('SignUp Component', () => {
   it('displays form inputs and handles v-model bindings', async () => {
     const wrapper = createWrapper();
 
-    const nameInput = wrapper.find('input#name');
-    expect(nameInput.exists()).toBe(true);
-    await nameInput.setValue('John Doe');
-    expect(wrapper.vm.name).toBe('John Doe');
-
-    const numberInput = wrapper.find('input#number');
-    expect(numberInput.exists()).toBe(true);
-    await numberInput.setValue('27826180677');
-    expect(wrapper.vm.number).toBe('27826180677');
-
     const emailInput = wrapper.find('input#email');
     expect(emailInput.exists()).toBe(true);
     await emailInput.setValue('john@example.com');
@@ -85,4 +83,6 @@ describe('SignUp Component', () => {
     await passwordInput.setValue('password123');
     expect(wrapper.vm.password).toBe('password123');
   });
+
+
 });
