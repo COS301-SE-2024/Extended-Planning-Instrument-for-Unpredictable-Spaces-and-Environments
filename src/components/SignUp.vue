@@ -1,15 +1,17 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 import { useDark } from '@vueuse/core'
+import { supabase } from '../supabase'
+
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
-const name = ref('');
-const number = ref('');
-const email = ref('');
-const password = ref('');
+const name = ref('')
+const number = ref('')
+const email = ref('')
+const password = ref('')
 </script>
 
 <template>
@@ -164,7 +166,7 @@ export default {
     return {
       name: '',
       number: '',
-      phone:'',
+      phone: '',
       email: '',
       password: ''
     }
@@ -182,7 +184,22 @@ export default {
         } else {
           console.log('User signed up:', user)
           alert('Sign up successful!')
-          this.$router.push({ name: 'home' }) // Navigate to the login page after successful sign-up
+
+          const { data, error } = await supabase.functions.invoke('core', {
+            body: {
+              fullname: this.name,
+              email: this.email,
+              role: 'unassigned',
+              Phone: this.phone
+            }
+          })
+          console.log(data.data)
+
+          if (error) {
+            console.log('Error:', error)
+          } else if (data.data == 'successfully added new user') {
+            this.$router.push({ name: 'home' })
+          }
         }
       } catch (error) {
         console.error('Error signing up:', error)
