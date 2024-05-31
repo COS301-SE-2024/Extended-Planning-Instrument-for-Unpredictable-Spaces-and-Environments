@@ -17,7 +17,6 @@ const toggleDark = () => {
 }
 const customers = ref([])  // Reactive variable to store customer data
 
-
 onMounted(async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
