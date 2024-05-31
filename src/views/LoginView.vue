@@ -1,10 +1,12 @@
 <script setup>
+// DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+// DARK MODE SETTINGS END
 </script>
 
 <template>
@@ -230,7 +232,6 @@ body {
   background-color: #171717;
   color: white;
   border: 1px solid #171717;
-
 }
 
 .dark .p-password input:focus {

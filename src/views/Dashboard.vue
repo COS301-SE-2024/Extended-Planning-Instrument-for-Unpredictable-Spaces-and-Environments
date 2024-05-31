@@ -4,6 +4,7 @@ import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
+//:class="[isDark? '' : '' , ]" 
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
@@ -58,8 +59,7 @@ const chartOptions = ref({
           />
         </div>
       </div>
-      <h2 class="my-4 font-normal text-3xl"><span class="font-bold">Welcome back</span>, John</h2>
-
+      <h2 :class="[isDark? 'text-yellow-600' : 'text-black' , 'my-4 font-normal text-3xl' ]" ><span class="font-bold">Welcome back</span>, John</h2>
       <div class="flex flex-wrap mb-4">
         <div class="w-full md:w-[55%] mb-4">
           <div class="p-4 bg-neutral-950 rounded-xl h-full flex flex-col">

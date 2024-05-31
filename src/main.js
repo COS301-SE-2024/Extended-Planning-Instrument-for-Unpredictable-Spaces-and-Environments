@@ -30,7 +30,6 @@ const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
 app.use(router)
 app.use(PrimeVue)
-
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)
 app.component('Password', Password)

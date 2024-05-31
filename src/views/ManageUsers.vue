@@ -4,11 +4,36 @@ import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
+// SUPA BASE
+import { createClient } from "@supabase/supabase-js";
+const supabaseUrl = "https://rgisazefakhdieigrylb.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA";
+// SUPA BASE
+const supabase = createClient(supabaseUrl, supabaseKey);
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+const customers = ref([])  // Reactive variable to store customer data
+
+onMounted(async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'GetAllUsers' }),
+      method: 'POST'
+    });
+
+    if (error) {
+      console.log('API Error:', error);
+    } else {
+      customers.value = JSON.parse(data).data;  
+      console.log(customers.value); // Now it should log an array
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+});
 </script>
 
 <template>
@@ -44,13 +69,14 @@ const toggleDark = () => {
         :rowsPerPageOptions="[5, 10, 20, 50]"
         tableStyle="min-width: 50rem"
       >
-        <Column field="name" header="Full Name"></Column>
-        <Column field="category" header="Email"></Column>
-        <Column field="role" header="Role"></Column>
-        <Column field="number" header="Phone Number"></Column>
+        <Column field="FullName" header="Full Name"></Column>
+        <Column field="Email" header="Email"></Column>
+        <Column field="Role" header="Role"></Column>
+        <Column field="Phone" header="Phone Number"></Column>
       </DataTable>
     </div>
   </div>
+  
 </template>
 
 <style>
