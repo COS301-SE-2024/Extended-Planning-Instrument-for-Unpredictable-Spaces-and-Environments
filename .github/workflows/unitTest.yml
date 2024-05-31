@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
@@ -32,9 +32,14 @@ jobs:
       - name: Run Vitest tests with coverage
         run: npm run test:coverage
 
-      - name: Upload coverage report as artifact
-        uses: actions/upload-artifact@v3
-        if: always()
+      - name: Publish Results Badge
+        uses: wjervis7/vitest-badge-action@v1.0.0
+        if: success() || failure() # run whether steps succeed or not
         with:
-          name: coverage-report
-          path: coverage/
+          result-type: statements
+          upload-badge: false
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          file_pattern: './badge.svg'

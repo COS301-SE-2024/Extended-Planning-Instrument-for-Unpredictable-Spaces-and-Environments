@@ -12,7 +12,8 @@ export default mergeConfig(
       coverage: {
         provider: 'v8', // change provider to 'v8'
         reporter: ['text', 'json', 'html'],
-      },
-    },
+        reportOnFailure: true
+      }
+    }
   })
 )
