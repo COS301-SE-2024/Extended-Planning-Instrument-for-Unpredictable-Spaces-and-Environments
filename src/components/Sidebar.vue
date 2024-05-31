@@ -4,13 +4,23 @@ import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router' // Import the router
-
+import { supabase } from '../supabase'
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 
 const isMobileSidebarCollapsed = ref(false)
 
+async function signOut() {
+  console.log("user will be signed out")
+  const { error } = await supabase.auth.signOut()
+  if (error) {
+    console.error('Error signing out:', error)
+  } else {
+    console.log('User signed out')
+    router.push({ name: 'login' }) // Navigate to the login page after logout
+  }
+}
 // Toggle the sidebar collapse state
 const toggleMobileSidebar = () => {
   isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
@@ -102,9 +112,10 @@ const items = [
   {
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
-    command: () => {
+      command: async () => {
+      await signOut()
       console.log('Logging Out')
-      router.push({ name: 'login' }) // Navigate to the login page after logout
+      // No need for additional router.push here as it's handled in the signOut function
     }
   }
 ]
