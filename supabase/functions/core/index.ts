@@ -112,6 +112,30 @@ Deno.serve(async (req) => {
         status,
       },
     );
+  } //============================================================
+
+  //==================== fetching current users ================
+  else if (type === "GetAllUsers") {
+    const { data, error } = await supabase
+      .from("Users")
+      .select("*");
+
+    if (error) {
+      response = { error: `Error fetching all users: ${error.details}` };
+      status = 400;
+    } else {
+      response = {
+        data
+      };
+    }
+
+    return new Response(
+      JSON.stringify(response),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status,
+      },
+    );
   } else {
     response = { error: `no type ${type} found in core` };
     status = 400;
