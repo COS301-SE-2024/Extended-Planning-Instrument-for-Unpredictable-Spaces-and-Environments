@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
+import OAuthCallback from '../views/OAuthCallback.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,9 +13,6 @@ const router = createRouter({
     {
       path: '/home',
       name: 'home',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/HomeView.vue')
     },
     {
@@ -31,7 +29,11 @@ const router = createRouter({
       path: '/manage-users',
       name: 'manage-users',
       component: () => import('../views/ManageUsers.vue')
-
+    },
+    {
+      path: '/callback',
+      name: 'callback',
+      component: OAuthCallback
     }
   ]
 })

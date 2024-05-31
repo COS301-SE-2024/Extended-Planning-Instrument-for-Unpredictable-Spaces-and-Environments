@@ -1,22 +1,63 @@
 <script setup>
 import { ref } from 'vue';
-import { useDark } from '@vueuse/core'
-const isDark = useDark()
+import { useDark } from '@vueuse/core';
+import { supabase } from '../supabase';
+import { useRouter } from 'vue-router';
+const isDark = useDark();
+const router = useRouter();
 const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
+  isDark.value = !isDark.value;
+  console.log('Dark mode:', isDark.value ? 'on' : 'off');
+};
+
 const name = ref('');
 const number = ref('');
 const email = ref('');
 const password = ref('');
+
+const signUp = async () => {
+  try {
+    console.log(email.value);
+    console.log(password.value);
+    const { user, error } = await supabase.auth.signUp({
+      email: email.value,
+      password: password.value
+    });
+    if (error) {
+      alert(error.message);
+    } else {
+      console.log('User signed up:', user);
+      alert('Sign up successful!');
+      const { data, error } = await supabase.functions.invoke('core', {
+        body: {
+          type: 'InsertUser',
+          fullname: name.value,
+          email: email.value,
+          role: 'unassigned',
+          phone: number.value
+        }
+      });
+      console.log(name.value, email.value, number.value);
+      console.log('This is data.data ' + data.data);
+      if (error) {
+        console.log('API Error:', error);
+      } else {
+        console.log("you are reaching here")
+        router.push({ name: 'home' });
+      }
+    }
+  } catch (error) {
+    console.error('Error signing up:', error);
+    alert('Error signing up.');
+  }
+};
 </script>
 
 <template>
   <div
     :class="[
       isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      ' min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
     ]"
   >
     <div
@@ -31,7 +72,6 @@ const password = ref('');
       ></i>
       <h1
         :class="[
-          isDark ? 'dark text-white' : 'text-neutral-800',
           isDark ? 'dark text-white' : 'text-neutral-800',
           'mb-2 text-left text-3xl font-normal'
         ]"
@@ -52,7 +92,7 @@ const password = ref('');
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600' // Changes here
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600'
             ]"
             type="text"
             id="name"
@@ -63,8 +103,7 @@ const password = ref('');
           />
         </div>
         <div class="form-group">
-
-          <label for="name" :class="[isDark ? 'text-white' : 'text-neutral-900', 'block font-bold']"
+          <label for="number" :class="[isDark ? 'text-white' : 'text-neutral-900', 'block font-bold']"
             >Phone Number</label
           >
           <input
@@ -72,7 +111,7 @@ const password = ref('');
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600'
             ]"
             type="text"
             id="number"
@@ -93,7 +132,7 @@ const password = ref('');
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600'
             ]"
             type="email"
             id="email"
@@ -111,6 +150,7 @@ const password = ref('');
           >
           <Password
             v-model="password"
+            inputId="password"
             id="password"
             toggleMask
             required
@@ -137,11 +177,10 @@ const password = ref('');
             class="mb-6 sign-in-button w-full py-2 bg-yellow-600 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
           >
             Create new account
-            <!-- <div :class="[isDark ? '' : '',  -->
           </button>
         </div>
         <p class="text-gray-500 dark:text-gray-400 text-center">
-          Already have an account ?
+          Already have an account?
           <router-link to="/" class="text-yellow-600">Login</router-link>
         </p>
       </form>
@@ -153,7 +192,9 @@ const password = ref('');
         'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
       ]"
     >
-      <p :class="[isDark ?  'text-white text-left mr-4 ' :  'text-neutral-800 mr-4',] ">Dark Mode Toggle</p>
+      <p :class="[isDark ? 'text-white text-left mr-4' : 'text-neutral-800 mr-4']">
+        Dark Mode Toggle
+      </p>
 
       <button class="focus:outline-none">
         <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
@@ -162,53 +203,6 @@ const password = ref('');
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      name: '',
-      number: '',
-      email: '',
-      password: ''
-    }
-  },
-  methods: {
-    async signUp() {
-      try {
-        const { user, error } = await this.$supabase.auth.signUp({
-          email: this.email,
-          password: this.password
-        })
-        if (error) {
-          alert(error.message)
-        } else {
-          console.log('User signed up:', user)
-          alert('Sign up successful!')
-          const { data, error } = await supabase.functions.invoke('core', {
-            body: {
-              type: 'InsertUser',
-              fullname: this.name,
-              email: this.email,
-              role: 'unassigned',
-              phone: this.number
-            }
-          })
-          console.log(this.name, this.email, this.number)
-          console.log('This is data.data ' + data)
-          if (error) {
-            console.log('API Error:', error)
-          } else {
-            this.$router.push({ name: 'home' })
-          }
-        }
-      } catch (error) {
-        console.error('Error signing up:', error)
-        alert('Error signing up.')
-      }
-    }
-  }
-}
-</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=SF+Compact&display=swap');
 
@@ -275,5 +269,4 @@ export default {
 .dark .p-password-footer ul li {
   color: #0066ff; /* Replace with your desired dark mode text color */
 }
-
 </style>
