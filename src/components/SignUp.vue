@@ -1,11 +1,17 @@
 <script setup>
+import { ref } from 'vue';
 import { useDark } from '@vueuse/core'
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+const name = ref('');
+const number = ref('');
+const email = ref('');
+const password = ref('');
 </script>
+
 <template>
   <div
     :class="[
@@ -25,6 +31,7 @@ const toggleDark = () => {
       ></i>
       <h1
         :class="[
+          isDark ? 'dark text-white' : 'text-neutral-800',
           isDark ? 'dark text-white' : 'text-neutral-800',
           'mb-2 text-left text-3xl font-normal'
         ]"
@@ -56,6 +63,7 @@ const toggleDark = () => {
           />
         </div>
         <div class="form-group">
+
           <label for="name" :class="[isDark ? 'text-white' : 'text-neutral-900', 'block font-bold']"
             >Phone Number</label
           >
@@ -106,7 +114,7 @@ const toggleDark = () => {
             id="password"
             toggleMask
             required
-            class="w-full"
+            class="w-full p-password"
             :class="[!isDark ? 'text-black bg-white' : '', 'focus:ring-0 hover:ring-0 mb-8 mt-2']"
           >
             <template #header>
@@ -146,6 +154,7 @@ const toggleDark = () => {
       ]"
     >
       <p class="mr-4 text-neutral-800 dark:text-neutral-800 text-left">Dark Mode Toggle</p>
+
       <button class="focus:outline-none">
         <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
       </button>
@@ -157,6 +166,8 @@ const toggleDark = () => {
 export default {
   data() {
     return {
+      name: '',
+      number: '',
       email: '',
       password: ''
     }
@@ -238,4 +249,16 @@ export default {
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
   background-color: orange; /* Change this to your desired orange color */
 }
+/* Light mode footer text color */
+.p-password-footer p,
+.p-password-footer ul li {
+  color: #6b7280; /* Replace with your desired light mode text color */
+}
+
+/* Dark mode footer text color */
+.dark .p-password-footer p,
+.dark .p-password-footer ul li {
+  color: #0066ff; /* Replace with your desired dark mode text color */
+}
+
 </style>

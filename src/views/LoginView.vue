@@ -42,6 +42,7 @@ const toggleDark = () => {
           <label
             for="email"
             :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
+
             >Email</label
           >
           <input
@@ -54,6 +55,7 @@ const toggleDark = () => {
                 ? 'text-white  bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
               'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+
             ]"
           />
         </div>
@@ -74,7 +76,6 @@ const toggleDark = () => {
             'focus:ring-0 hover:ring-0 mb-8 mt-2'
           ]"
         />
-
         <button
           type="submit"
           class="mb-6 sign-in-button w-full py-2 bg-yellow-600 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
@@ -106,6 +107,7 @@ const toggleDark = () => {
               isDark
                 ? ' bg-neutral-900'
                 : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
+
               'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
             ]"
           >
@@ -118,6 +120,7 @@ const toggleDark = () => {
               isDark
                 ? ' bg-neutral-900'
                 : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
+
               'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
             ]"
           >
@@ -135,6 +138,7 @@ const toggleDark = () => {
         >
           Don't have an account ?
           <router-link to="/SignUp" class="ml-2 text-yellow-600"> Sign up</router-link>
+
         </p>
       </form>
     </div>
@@ -143,6 +147,7 @@ const toggleDark = () => {
       :class="[
         isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
         'mb-4 w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
+
       ]"
     >
       <p class="mr-4 text-gray-500 dark:text-gray-400 text-left">Dark Mode Toggle</p>
@@ -189,6 +194,7 @@ export default {
 body {
   font-family: 'Inter', sans-serif;
 }
+
 .custom-icon-width {
   width: 50px; /* Adjust the width as needed */
 }
@@ -224,6 +230,7 @@ body {
   background-color: #171717;
   color: white;
   border: 1px solid #171717;
+
 }
 
 .dark .p-password input:focus {

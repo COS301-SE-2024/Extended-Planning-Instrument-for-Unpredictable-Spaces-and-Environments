@@ -31,6 +31,7 @@ const router = createRouter({
       path: '/manage-users',
       name: 'manage-users',
       component: () => import('../views/ManageUsers.vue')
+
     }
   ]
 })

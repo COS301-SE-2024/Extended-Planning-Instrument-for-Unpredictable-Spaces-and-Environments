@@ -48,4 +48,5 @@ app.component('Knob', Knob)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
 
+
 app.mount('#app')
