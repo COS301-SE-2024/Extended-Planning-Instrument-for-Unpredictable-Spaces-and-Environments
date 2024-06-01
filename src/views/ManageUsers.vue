@@ -88,5 +88,61 @@ onMounted(async () => {
 </template>
 
 <style>
-/* General styles */
+/* Light mode styles */
+.datatable-light {
+  background-color: white;
+  color: black;
+}
+
+.datatable-light .p-datatable-header {
+  background-color: white; 
+  color: black;
+}
+
+.datatable-light .p-datatable-tbody > tr {
+  background-color: white;
+  color: black;
+}
+
+.datatable-light .p-datatable-tbody > tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.datatable-light .p-datatable-tbody > tr:hover {
+  background-color: #e0e0e0; 
+}
+
+.datatable-light .p-datatable-footer {
+  background-color: #f9f9f9;
+  color: black;
+}
+
+/* Dark mode styles */
+.datatable-dark {
+  background-color: #262626;
+  color: white;
+}
+
+.datatable-dark .p-datatable-header {
+  background-color: #333333;
+  color: white;
+}
+
+.datatable-dark .p-datatable-tbody > tr {
+  background-color: #262626;
+  color: white;
+}
+
+.datatable-dark .p-datatable-tbody > tr:nth-child(even) {
+  background-color: #333333; 
+}
+
+.datatable-dark .p-datatable-tbody > tr:hover {
+  background-color: #444444; 
+}
+
+.datatable-dark .p-datatable-footer {
+  background-color: #333333;
+  color: white;
+}
 </style>
