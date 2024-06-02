@@ -151,19 +151,7 @@ const signInWithProvider = async (provider) => {
               <i class="pi pi-github"></i>
             </div>
           </button>
-          <button
-            @click.prevent="signInWithProvider('azure')"
-            :class="[
-              isDark
-                ? ' bg-neutral-900'
-                : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-              'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
-            ]"
-          >
-            <div class="flex items-center justify-center">
-              <i class="pi pi-microsoft"></i>
-            </div>
-          </button>
+          
         </div>
 
         <p
