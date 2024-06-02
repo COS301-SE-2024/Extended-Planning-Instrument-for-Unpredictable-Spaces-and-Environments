@@ -21,6 +21,11 @@ import AccordionTab from 'primevue/accordiontab'
 import Knob from 'primevue/knob'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import ConfirmDialog from 'primevue/confirmdialog'
+import Button from 'primevue/button'
+import ConfirmationService from 'primevue/confirmationservice'
+import Dialog from 'primevue/dialog'
+import Dropdown from 'primevue/dropdown'
 
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
@@ -30,6 +35,8 @@ const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
 app.use(router)
 app.use(PrimeVue)
+app.use(ConfirmationService)
+
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)
 app.component('Password', Password)
@@ -46,6 +53,10 @@ app.component('AccordionTab', AccordionTab)
 app.component('Knob', Knob)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
-
+app.component('ConfirmDialog', ConfirmDialog)
+app.component('Button', Button)
+app.component('ConfirmationService', ConfirmationService)
+app.component('Dialog', Dialog)
+app.component('Dropdown', Dropdown)
 
 app.mount('#app')

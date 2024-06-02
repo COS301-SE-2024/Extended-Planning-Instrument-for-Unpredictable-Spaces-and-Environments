@@ -124,8 +124,11 @@ const items = [
 <template>
   <!-- Sidebar -->
   <div
-    class="h-[100vh] bg-neutral-950 p-4 flex flex-col justify-between transition-all duration-300 ease-in-out"
-    :class="{ 'w-[80px]': isMobileSidebarCollapsed, 'w-[300px]': !isMobileSidebarCollapsed }"
+    class="h-[100vh] p-4 flex flex-col justify-between transition-all duration-300 ease-in-out"
+    :class="[
+      isMobileSidebarCollapsed ? 'w-[80px]' : 'w-[300px]',
+      isDark ? 'bg-neutral-950' : 'bg-white'
+    ]"
   >
     <div>
       <div
@@ -143,7 +146,10 @@ const items = [
             'mr-4': !isMobileSidebarCollapsed
           }"
         ></i>
-        <h1 class="font-semibold mb-4 transition-opacity duration-300 ease-in-out">
+        <h1
+          :style="{ color: isDark ? 'white' : 'black' }"
+          :class="['mr-4 font-semibold mb-4 transition-opacity duration-300 ease-in-out']"
+        >
           {{ isMobileSidebarCollapsed ? 'JS' : 'JANEEB SOLUTIONS' }}
         </h1>
       </div>
@@ -159,7 +165,13 @@ const items = [
       </button>
 
       <!-- Menu -->
-      <Menu :model="items" :router="router" class="w-full md:w-15rem p-menu-custom" :exact="false">
+      <Menu
+        :class="[isDark ? 'dark' : 'light']"
+        :model="items"
+        :router="router"
+        class="w-full md:w-15rem p-menu-custom"
+        :exact="false"
+      >
         <template #item="{ item, props }">
           <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
             <a
@@ -236,11 +248,11 @@ const items = [
 }
 
 /* Update styles for hovered menu item link */
-.p-menu {
+.dark .p-menu {
   background-color: #0a0a0a;
 }
 
-.p-menuitem {
+.dark .p-menuitem {
   &.p-focus {
     > .p-menuitem-content {
       background-color: #262626 !important;
@@ -249,7 +261,7 @@ const items = [
   }
 }
 
-.p-menuitem:hover > .p-menuitem-content {
+.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
   border-radius: 1rem;
 }
@@ -287,6 +299,47 @@ const items = [
   .p-menu {
     width: 48px !important;
     background-color: transparent !important;
+  }
+}
+.light .p-menu .p-menuitem > .p-menuitem-content {
+  color: rgba(255, 0, 0, 0.87) !important;
+}
+.light .p-menu {
+  color: black;
+  background-color: #0a0a0a;
+  background: #0a0a0a;
+}
+.light .p-menu-list {
+  color: rgba(0, 0, 0, 0.87) !important;
+  background-color: white;
+  background: #0a0a0a;
+}
+
+.light {
+  color: white;
+}
+
+.light .p-menuitem {
+  &.p-focus {
+    > .p-menuitem-content {
+      background-color: #f3f4f6 !important;
+      border-radius: 1rem;
+
+      /* Explicitly set color for spans inside */
+      span {
+        color: black !important;
+      }
+    }
+  }
+}
+
+.light .p-menuitem:hover > .p-menuitem-content {
+  background-color: #a16207 !important;
+  border-radius: 1rem;
+
+  /* Explicitly set color for spans inside */
+  span {
+    color: white !important;
   }
 }
 </style>
