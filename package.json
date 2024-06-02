@@ -1,0 +1,45 @@
+{
+  "name": "epiusejaneeb",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:unit": "vitest",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4",
+    "@vueuse/core": "^10.10.0",
+    "chart.js": "^4.4.3",
+    "cors": "^2.8.5",
+    "primeicons": "^7.0.0",
+    "primevue": "^3.52.0",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.8.0",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vitejs/plugin-vue-jsx": "^3.1.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/test-utils": "^2.4.6",
+    "autoprefixer": "^10.4.19",
+    "c8": "^9.1.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.23.0",
+    "jsdom": "^24.0.0",
+    "postcss": "^8.4.38",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.3",
+    "vite": "^5.2.12",
+    "vite-plugin-vue-devtools": "^7.0.25",
+    "vitest": "^1.6.0"
+  }
+}
