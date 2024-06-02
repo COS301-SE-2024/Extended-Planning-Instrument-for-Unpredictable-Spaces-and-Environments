@@ -1,5 +1,5 @@
 <script setup>
-import { useDark/*, useToggle */} from '@vueuse/core'
+import { useDark /*, useToggle */ } from '@vueuse/core'
 // import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
 import { ref } from 'vue'
@@ -51,11 +51,13 @@ const chartOptions = ref({
       <div class="w-full md:w-[300px] mb-4">
         <div
           :class="[
-            isDark ? 'border-neutral-500 bg-neutral-900 text-white' : 'border-gray-500 bg-white text-black',
+            isDark
+              ? 'border-neutral-500 bg-neutral-900 text-white'
+              : 'border-gray-500 bg-white text-black',
             'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-yellow-600'
           ]"
         >
-          <i :class="[isDark ? 'text-white' : 'text-black','pi pi-search mr-2']"></i>
+          <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
             placeholder="Search"
             :class="[
@@ -65,12 +67,17 @@ const chartOptions = ref({
           />
         </div>
       </div>
-      <h2 :class="[isDark ? 'text-yellow-600' : 'text-black', 'my-4 font-normal text-3xl']">
+      <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
         <span class="font-bold">Welcome back</span>, John
       </h2>
       <div class="flex flex-wrap mb-4">
         <div class="w-full md:w-[55%] mb-4">
-          <div :class="[isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black', 'p-4 rounded-xl h-full flex flex-col']">
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'p-4 rounded-xl h-full flex flex-col'
+            ]"
+          >
             <h2 class="mb-6 font-bold">Shipment Overview</h2>
             <div class="w-full flex-grow">
               <Chart type="line" :data="chartData" :options="chartOptions" class="h-full w-full" />
@@ -79,10 +86,20 @@ const chartOptions = ref({
         </div>
 
         <div class="w-full ml-2 md:w-[43%] mb-4 flex flex-col">
-          <div :class="[isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black', 'flex-grow p-4 rounded-xl flex flex-col mb-4']">
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex-grow p-4 rounded-xl flex flex-col mb-4'
+            ]"
+          >
             <h2 class="mb-1 text-xl font-bold">Current Shipments</h2>
             <div class="flex flex-row flex-grow items-center">
-              <Knob v-model="value" valueColor="SlateGray" rangeColor="Purple" class="flex-grow-0" />
+              <Knob
+                v-model="value"
+                valueColor="SlateGray"
+                rangeColor="Purple"
+                class="flex-grow-0"
+              />
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Completed</h2>
                 <p class="font-light">223/300</p>
@@ -92,10 +109,20 @@ const chartOptions = ref({
             </div>
           </div>
 
-          <div :class="[isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black', 'flex-grow p-4 rounded-xl flex flex-col']">
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex-grow p-4 rounded-xl flex flex-col'
+            ]"
+          >
             <h2 class="mb-1 text-xl font-bold">Current Shipments</h2>
             <div class="flex flex-row flex-grow items-center">
-              <Knob v-model="value" valueColor="SlateGray" rangeColor="Purple" class="flex-grow-0" />
+              <Knob
+                v-model="value"
+                valueColor="SlateGray"
+                rangeColor="Purple"
+                class="flex-grow-0"
+              />
               <div class="ml-2 flex flex-col">
                 <h2 class="mb-1 font-bold">Completed</h2>
                 <p class="font-light">223/300</p>
@@ -108,12 +135,25 @@ const chartOptions = ref({
         <div class="w-full flex flex-wrap mb-4">
           <!-- Latest Shipment -->
           <div class="w-full md:w-[49%] mb-4 mr-2 flex flex-col">
-            <div :class="[isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black', 'p-4 rounded-xl']">
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'p-4 rounded-xl'
+              ]"
+            >
               <h2 class="mb-6 font-bold">Latest Shipment</h2>
               <div :class="[isDark ? 'text-neutral-400' : 'text-neutral-900']">
                 <Accordion :activeIndex="0" class="custom-accordion w-full">
-                  <AccordionTab v-for="item in [1, 2, 3]" :key="item" :header="`Shipment #344${item}`" :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'">
-                    <Timeline :value="events" :class="isDark ? 'dark-mode-timeline' : 'light-mode-timeline'">
+                  <AccordionTab
+                    v-for="item in [1, 2, 3]"
+                    :key="item"
+                    :header="`Shipment #344${item}`"
+                    :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
+                  >
+                    <Timeline
+                      :value="events"
+                      :class="isDark ? 'dark-mode-timeline' : 'light-mode-timeline'"
+                    >
                       <template #opposite="slotProps">
                         <small class="p-text-secondary">{{ slotProps.item.date }}</small>
                       </template>
@@ -128,10 +168,15 @@ const chartOptions = ref({
           </div>
           <!-- Calendar -->
           <div class="w-full md:w-[49%] mb-4 flex flex-col">
-            <div :class="[isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black', 'p-4 rounded-xl']">
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'p-4 rounded-xl'
+              ]"
+            >
               <h2 class="font-bold mb-6">Calendar</h2>
               <div class="flex-grow">
-                <Calendar 
+                <Calendar
                   id="calendar"
                   v-model="date"
                   inline
@@ -166,19 +211,13 @@ const chartOptions = ref({
   color: black;
 }
 
-/* General styles for dark mode */
-.dark-calendar {
-  background-color: #2e2e2e;
-  color: white;
-}
-
 .dark-calendar .p-datepicker {
-  background-color: #2e2e2e;
+  background-color: #0a0a0a;
   border: 1px solid #444;
 }
 
 .dark-calendar .p-datepicker-header {
-  background-color: #3e3e3e;
+  background-color: #171717;
   color: white;
 }
 
@@ -194,60 +233,60 @@ const chartOptions = ref({
 }
 
 .custom-accordion {
-  background-color: inherit; 
-  color: inherit; 
+  background-color: inherit;
+  color: inherit;
   border: none;
 }
 
-.custom-accordion .p-accordion-header {
-  background-color: inherit; 
-  color: inherit; 
+.custom-accordion .p-accordion-header .p-accordion-header-link {
+  background-color: #171717;
+  color: inherit;
   border: none;
 }
 
 .custom-accordion .p-accordion-header:hover {
-  background-color: #f0f0f0; 
+  background-color: #f0f0f0;
   color: black;
 }
 
 .dark .custom-accordion .p-accordion-header:hover {
-  background-color: #3e3e3e; 
+  background-color: #3e3e3e;
   color: white;
 }
 
 .custom-accordion .p-accordion-content {
-  background-color: inherit; 
-  color: inherit; 
+  background-color: inherit;
+  color: inherit;
 }
 
 .custom-timeline {
-  background-color: inherit; 
-  color: inherit; 
+  background-color: inherit;
+  color: inherit;
 }
 
 .custom-timeline .p-timeline-event {
-  border-left: 2px solid #ccc; 
+  border-left: 2px solid #ccc;
 }
 
 .dark .custom-timeline .p-timeline-event {
-  border-left: 2px solid #555; 
+  border-left: 2px solid #555;
 }
 
 .custom-timeline .p-timeline-event-opposite {
-  color: inherit; 
+  color: inherit;
 }
 
 .custom-timeline .p-timeline-event-content {
-  color: inherit; 
+  color: inherit;
 }
 
 .custom-timeline .p-timeline-event-marker {
-  background-color: inherit; 
-  border: 2px solid #ccc; 
+  background-color: inherit;
+  border: 2px solid #ccc;
 }
 
 .dark .custom-timeline .p-timeline-event-marker {
-  border: 2px solid #555; 
+  border: 2px solid #555;
 }
 
 /* General styles for AccordionTab */
@@ -284,12 +323,12 @@ const chartOptions = ref({
 }
 
 .light-mode-accordion-tab .p-accordion-tab-header:hover {
-  background-color: #f0f0f0; 
+  background-color: #f0f0f0;
   color: black;
 }
 
 .dark-mode-accordion-tab .p-accordion-tab-header:hover {
-  background-color: #3e3e3e; 
+  background-color: #3e3e3e;
   color: white;
 }
 
@@ -310,16 +349,16 @@ const chartOptions = ref({
 }
 
 .dark-mode-timeline {
-  background-color: #262626;
+  background-color: #0a0a0a;
   color: white;
 }
 
 .light-mode-timeline .p-timeline-event {
-  border-left: 2px solid #ccc; 
+  border-left: 2px solid #ccc;
 }
 
 .dark-mode-timeline .p-timeline-event {
-  border-left: 2px solid #555; 
+  border-left: 2px solid #555;
 }
 
 .light-mode-timeline .p-timeline-event-opposite {
@@ -340,12 +379,11 @@ const chartOptions = ref({
 
 .light-mode-timeline .p-timeline-event-marker {
   background-color: white;
-  border: 2px solid #ccc; 
+  border: 2px solid #ccc;
 }
 
 .dark-mode-timeline .p-timeline-event-marker {
   background-color: #262626;
-  border: 2px solid #555; 
+  border: 2px solid #555;
 }
-
 </style>
