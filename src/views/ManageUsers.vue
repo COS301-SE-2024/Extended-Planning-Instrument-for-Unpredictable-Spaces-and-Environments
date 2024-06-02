@@ -144,7 +144,7 @@ const saveChanges = async () => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-yellow-600 text-white"
+                class="bg-yellow-700 text-gray-100 rounded-xl p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -155,19 +155,55 @@ const saveChanges = async () => {
     </div>
   </div>
 
-  <Dialog header="Edit User" v-model:visible="dialogVisible" :modal="true" :closable="false">
-    <div class="p-fluid">
-      <div class="field">
-        <label for="FullName" class="py-2">Full Name</label>
-        <InputText v-model="selectedUser.FullName" id="FullName" />
+  <Dialog
+    :class="[isDark ? 'dark' : '', ' w-[400px]']"
+    header="Edit User Profile"
+    v-model:visible="dialogVisible"
+    :modal="true"
+    :closable="false"
+  >
+    <div
+      :class="[
+        isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
+        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+      ]"
+      class="flex flex-col"
+    >
+      <div class="field flex flex-col">
+        <label class="text-xl font-semibold" for="FullName">Full Name</label>
+        <InputText
+          :class="[
+            isDark
+              ? 'text-white border bg-neutral-950 border-transparent'
+              : 'border border-neutral-900 bg-white text-neutral-800',
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+          ]"
+          v-model="selectedUser.FullName"
+          id="FullName"
+        />
       </div>
-      <div class="field">
-        <label for="Email">Email</label>
-        <InputText v-model="selectedUser.Email" id="Email" />
+      <div class="field flex flex-col">
+        <label class="text-xl font-semibold" for="Email">Email</label>
+        <InputText
+          :class="[
+            isDark
+              ? 'text-white border bg-neutral-950 border-transparent'
+              : 'border border-neutral-900 bg-white text-neutral-800',
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+          ]"
+          v-model="selectedUser.Email"
+          id="Email"
+        />
       </div>
-      <div class="field">
-        <label for="Role">Role</label>
+      <div class="field flex flex-col">
+        <label class="text-xl font-semibold" for="Role">Role</label>
         <Dropdown
+          :class="[
+            isDark
+              ? 'text-white border bg-neutral-950 border-transparent'
+              : 'border border-neutral-900 bg-white text-neutral-800',
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+          ]"
           v-model="selectedRole"
           :options="roles"
           optionLabel="name"
@@ -175,19 +211,34 @@ const saveChanges = async () => {
           class="w-full md:w-14rem"
         />
       </div>
-      <div class="field">
-        <label for="Phone">Phone Number</label>
-        <InputText v-model="selectedUser.Phone" id="Phone" />
+      <div class="field flex flex-col">
+        <label class="text-xl font-semibold" for="Phone">Phone Number</label>
+        <InputText
+          :class="[
+            isDark
+              ? 'text-white border bg-neutral-950 border-transparent'
+              : 'border border-neutral-900 bg-white text-neutral-800',
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+          ]"
+          v-model="selectedUser.Phone"
+          id="Phone"
+        />
       </div>
     </div>
-    <div class="p-d-flex p-jc-end">
+    <div class="flex flex-col items-center align-center">
       <Button
-        label="Cancel"
-        icon="pi pi-times"
-        class="p-button-text"
+        label="Save"
+        class="w-full font-semibold p-button-text text-white bg-green-800 rounded-xl p-2 mb-3"
+        @click="saveChanges"
+      />
+
+      <Button
+        icon="pi pi-arrow-left"
+        iconPos="left"
+        label="Back"
+        class="font-semibold w-auto p-button-text text-yellow-700 p-2"
         @click="dialogVisible = false"
       />
-      <Button label="Save" icon="pi pi-check" class="p-ml-2" @click="saveChanges" />
     </div>
   </Dialog>
 </template>
@@ -263,28 +314,28 @@ const saveChanges = async () => {
 
 /* Dark mode styles */
 .dark {
-  background-color: #262626;
+  background-color: #171717;
   color: white;
 }
 
 .dark .p-datatable-header {
-  background-color: #333333;
+  background-color: #262626;
   color: white;
 }
 
 .dark .p-datatable-thead > tr > th,
 .dark .p-datatable-tfoot > tr > th {
-  background-color: #333333;
-  color: white;
-}
-
-.dark .p-datatable-tbody > tr {
   background-color: #262626;
   color: white;
 }
 
+.dark .p-datatable-tbody > tr {
+  background-color: #171717;
+  color: white;
+}
+
 .dark .p-datatable-tbody > tr:nth-child(even) {
-  background-color: #333333;
+  background-color: #262626;
 }
 
 .dark .p-datatable-tbody > tr:hover {
@@ -292,42 +343,42 @@ const saveChanges = async () => {
 }
 
 .dark .p-datatable-footer {
-  background-color: #333333;
+  background-color: #262626;
   color: white;
 }
 
 .dark .p-paginator {
-  background-color: #333333;
+  background-color: #262626;
   color: white;
 }
 .dark .p-paginator .p-dropdown {
-  background-color: #333333 !important;
+  background-color: #262626 !important;
   color: #333333 !important;
-  border: 1px solid #333333 !important;
+  border: 1px solid #262626 !important;
 }
 .dark .p-paginator .p-dropdown .p-dropdown-trigger {
   color: rgb(255, 145, 0);
-  background-color: #333333;
+  background-color: #262626;
 }
 
 .dark .p-paginator .p-inputtext {
-  background: #333333 !important;
+  background: #262626 !important;
   color: white !important;
 }
 
 .dark .p-dropdown-panel {
-  background: #333333;
+  background: #262626;
 }
 .dark .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
   color: rgb(255, 145, 0);
-  background-color: #333333;
+  background-color: #262626;
 }
 .dark
   .p-dropdown-panel
   .p-dropdown-items
   .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus {
   color: rgb(255, 145, 0);
-  background-color: #333333;
+  background-color: #262626;
 }
 
 .dark .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
@@ -338,5 +389,48 @@ const saveChanges = async () => {
   background: #333333;
   transition: none;
   border-radius: 0;
+}
+
+.p-dialog {
+  background-color: rgb(255, 255, 255);
+  color: black;
+}
+
+.p-dialog .p-dialog-content {
+  background-color: white;
+  color: black;
+}
+.p-p-dialog-titlebar {
+  background-color: #f3f4f6;
+  color: black;
+}
+.p-dialog .p-dialog-header {
+  border-bottom: 2px solid #333333;
+  background-color: #f3f4f6;
+  color: black;
+  text-align: center; /* Center the header text */
+  font-weight: bold; /* Use font-weight instead of just "font" */
+}
+
+.p-confirm-dialog-message {
+  text-align: center; /* Center the message text */
+}
+
+.dark .p-dialog {
+  background-color: #262626;
+  color: white;
+}
+
+.dark .p-dialog .p-dialog-content {
+  background-color: #171717;
+  color: white;
+}
+.dark .p-dialog-titlebar {
+  background-color: #171717;
+  color: white;
+}
+.dark .p-dialog .p-dialog-header {
+  background-color: #171717;
+  color: white;
 }
 </style>
