@@ -67,14 +67,14 @@ const saveChanges = async () => {
   try {
     console.log(FullName.value)
     console.log(Email.value)
-    console.log(Role.value)
+    console.log(selectedRole.value)
     console.log(Phone.value)
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'UpdateUser',
         fullname: FullName.value,
         email: Email.value,
-        role: Role.value,
+        role: selectedRole.value.name,
         phone: Phone.value
       }),
       method: 'POST'
