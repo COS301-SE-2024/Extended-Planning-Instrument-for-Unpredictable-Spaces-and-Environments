@@ -7,6 +7,10 @@ import {getAllUsers} from './Users/getAllUsers.ts';
 import {insertUser} from './Users/insertUser.ts';
 import {updateRole} from './Users/updateRole.ts';
 
+const supabaseUrl = "https://rgisazefakhdieigrylb.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo";
+const supabaseUser = createClient(supabaseUrl, supabaseKey);
+
 
 function defaultResponse() {
   return new Response(JSON.stringify({ error: "Endpoint not found" }), {
@@ -29,10 +33,6 @@ function responseBuilder(data: any) {
 }
 
 Deno.serve(async (req) => {
-  const supabaseUrl = "https://rgisazefakhdieigrylb.supabase.co";
-  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo";
-  const supabaseUser = createClient(supabaseUrl, supabaseAnonKey);
-
   try {
     if (req.method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
