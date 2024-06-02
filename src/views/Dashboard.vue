@@ -14,13 +14,34 @@ const chartData = ref({
   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
   datasets: [
     {
-      type: 'bar',
-      label: 'Sales',
-      backgroundColor: '#82ca9d',
-      data: [50, 25, 12, 48, 56, 76, 42]
+      label: 'Algorithm 1',
+      data: [1, 2, 1, 3, 3, 2, 1],
+      borderColor: '#f5a142',
+      backgroundColor: '#000000'
+    },
+    {
+      label: 'Algorithm 2',
+      data: [2, 3, 1, 2, 2, 1, 1],
+      borderColor: '#4300a1',
+      backgroundColor: '#000000'
     }
-  ]
+  ],
+  options: {
+    scales: {
+      x: {
+        grid: {
+          color: 'red' // Change the color of the x-axis grid lines
+        }
+      },
+      y: {
+        grid: {
+          color: 'blue' // Change the color of the y-axis grid lines
+        }
+      }
+    }
+  }
 })
+
 const events = [
   { status: 'Ordered', date: '15/10/2020 10:30', icon: 'pi pi-shopping-cart', color: '#9C27B0' },
   { status: 'Processing', date: '15/10/2020 14:00', icon: 'pi pi-cog', color: '#673AB7' },
@@ -30,7 +51,15 @@ const events = [
 
 const chartOptions = ref({
   scales: {
+    x: {
+      grid: {
+        color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
+      }
+    },
     y: {
+      grid: {
+        color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
+      },
       beginAtZero: true
     }
   }
@@ -96,9 +125,9 @@ const chartOptions = ref({
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="value"
-                valueColor="SlateGray"
-                rangeColor="Purple"
-                class="flex-grow-0"
+                valueColor="Orange"
+                rangeColor="Black"
+                :class="[isDark ? 'dark' : 'light']"
               />
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Completed</h2>
@@ -119,9 +148,10 @@ const chartOptions = ref({
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="value"
-                valueColor="SlateGray"
-                rangeColor="Purple"
+                valueColor="Orange"
+                rangeColor="Black"
                 class="flex-grow-0"
+                :class="[isDark ? 'dark' : 'light']"
               />
               <div class="ml-2 flex flex-col">
                 <h2 class="mb-1 font-bold">Completed</h2>
@@ -142,7 +172,7 @@ const chartOptions = ref({
               ]"
             >
               <h2 class="mb-6 font-bold">Latest Shipment</h2>
-              <div :class="[isDark ? 'text-neutral-400' : 'text-neutral-900']">
+              <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
                 <Accordion :activeIndex="0" class="custom-accordion w-full">
                   <AccordionTab
                     v-for="item in [1, 2, 3]"
@@ -220,6 +250,16 @@ const chartOptions = ref({
   background-color: #171717;
   color: white;
 }
+.dark .p-knob-text {
+  stroke: white;
+  color: white;
+  fill: white;
+}
+.light .p-knob-text {
+  stroke: #171717;
+  color: #171717;
+  fill: #171717;
+}
 
 /* Additional custom styles */
 .dark-calendar .p-datepicker .p-datepicker-prev,
@@ -232,14 +272,8 @@ const chartOptions = ref({
   color: black;
 }
 
-.custom-accordion {
-  background-color: inherit;
-  color: inherit;
-  border: none;
-}
-
-.custom-accordion .p-accordion-header .p-accordion-header-link {
-  background-color: #171717;
+.light .custom-accordion .p-accordion-header .p-accordion-header-link {
+  background-color: #f3f4f6;
   color: inherit;
   border: none;
 }
@@ -387,3 +421,15 @@ const chartOptions = ref({
   border: 2px solid #555;
 }
 </style>
+<script>
+import '../assets/tailwind.css'
+
+export default {
+  data() {
+    return {
+      value: 223
+      // Other data properties
+    }
+  }
+}
+</script>

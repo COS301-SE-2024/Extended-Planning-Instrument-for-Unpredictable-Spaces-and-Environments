@@ -1,8 +1,7 @@
 <script setup>
-import { useDark /*, useToggle*/ } from '@vueuse/core'
-// import Toolbar from 'primevue/toolbar'
+import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
-import { ref, onMounted /*, onUnmounted*/ } from 'vue'
+import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
@@ -18,7 +17,7 @@ const toggleDark = () => {
 }
 const customers = ref([]) // Reactive variable to store customer data
 
-onMounted(async () => {
+const fetchUsers = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'GetAllUsers' }),
@@ -34,7 +33,64 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error fetching data:', error)
   }
+}
+onMounted(fetchUsers)
+
+const dialogVisible = ref(false)
+const selectedUser = ref({
+  FullName: '',
+  Email: '',
+  Role: '',
+  Phone: ''
 })
+const selectedRole = ref(null)
+const handleRemoveThing = () => {
+  console.log('successfully removed')
+}
+
+const onRemoveThing = (user) => {
+  selectedUser.value = { ...user }
+  selectedRole.value = roles.value.find((role) => role.name === user.Role) || null
+  dialogVisible.value = true
+}
+const roles = ref([
+  { name: 'Manager', code: 'Manager' },
+  { name: 'Packer', code: 'Packer' },
+  { name: 'Driver', code: 'Driver' },
+  { name: 'unassigned', code: 'unassigned' }
+])
+
+const saveChanges = async () => {
+  // Save changes to the selectedUser
+  console.log('User details saved:', selectedUser.value)
+  dialogVisible.value = false
+  try {
+    console.log(FullName.value)
+    console.log(Email.value)
+    console.log(Role.value)
+    console.log(Phone.value)
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'UpdateUser',
+        fullname: FullName.value,
+        email: Email.value,
+        role: Role.value,
+        phone: Phone.value
+      }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.log('API Error:', error)
+      console.log(error.message)
+    } else {
+      console.log(customers.value) // Now it should log an array
+      await fetchUsers()
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
 </script>
 
 <template>
@@ -67,7 +123,7 @@ onMounted(async () => {
           />
         </div>
       </div>
-      <h2 :class="[isDark ? 'text-yellow-600' : 'text-black', 'my-4 font-normal text-3xl']">
+      <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
         <span class="font-bold">Manage User's</span>
       </h2>
 
@@ -84,12 +140,57 @@ onMounted(async () => {
           <Column field="Email" header="Email" style="width: 25%"></Column>
           <Column field="Role" header="Role" style="width: 25%"></Column>
           <Column field="Phone" header="Phone Number" style="width: 25%"></Column>
+
+          <Column header="Edit" style="width: 25%">
+            <template #body="slotProps">
+              <Button
+                class="bg-yellow-600 text-white"
+                label="Edit"
+                @click="onRemoveThing(slotProps.data)"
+              />
+            </template>
+          </Column>
         </DataTable>
       </div>
     </div>
   </div>
-</template>
 
+  <Dialog header="Edit User" v-model:visible="dialogVisible" :modal="true" :closable="false">
+    <div class="p-fluid">
+      <div class="field">
+        <label for="FullName" class="py-2">Full Name</label>
+        <InputText v-model="selectedUser.FullName" id="FullName" />
+      </div>
+      <div class="field">
+        <label for="Email">Email</label>
+        <InputText v-model="selectedUser.Email" id="Email" />
+      </div>
+      <div class="field">
+        <label for="Role">Role</label>
+        <Dropdown
+          v-model="selectedRole"
+          :options="roles"
+          optionLabel="name"
+          placeholder="Select a Role"
+          class="w-full md:w-14rem"
+        />
+      </div>
+      <div class="field">
+        <label for="Phone">Phone Number</label>
+        <InputText v-model="selectedUser.Phone" id="Phone" />
+      </div>
+    </div>
+    <div class="p-d-flex p-jc-end">
+      <Button
+        label="Cancel"
+        icon="pi pi-times"
+        class="p-button-text"
+        @click="dialogVisible = false"
+      />
+      <Button label="Save" icon="pi pi-check" class="p-ml-2" @click="saveChanges" />
+    </div>
+  </Dialog>
+</template>
 <style>
 /* Light mode styles */
 .body {
