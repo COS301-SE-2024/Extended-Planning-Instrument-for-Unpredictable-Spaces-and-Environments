@@ -4,23 +4,13 @@ import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router' // Import the router
-import { supabase } from '../supabase'
+
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 
 const isMobileSidebarCollapsed = ref(false)
 
-async function signOut() {
-  console.log("user will be signed out")
-  const { error } = await supabase.auth.signOut()
-  if (error) {
-    console.error('Error signing out:', error)
-  } else {
-    console.log('User signed out')
-    router.push({ name: 'login' }) // Navigate to the login page after logout
-  }
-}
 // Toggle the sidebar collapse state
 const toggleMobileSidebar = () => {
   isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
@@ -112,10 +102,9 @@ const items = [
   {
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
-      command: async () => {
-      await signOut()
+    command: () => {
       console.log('Logging Out')
-      // No need for additional router.push here as it's handled in the signOut function
+      router.push({ name: 'login' }) // Navigate to the login page after logout
     }
   }
 ]
@@ -140,15 +129,17 @@ const items = [
         ]"
       >
         <i
-          class="pi pi-box text-white"
+          class="pi pi-truck"
           :class="{
-            'm-0 opacity-0': isMobileSidebarCollapsed,
-            'mr-4': !isMobileSidebarCollapsed
+            'ml-3 opacity-0': isMobileSidebarCollapsed,
+            'ml-4  mr-4': !isMobileSidebarCollapsed,
+            'text-black': !isDark,
+            'text-white': isDark
           }"
         ></i>
         <h1
           :style="{ color: isDark ? 'white' : 'black' }"
-          :class="['mr-4 font-semibold mb-4 transition-opacity duration-300 ease-in-out']"
+          :class="[' mr-4 font-semibold mb-4 mt-2 transition-opacity duration-300 ease-in-out']"
         >
           {{ isMobileSidebarCollapsed ? 'JS' : 'JANEEB SOLUTIONS' }}
         </h1>
@@ -158,7 +149,13 @@ const items = [
         class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-yellow-700 text-white mb-4 flex items-center"
         :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
       >
-        <i class="pi pi-box text-white mobile-icon"></i>
+        <i
+          class="pi pi-box text-white"
+          :class="{
+            'm-0 ': isMobileSidebarCollapsed,
+            'mr-4': !isMobileSidebarCollapsed
+          }"
+        ></i>
         <p :class="{ 'opacity-0': isMobileSidebarCollapsed }" class="justify-center ml-2">
           New Shipment
         </p>
@@ -221,7 +218,7 @@ const items = [
     >
       <div class="flex-shrink-0">
         <!-- Wrap Avatar in a div to maintain aspect ratio -->
-        <Avatar label="P" class="mr-2" size="large" shape="circle" />
+        <Avatar label="P" class="mr-2 border border-neutral-900" size="large" shape="circle" />
       </div>
       <span
         class="inline-flex flex-col transition-opacity duration-300 ease-in-out"
@@ -301,24 +298,32 @@ const items = [
     background-color: transparent !important;
   }
 }
-.light .p-menu .p-menuitem > .p-menuitem-content {
-  color: rgba(255, 0, 0, 0.87) !important;
-}
+
 .light .p-menu {
   color: black;
   background-color: #0a0a0a;
   background: #0a0a0a;
 }
+.light .p-menuitem {
+  color: black;
+}
 .light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
+  stroke: black !important;
+  fill: black !important;
   background-color: white;
-  background: #0a0a0a;
+  background: transparent;
 }
-
-.light {
-  color: white;
+.light a {
+  color: black !important;
 }
-
+.p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.87);
+  border-radius: 4px;
+  min-width: 12.5rem;
+}
 .light .p-menuitem {
   &.p-focus {
     > .p-menuitem-content {

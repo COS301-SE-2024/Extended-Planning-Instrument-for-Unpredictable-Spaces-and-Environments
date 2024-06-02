@@ -24,7 +24,7 @@
 
 ## Demo Video 🎥
 
-[MP6-Demo1](https://link-to-demo-video)
+[MP6-Demo1](https://youtu.be/tY6WINjeh4o)
 
 ## Functional Requirements (SRS) Document 📄
 
