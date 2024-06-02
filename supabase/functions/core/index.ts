@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     } //============================================================
 
     //==================== Updating user role ====================
-    else if (type === "UpdateRole") {
+    else if (type === "UpdateUser") {
       if (!("email" in requestBody)) {
         response = { error: `Missing attribute email in body` };
         status = 400;
@@ -106,35 +106,30 @@ Deno.serve(async (req) => {
         response = { error: `Missing attribute role in body` };
         status = 400;
       } else {
-        const { email, role } = requestBody;
-        const { error } = await supabase
+        const { email, role, fullname, phone } = requestBody;
+        const { data, error } = await supabase
           .from("Users")
           .update({
-            "Role": role,
-          }).eq("Email", email);
-
+            Role: role,
+            Email: email,
+            FullName: fullname, 
+            Phone: phone,
+          })
+          .eq("Email", email);
+    
         if (error) {
           response = {
-            error: `Error upadting the Users role: ${error.details}`,
+            error: `Error updating the User: ${error.message}`,
           };
           status = 400;
         } else {
           response = {
-            data: "successfully changed users role",
+            data: "Successfully changed user",
           };
         }
       }
-      return new Response(
-        JSON.stringify(response),
-        {
-          headers: headers,
-          status,
-        },
-      );
-      //============================================================
-
-      //==================== fetching current users ================
-    } else if (type === "GetAllUsers") {
+    }
+     else if (type === "GetAllUsers") {
       const { data, error } = await supabase
         .from("Users")
         .select("*");
