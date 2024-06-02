@@ -26,7 +26,7 @@ const signIn = async () => {
     alert(error.message)
   } else {
     console.log('User signed in:', user)
-    router.push({ name: 'home' })
+    router.push({ name: 'dashboard' })
   }
 }
 
