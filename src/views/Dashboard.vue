@@ -274,7 +274,7 @@ const chartOptions = ref({
 
 .light .custom-accordion .p-accordion-header .p-accordion-header-link {
   background-color: #f3f4f6;
-  color: inherit;
+  color: black;
   border: none;
 }
 
