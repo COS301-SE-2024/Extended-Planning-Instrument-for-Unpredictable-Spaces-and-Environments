@@ -19,16 +19,13 @@
 #### Issue Tracking 🐛
 - [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)
 
-#### Monitoring 📈
-- [![Uptime Robot](https://img.shields.io/uptimerobot/ratio/7/m778918918.svg)](https://uptimerobot.com/dashboard#778918918)
-
 ## Demo Video 🎥
 
 [![Demo1 Thumbnail](https://img.youtube.com/vi/tY6WINjeh4o/0.jpg)](https://youtu.be/tY6WINjeh4o)
 
 ## Functional Requirements (SRS) Document 📄
 
-[Functional Requirements (SRS)](https://link-to-srs-document)
+[Functional Requirements (SRS)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/2318fb0a157eebf2b4eaec26539ad3bbcb7649e6/Docs/Requirement%20Specification%20v1.pdf)
 
 ## Project Management 📋
 
