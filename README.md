@@ -5,12 +5,8 @@
 **Logistics Optimization System** - Unlocking the potential within South Africa's logistics juggernaut: 1.5 billion tonnes of goods annually, 10% of the nation's GDP, and a million-strong workforce. In this landscape of untapped opportunities, our mission is clear – design a system that transforms inefficiency into a symphony of precision. Imagine a logistics realm where every truck is a marvel of intelligent packing and optimal space management. This project isn't just an upgrade; it's a revolution in efficiency.
 
 ### Code Quality Badges 🛡️
-![Coverage Status](https://coveralls.io/repos/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/badge.svg?branch=main)](https://coveralls.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments?branch=main) [![Codecov](https://codecov.io/gh/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/branch/main/graph/badge.svg)](https://codecov.io/gh/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments) [![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/unitTest.yml/badge.svg)]
-#### Requirements 📋
-- [![Requirements Status](https://requires.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/requirements.svg?branch=main)](https://requires.io/github/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/requirements/?branch=main)
-
-#### Issue Tracking 🐛
-- [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)
+![image](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/d645989e-9147-44a0-a3fc-5b398450573f) ![Static Badge](https://img.shields.io/badge/Build-passing-brightgreen?logo=github)
+![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/unitTest.yml/badge.svg) [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)
 
 ## Demo Video 🎥
 
