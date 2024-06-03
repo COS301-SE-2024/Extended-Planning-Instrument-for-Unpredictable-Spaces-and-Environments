@@ -12,11 +12,11 @@
   
   // This function will be triggered when the component is mounted
   supabase.auth.onAuthStateChange((event, session) => {
-    if (session) {
-      router.push({ name: 'dashboard' })
-    } else {
-      router.push({ name: 'login' })
-    }
+    // if (session) {
+    //   router.push({ name: 'dashboard' })
+    // } else {
+    //   router.push({ name: 'login' })
+    // }
   })
   </script>
   
