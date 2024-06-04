@@ -30,7 +30,7 @@ const signUp = async () => {
       alert('Sign up successful!');
       const { data, error } = await supabase.functions.invoke('core', {
         body: {
-          type: 'InsertUser',
+          type: 'insertUser',
           fullname: name.value,
           email: email.value,
           role: 'unassigned',
