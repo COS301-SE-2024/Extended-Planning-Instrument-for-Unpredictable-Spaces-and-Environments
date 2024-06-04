@@ -35,7 +35,7 @@ const signInWithProvider = async (provider) => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}dashboard`
+      redirectTo: `${window.location.origin}/dashboard`
     }
   })
   if (error) {
@@ -45,9 +45,6 @@ const signInWithProvider = async (provider) => {
     // Do not navigate to the home page here, handle this in the callback
   }
 }
-
-
-
 </script>
 
 <template>
@@ -84,7 +81,8 @@ const signInWithProvider = async (provider) => {
           <label
             for="email"
             :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
-          >Email</label>
+            >Email</label
+          >
           <input
             type="email"
             id="email"
@@ -102,7 +100,8 @@ const signInWithProvider = async (provider) => {
         <label
           for="password"
           :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
-        >Password</label>
+          >Password</label
+        >
         <Password
           id="password"
           v-model="password"
@@ -141,7 +140,7 @@ const signInWithProvider = async (provider) => {
             </div>
           </button>
           <button
-          @click.prevent="signInWithProvider('github')"
+            @click.prevent="signInWithProvider('github')"
             :class="[
               isDark
                 ? ' bg-neutral-900'
@@ -153,7 +152,6 @@ const signInWithProvider = async (provider) => {
               <i class="pi pi-github"></i>
             </div>
           </button>
-          
         </div>
 
         <p
