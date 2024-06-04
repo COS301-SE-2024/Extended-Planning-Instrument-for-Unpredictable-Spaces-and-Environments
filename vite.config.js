@@ -10,7 +10,7 @@ const dirname = path.dirname(filename)
 
 export default defineConfig({
   plugins: [vue(), vueJsx(), VueDevTools()],
-  base:'/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/',
+  base:'/',
   css: {
     postcss: {
       plugins: [tailwindcss()]
