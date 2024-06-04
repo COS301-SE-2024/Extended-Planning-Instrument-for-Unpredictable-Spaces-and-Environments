@@ -46,7 +46,8 @@ const fetchUsers = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      customers.value = JSON.parse(data).data
+      console.log(data.data);
+      customers.value = data.data
       // console.log(customers.value) // Now it should log an array
     }
   } catch (error) {
