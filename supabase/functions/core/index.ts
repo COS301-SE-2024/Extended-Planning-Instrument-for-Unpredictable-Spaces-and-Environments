@@ -5,7 +5,7 @@ import { corsHeaders } from '../cors.ts'; // Adjusted relative path
 //Users
 import {getAllUsers} from './Users/getAllUsers.ts';
 import {insertUser} from './Users/insertUser.ts';
-import {updateRole} from './Users/updateRole.ts';
+import {updateUser} from './Users/updateUser.ts';
 
 const supabaseUrl = "https://rgisazefakhdieigrylb.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo";
@@ -46,8 +46,8 @@ Deno.serve(async (req) => {
       if (requestBody.type == "getAllUsers") {
         return responseBuilder(await getAllUsers(supabaseUser));
       } 
-      if (requestBody.type == "updateRole") {
-        return responseBuilder(await updateRole(supabaseUser, requestBody.email, requestBody.role));
+      if (requestBody.type == "updateUser") {
+        return responseBuilder(await updateUser(supabaseUser, requestBody.email, requestBody.role, requestBody.fullname, requestBody.phone));
       } else {
         return defaultResponse();
       }

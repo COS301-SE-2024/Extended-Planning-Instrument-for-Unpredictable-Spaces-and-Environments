@@ -39,7 +39,7 @@ async function setupSubscription() {
 const fetchUsers = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'GetAllUsers' }),
+      body: JSON.stringify({ type: 'getAllUsers' }),
       method: 'POST'
     })
 
@@ -86,7 +86,7 @@ const saveChanges = async () => {
   try {
     const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
-        type: 'UpdateUser',
+        type: 'updateUser',
         fullname: selectedUser.value.FullName,
         email: selectedUser.value.Email,
         role: selectedRole.value.name,
