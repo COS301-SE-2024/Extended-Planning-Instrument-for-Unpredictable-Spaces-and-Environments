@@ -9,7 +9,6 @@
   import { useRouter } from 'vue-router'
   
   const router = useRouter()
-  
   // This function will be triggered when the component is mounted
   supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state changed:', event, session)
@@ -17,6 +16,10 @@
       //router.push({ name: 'dashboard' })
 
 })
-
+    // if (session) {
+    //   router.push({ name: 'dashboard' })
+    // } else {
+    //   router.push({ name: 'login' })
+    // }
   </script>
   
