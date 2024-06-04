@@ -1,15 +1,30 @@
 <script setup>
 // DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
+
+
+let localUser;
 
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+
+async function checkAuth(){
+    //const { data, error } = await supabase.auth.getSession()
+    localUser = await supabase.auth.getSession();
+    console.log(localUser);
+    if (localUser.data.session != null) {
+      router.push("/dashboard");
+    }
+  }
+onMounted(() => {
+  checkAuth();
+})
 
 // Authentication state
 const email = ref('')
