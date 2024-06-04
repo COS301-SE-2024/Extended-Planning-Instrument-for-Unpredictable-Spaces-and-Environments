@@ -37,29 +37,21 @@ Deno.serve(async (req) => {
     if (req.method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
     }
-
-    if (req.method === 'GET') {
-      const url = new URL(req.url);
-      const params = new URLSearchParams(url.search);
-
-      if (req.url.includes('/getAllUsers')) {
-        return responseBuilder(await getAllUsers(supabaseUser));
-      } else {
-        return defaultResponse();
-      }
-    } else if (req.method === 'POST') {
+    if (req.method === 'POST') {
       const requestBody = await req.json();
-
-      if (req.url.endsWith("/insertUser")) {
+      // -------------------------------------------
+      if (requestBody.type == "insertUser") {
         return responseBuilder(await insertUser(supabaseUser, requestBody.fullname, requestBody.email, requestBody.role, requestBody.phone));
       } 
-      if (req.url.endsWith("/updateRole")) {
+      if (requestBody.type == "getAllUsers") {
+        return responseBuilder(await getAllUsers(supabaseUser));
+      } 
+      if (requestBody.type == "updateRole") {
         return responseBuilder(await updateRole(supabaseUser, requestBody.email, requestBody.role));
       } else {
         return defaultResponse();
       }
     }
-
     return new Response(JSON.stringify({ error: "Endpoint not found" }), {
       headers: { "Content-Type": "application/json" },
       status: 404,
