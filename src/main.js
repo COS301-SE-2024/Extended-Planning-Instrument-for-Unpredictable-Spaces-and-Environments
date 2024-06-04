@@ -9,6 +9,7 @@ import FloatLabel from 'primevue/floatlabel'
 import Password from 'primevue/password'
 import InputSwitch from 'primevue/inputswitch'
 import Menu from 'primevue/menu'
+import Menubar from 'primevue/menubar'
 import Toolbar from 'primevue/toolbar'
 import Badge from 'primevue/badge'
 import Avatar from 'primevue/avatar'
@@ -42,6 +43,7 @@ app.component('FloatLabel', FloatLabel)
 app.component('Password', Password)
 app.component('InputSwitch', InputSwitch)
 app.component('Menu', Menu)
+app.component('Menubar', Menubar)
 app.component('Toolbar', Toolbar)
 app.component('Badge', Badge)
 app.component('Avatar', Avatar)

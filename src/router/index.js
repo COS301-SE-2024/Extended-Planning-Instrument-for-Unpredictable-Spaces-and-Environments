@@ -3,7 +3,7 @@ import LoginView from '../views/LoginView.vue'
 import OAuthCallback from '../views/OAuthCallback.vue'
 import { supabase } from '@/supabase'
 
-let localUser;
+let localUser
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -26,13 +26,19 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue'),
-      meta: {requiresAuth: true}
+      meta: { requiresAuth: true }
     },
     {
       path: '/manage-users',
       name: 'manage-users',
       component: () => import('../views/ManageUsers.vue'),
-      meta: {requiresAuth: true}
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/packer',
+      name: 'packer',
+      component: () => import('../views/Packer.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/callback',
@@ -41,22 +47,22 @@ const router = createRouter({
     }
   ]
 })
-async function getUser(next){
-  localUser = await supabase.auth.getSession();
+async function getUser(next) {
+  localUser = await supabase.auth.getSession()
   console.log(localUser.data.session)
-  if(localUser.data.session == null){
-    next ("/")
-  }else{
-    next();
+  if (localUser.data.session == null) {
+    next('/')
+  } else {
+    next()
   }
 }
 
-router.beforeEach((to,from,next)=> {
-  if(to.meta.requiresAuth){
-    getUser(next);
-  }else{
-    next();
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth) {
+    getUser(next)
+  } else {
+    next()
   }
 })
 
-export default router 
+export default router
