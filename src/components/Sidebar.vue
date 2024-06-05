@@ -1,7 +1,5 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import Toolbar from 'primevue/toolbar'
-import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router' // Import the router
 import { supabase } from '@/supabase'
@@ -33,14 +31,14 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
-async function logout(){
-  const {error} =  await supabase.auth.signOut();
+async function logout() {
+  const { error } = await supabase.auth.signOut()
 
-  if (error){
-    console.log (error);
-  }else{
+  if (error) {
+    console.log(error)
+  } else {
     router.push({ name: 'login' })
-    console.log ("Log out successful")
+    console.log('Log out successful')
   }
 }
 
@@ -116,7 +114,7 @@ const items = [
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
       console.log('Logging Out')
-      logout();
+      logout()
     }
   }
 ]
