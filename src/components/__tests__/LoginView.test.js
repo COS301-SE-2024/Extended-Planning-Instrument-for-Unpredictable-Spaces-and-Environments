@@ -6,7 +6,6 @@ import LoginView from '@/views/LoginView.vue';
 import PrimeVue from 'primevue/config';
 import Password from 'primevue/password';
 import { createRouter, createWebHistory } from 'vue-router';
-import { supabase } from '../../supabase'; // Ensure the correct import path
 
 const supabaseMock = {
   auth: {
@@ -132,7 +131,6 @@ describe('LoginView Component', () => {
   
   it('navigates to the dashboard if user session is active', async () => {
     supabaseMock.auth.getSession.mockResolvedValueOnce({ data: { session: {} } });
-    const wrapper = createWrapper();
 
     await router.isReady();
     router.push('/dashboard');

@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import HomeView from '../../views/HomeView.vue';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('HomeView Component', () => {
   let wrapper;
