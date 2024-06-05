@@ -17,9 +17,9 @@ async function getUsername() {
 onMounted(() => {
   getUsername()
   nextTick(() => {
-    initThreeJS('three-container-1') // Initialize Three.js scene for each container
-    initThreeJS('three-container-2')
-    initThreeJS('three-container-3')
+    initThreeJS('three-container-1', isDark.value) // Initialize Three.js scene for each container
+    initThreeJS('three-container-2', isDark.value)
+    initThreeJS('three-container-3', isDark.value)
   })
 })
 
@@ -55,7 +55,7 @@ const chartData = ref({
   }
 })
 
-function initThreeJS(containerId) {
+function initThreeJS(containerId, isDark) {
   const container = document.getElementById(containerId)
   if (!container) {
     console.error(`No container found for Three.js scene: ${containerId}`)
@@ -78,7 +78,7 @@ function initThreeJS(containerId) {
   // Create renderer
   const renderer = new THREE.WebGLRenderer()
   renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.setClearColor(0x000000) // Set a clear color to confirm canvas rendering
+  renderer.setClearColor(isDark ? 0x000000 : 0xffffff) // Set clear color based on isDark value
   container.appendChild(renderer.domElement)
   console.log(`Renderer appended to container: ${containerId}`) // Debugging line
 
@@ -95,23 +95,6 @@ function initThreeJS(containerId) {
   const line = new THREE.LineSegments(edges, lineMaterial)
   scene.add(line)
   console.log(`Edges added to scene: ${containerId}`, line) // Debugging line
-
-  // Add labels to each side
-  const labels = ['Top', 'Bottom', 'Left', 'Right', 'Front', 'Back']
-  const positions = [
-    { x: 0, y: 1.5, z: 0 }, // Top
-    { x: 0, y: -1.5, z: 0 }, // Bottom
-    { x: -2.5, y: 0, z: 0 }, // Left
-    { x: 2.5, y: 0, z: 0 }, // Right
-    { x: 0, y: 0, z: 1.5 }, // Front
-    { x: 0, y: 0, z: -1.5 } // Back
-  ]
-
-  labels.forEach((label, index) => {
-    const sprite = createTextSprite(label)
-    sprite.position.set(positions[index].x, positions[index].y, positions[index].z)
-    cube.add(sprite) // Attach label to the cube
-  })
 
   // Drag state
   let isDragging = false
@@ -198,7 +181,7 @@ function initThreeJS(containerId) {
   >
     <PackerSidebar />
     <!-- Main Content -->
-    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
         <AccordionTab
           v-for="item in [1, 2, 3]"
@@ -228,59 +211,17 @@ function initThreeJS(containerId) {
 <style>
 /* General styles */
 /* General styles for light mode */
-.light-calendar {
-  background-color: white;
-  color: black;
-}
-
-.light-calendar .p-datepicker {
-  background-color: white;
-  border: 1px solid #ccc;
-  color: black;
-}
-
-.light-calendar .p-datepicker-header {
-  background-color: #f7f7f7;
-  color: black;
-}
-
-.dark-calendar .p-datepicker {
-  background-color: #0a0a0a;
-  border: 1px solid #444;
-}
-
-.dark-calendar .p-datepicker-header {
-  background-color: #171717;
-  color: white;
-}
-.dark .p-knob-text {
-  stroke: white;
-  color: white;
-  fill: white;
-}
-.light .p-knob-text {
-  stroke: #171717;
-  color: #171717;
-  fill: #171717;
-}
-
-/* Additional custom styles */
-.dark-calendar .p-datepicker .p-datepicker-prev,
-.dark-calendar .p-datepicker .p-datepicker-next {
-  color: white;
-}
-
-.light-calendar .p-datepicker .p-datepicker-prev,
-.light-calendar .p-datepicker .p-datepicker-next {
-  color: black;
-}
 
 .light .custom-accordion .p-accordion-header .p-accordion-header-link {
-  background-color: #f3f4f6;
+  background-color: white;
   color: black;
-  border: none;
+  border-bottom: 1px solid black; /* Only apply a border to the bottom */
 }
-
+.custom-accordion .p-accordion-header .p-accordion-header-link {
+  background-color: #0a0a0a;
+  color: rgb(255, 255, 255);
+  border-bottom: 1px solid rgb(255, 255, 255); /* Only apply a border to the bottom */
+}
 .custom-accordion .p-accordion-header:hover {
   background-color: #f0f0f0;
   color: black;
@@ -378,7 +319,15 @@ function initThreeJS(containerId) {
   background-color: #262626;
   color: white;
 }
+.light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  background-color: white;
+  color: black;
+}
 
+.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  background-color: #171717;
+  color: white;
+}
 /* General styles for Timeline */
 .light-mode-timeline {
   background-color: white;
