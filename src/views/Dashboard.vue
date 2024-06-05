@@ -10,15 +10,6 @@ const isDark = useDark()
 //   isDark.value = !isDark.value
 //   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 // }
-let userName;
-async function getUsername(){
-  const { data} = await supabase.auth.getSession()
-  userName = data.session.user.identities[0].identity_data.name;
-  console.log (userName)
-}
-onMounted(() => {
-  getUsername();
-})
 
 const chartData = ref({
   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
