@@ -31,6 +31,11 @@ const router = createRouter({
       component: () => import('../views/ManageUsers.vue')
     },
     {
+      path: '/delivery-page',
+      name: 'delivery-page',
+      component: () => import('../views/deliveryPage.vue')
+    },
+    {
       path: '/callback',
       name: 'callback',
       component: OAuthCallback
