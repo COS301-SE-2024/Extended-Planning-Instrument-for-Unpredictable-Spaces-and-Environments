@@ -5,8 +5,7 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 
-
-let localUser;
+let localUser
 
 const isDark = useDark()
 const toggleDark = () => {
@@ -14,16 +13,16 @@ const toggleDark = () => {
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
 
-async function checkAuth(){
-    //const { data, error } = await supabase.auth.getSession()
-    localUser = await supabase.auth.getSession();
-    console.log(localUser);
-    if (localUser.data.session != null) {
-      router.push("/dashboard");
-    }
+async function checkAuth() {
+  //const { data, error } = await supabase.auth.getSession()
+  localUser = await supabase.auth.getSession()
+  console.log(localUser)
+  if (localUser.data.session != null) {
+    router.push('/dashboard')
   }
+}
 onMounted(() => {
-  checkAuth();
+  checkAuth()
 })
 
 // Authentication state

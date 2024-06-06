@@ -4,7 +4,10 @@ import { ref, onMounted, nextTick } from 'vue'
 import * as THREE from 'three'
 import PackerSidebar from '@/components/PackerSidebar.vue'
 import { supabase } from '../supabase'
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
+import { useToast } from 'primevue/usetoast'
 
+const toast = useToast()
 const isDark = useDark()
 const activeIndex = ref(0)
 
@@ -17,43 +20,12 @@ async function getUsername() {
 onMounted(() => {
   getUsername()
   nextTick(() => {
-    initThreeJS('three-container-1', isDark.value) // Initialize Three.js scene for each container
+    initThreeJS('three-container-1', isDark.value)
     initThreeJS('three-container-2', isDark.value)
     initThreeJS('three-container-3', isDark.value)
   })
 })
-
-const chartData = ref({
-  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-  datasets: [
-    {
-      label: 'Algorithm 1',
-      data: [1, 2, 1, 3, 3, 2, 1],
-      borderColor: '#f5a142',
-      backgroundColor: '#000000'
-    },
-    {
-      label: 'Algorithm 2',
-      data: [2, 3, 1, 2, 2, 1, 1],
-      borderColor: '#4300a1',
-      backgroundColor: '#000000'
-    }
-  ],
-  options: {
-    scales: {
-      x: {
-        grid: {
-          color: 'red' // Change the color of the x-axis grid lines
-        }
-      },
-      y: {
-        grid: {
-          color: 'blue' // Change the color of the y-axis grid lines
-        }
-      }
-    }
-  }
-})
+const dialogVisible = ref(false)
 
 function initThreeJS(containerId, isDark) {
   const container = document.getElementById(containerId)
@@ -61,42 +33,35 @@ function initThreeJS(containerId, isDark) {
     console.error(`No container found for Three.js scene: ${containerId}`)
     return
   }
-  console.log(`Container found: ${containerId}`, container) // Debugging line
+  console.log(`Container found: ${containerId}`, container)
 
-  // Create scene
   const scene = new THREE.Scene()
-
-  // Create camera
   const camera = new THREE.PerspectiveCamera(
     75,
     container.clientWidth / container.clientHeight,
     0.1,
     1000
   )
-  camera.position.z = 10 // Move the camera further back
+  camera.position.z = 10
 
-  // Create renderer
   const renderer = new THREE.WebGLRenderer()
   renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.setClearColor(isDark ? 0x000000 : 0xffffff) // Set clear color based on isDark value
+  renderer.setClearColor(isDark ? 0x000000 : 0xffffff)
   container.appendChild(renderer.domElement)
-  console.log(`Renderer appended to container: ${containerId}`) // Debugging line
+  console.log(`Renderer appended to container: ${containerId}`)
 
-  // Create a cube
-  const geometry = new THREE.BoxGeometry(5, 3, 3) // Cube dimensions
-  const material = new THREE.MeshBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.1 }) // Transparent cube material
+  const geometry = new THREE.BoxGeometry(5, 3, 3)
+  const material = new THREE.MeshBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.1 })
   const cube = new THREE.Mesh(geometry, material)
   scene.add(cube)
-  console.log(`Cube added to scene: ${containerId}`, cube) // Debugging line
+  console.log(`Cube added to scene: ${containerId}`, cube)
 
-  // Create edges
   const edges = new THREE.EdgesGeometry(geometry)
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xa16207 })
   const line = new THREE.LineSegments(edges, lineMaterial)
   scene.add(line)
-  console.log(`Edges added to scene: ${containerId}`, line) // Debugging line
+  console.log(`Edges added to scene: ${containerId}`, line)
 
-  // Drag state
   let isDragging = false
   let previousMousePosition = {
     x: 0,
@@ -134,22 +99,20 @@ function initThreeJS(containerId, isDark) {
     isDragging = false
   })
 
-  // Animation loop
   function animate() {
     requestAnimationFrame(animate)
     renderer.render(scene, camera)
-    console.log(`Rendering scene: ${containerId}`) // Debugging line
+    // console.log(`Rendering scene: ${containerId}`)
   }
   animate()
 
-  // Handle window resize
   window.addEventListener('resize', () => {
     const width = container.clientWidth
     const height = container.clientHeight
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
-    console.log(`Window resized, updated renderer size: ${containerId}`) // Debugging line
+    console.log(`Window resized, updated renderer size: ${containerId}`)
   })
 
   function toRadians(angle) {
@@ -170,6 +133,82 @@ function initThreeJS(containerId, isDark) {
     return sprite
   }
 }
+const userMediaSupported = ref(true)
+
+const onInit = (promise) => {
+  promise.catch(() => {
+    userMediaSupported.value = false
+  })
+}
+
+const onCameraReady = () => {
+  console.log('Camera is ready')
+}
+
+const onError = (error) => {
+  console.error('QR code scanning error:', error)
+}
+
+const onDetect = (result) => {
+  toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
+  dialogVisible.value = false
+  console.log('QR code detected:', result)
+}
+function paintOutline(detectedCodes, ctx) {
+  for (const detectedCode of detectedCodes) {
+    const [firstPoint, ...otherPoints] = detectedCode.cornerPoints
+
+    ctx.strokeStyle = 'orange'
+    ctx.lineWidth = 5
+
+    ctx.beginPath()
+    ctx.moveTo(firstPoint.x, firstPoint.y)
+    for (const { x, y } of otherPoints) {
+      ctx.lineTo(x, y)
+    }
+    ctx.lineTo(firstPoint.x, firstPoint.y)
+    ctx.closePath()
+    ctx.stroke()
+  }
+}
+function paintBoundingBox(detectedCodes, ctx) {
+  for (const detectedCode of detectedCodes) {
+    const {
+      boundingBox: { x, y, width, height }
+    } = detectedCode
+
+    ctx.lineWidth = 2
+    ctx.strokeStyle = '#007bff'
+    ctx.strokeRect(x, y, width, height)
+  }
+}
+function paintCenterText(detectedCodes, ctx) {
+  for (const detectedCode of detectedCodes) {
+    const { boundingBox, rawValue } = detectedCode
+
+    const centerX = boundingBox.x + boundingBox.width / 2
+    const centerY = boundingBox.y + boundingBox.height / 2
+
+    const fontSize = Math.max(12, (50 * boundingBox.width) / ctx.canvas.width)
+
+    ctx.font = `bold ${fontSize}px sans-serif`
+    ctx.textAlign = 'center'
+
+    ctx.lineWidth = 3
+    ctx.strokeStyle = '#35495e'
+    ctx.strokeText(detectedCode.rawValue, centerX, centerY)
+
+    ctx.fillStyle = '#5cb984'
+    ctx.fillText(rawValue, centerX, centerY)
+  }
+}
+const trackFunctionOptions = [
+  { text: 'nothing (default)', value: undefined },
+  { text: 'outline', value: paintOutline },
+  { text: 'centered text', value: paintCenterText },
+  { text: 'bounding box', value: paintBoundingBox }
+]
+const trackFunctionSelected = ref(trackFunctionOptions[1])
 </script>
 
 <template>
@@ -180,7 +219,6 @@ function initThreeJS(containerId, isDark) {
     ]"
   >
     <PackerSidebar />
-    <!-- Main Content -->
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
         <AccordionTab
@@ -198,7 +236,7 @@ function initThreeJS(containerId, isDark) {
           ></div>
           <Button
             class="w-full bg-yellow-700 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
-            @click="onRemoveThing(slotProps.data)"
+            @click="dialogVisible = true"
           >
             <span>Scan Barcode</span>
             <i class="pi pi-barcode"></i>
@@ -207,7 +245,34 @@ function initThreeJS(containerId, isDark) {
       </Accordion>
     </div>
   </div>
+  <Dialog
+    :class="[isDark ? 'dark' : '', ' w-[90%]']"
+    header="Scan Box"
+    v-model:visible="dialogVisible"
+    :modal="true"
+    :closable="false"
+  >
+    <qrcode-stream
+      :track="trackFunctionSelected.value"
+      @init="onInit"
+      @error="onError"
+      @detect="onDetect"
+      @camera-on="onCameraReady"
+      class="mb-6 rounded-lg"
+    />
+    <div class="flex flex-col items-center align-center">
+      <Button
+        icon="pi pi-arrow-left"
+        iconPos="left"
+        label="Back"
+        class="font-semibold w-auto p-button-text text-yellow-700 p-2"
+        @click="dialogVisible = false"
+      />
+    </div>
+  </Dialog>
+  <Toast />
 </template>
+
 <style>
 /* General styles */
 /* General styles for light mode */
