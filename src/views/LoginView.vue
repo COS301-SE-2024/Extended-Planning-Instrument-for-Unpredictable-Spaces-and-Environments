@@ -13,7 +13,6 @@ const toggleDark = () => {
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
 async function checkRole() {
-  console.log(email.value)
   const { data, error } = await supabase.functions.invoke('core', {
     body: {
       type: 'checkRole',
@@ -75,13 +74,14 @@ const signInWithProvider = async (provider) => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/dashboard`
+      redirectTo: `${window.location.origin}/callback`
     }
   })
   if (error) {
     alert(error.message)
   } else {
     console.log(`Redirecting to ${provider} login page`)
+    router.push({ name: 'callback' })
     // Do not navigate to the home page here, handle this in the callback
   }
 }
