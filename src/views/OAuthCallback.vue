@@ -39,6 +39,7 @@ async function checkRole(email) {
     return
   }
 
+  console.log('OAuthCall back ', data)
   const role = data.data[0].Role
 
   if (role === 'unassigned') {
