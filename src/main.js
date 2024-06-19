@@ -27,6 +27,7 @@ import ConfirmationService from 'primevue/confirmationservice'
 // import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 
+// import 'primeicons/primeicons.css';
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
 import 'primeicons/primeicons.css'
