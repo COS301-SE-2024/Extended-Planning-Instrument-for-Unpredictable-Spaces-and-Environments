@@ -1,154 +1,114 @@
 <template>
-    <div class="route-summary">
-        <header>
-        <h1>Route summary</h1>
-        <div class="miles-info">123 routes · 3,500 - 7,000 miles</div>
-        </header>
-        <div class="timeline">
-        <div v-for="(delivery, index) in deliveries" :key="index" class="timeline-item">
-            <div class="timeline-item-content">
-            <div class="location-time-wrapper">
-                <div class="location">
-                <p>{{ delivery.location }}</p>
-                <small>{{ delivery.city }}</small>
-                </div>
-                <div class="time">{{ delivery.time }}</div>
+  <div class="main-container">
+    <Sidebar />
+    <div class="container">
+      <div class="square"></div>
+      <div class="card">
+        <div class="header">Shipment #345290</div>
+        <Timeline :value="events" class="custom-timeline">
+          <template #content="slotProps">
+            <div class="timeline-content">
+              <div v-if="slotProps.item.status">{{ slotProps.item.status }}</div>
+              <div v-if="slotProps.item.coordinates">{{ slotProps.item.coordinates }}</div>
+              <div v-if="slotProps.item.location">{{ slotProps.item.location }}</div>
+              <div v-if="slotProps.item.date">{{ slotProps.item.date }}</div>
+              <div v-if="slotProps.item.finish">{{ slotProps.item.finish }}</div>
+              <div v-if="slotProps.item.add">{{ slotProps.item.add }}</div>
             </div>
-            <span class="circle"></span>
-            </div>
-        </div>
-        <button class="start-button">Start!</button>
-        </div>
+          </template>
+        </Timeline>
+        <button class="delivered-button">Delivered</button>
+      </div>
     </div>
+  </div>
 </template>
 
-<script>
-    export default {
-        name: "RouteSummary",
-        data() {
-            return {
-                deliveries: [
-                { location: "24091 S State St", city: "Johannesburg, GP", time: "10:00 AM" },
-                { location: "3743 E 1060 S", city: "Cape Town, WC", time: "12:00 PM" },
-                { location: "84136 S 3005", city: "Durban, KZN", time: "2:00 PM" },
-                { location: "84136 S 3005", city: "Pretoria, GP", time: "3:30 PM" },
-            ],
-            };
-        },
-    };
+<script setup>
+import Sidebar from '@/components/Sidebar.vue'
+import { ref } from "vue";
+
+const events = ref([
+  { status: 'Starting Location', icon: 'pi pi-circle', color: '#9C27B0'},
+  { location: 'Cape Town', coordinates: '-33.9249, 18.4241', date: '15/10/2020', time: '10:30', icon: 'pi pi-shopping-cart', color: '#9C27B0'},
+  { location: 'Durban', coordinates: '-29.8587, 31.0218', date: '16/10/2020', time: '10:30', icon: 'pi pi-check', color: '#607D8B' },
+  { add: '124 more ships', icon: 'pi pi-check', color: '#607D8B' },
+  { location: 'Cape Town', coordinates: '-33.9249, 18.4241', date: '15/10/2020', time: '10:30', icon: 'pi pi-cog', color: '#673AB7' },
+  { location: 'Johannesburg', coordinates: '-26.2041, 28.0473', date: '15/10/2020', time: '10:30', icon: 'pi pi-shopping-cart', color: '#FF9800' },
+  { location: 'Durban', coordinates: '-29.8587, 31.0218', date: '16/10/2020', time: '10:30', icon: 'pi pi-check', color: '#607D8B' },
+  { finish: 'Finishing State', icon: 'pi pi-circle', color: '#9C27B0'}
+]);
 </script>
 
-<style scoped>
-.route-summary {
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+<style>
+.main-container {
+  display: flex;
 }
 
-header {
-    text-align: left;
-    margin-bottom: 20px;
+.container {
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
 }
 
-header h1 {
-    font-size: 24px;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #000;
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+  width: 50%; /* Default width on larger screens */
 }
 
-.miles-info {
-    color: #666;
-    font-size: 14px;
+.header {
+  text-align: center;
+  font-size: 1.5rem;
+  font-family: Arial Black, sans-serif;
+  margin-bottom: 1rem;
 }
 
-.timeline {
-    position: relative;
-    padding-left: 20px;
+.custom-timeline .p-timeline-event-content {
+  margin-bottom: 2rem;
 }
 
-.timeline-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    position: relative;
+.timeline-content {
+  padding: 0.1rem;
+  border: 1px solid #ccc;
+  width: 15rem;
 }
 
-.timeline-item-content {
-    background-color: #f9f9f9;
-    border-radius: 6px;
-    padding: 10px 20px;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
-    width: 100%;
+.delivered-button {
+  background-color: blue;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  margin-top: 1rem;
 }
 
-.location-time-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.delivered-button:hover {
+  background-color: darkblue;
 }
 
-.timeline-item .location {
-    flex-grow: 1;
+.square {
+  background-color: lightgray;
+  width: 50%; /* 50% of the screen size */
+  aspect-ratio: 1 / 1; /* Ensure the square aspect ratio */
+  flex-shrink: 0; /* Prevent the square from shrinking */
 }
 
-.timeline-item .location p {
-    margin: 0;
-    font-size: 16px;
-    font-weight: bold;
-    color: #000;
-}
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: row;
+  }
 
-.timeline-item .location small {
-    color: #999;
-    font-size: 12px;
-}
+  .container {
+    flex-direction: column;
+    width: 100%; /* Full width on medium and small screens */
+  }
 
-.timeline-item .time {
-    color: #333;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.timeline-item .circle {
-    width: 12px;
-    height: 12px;
-    background-color: #3498db;
-    border-radius: 50%;
-    position: absolute;
-    left: -25px;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    width: 2px;
-    background-color: #e3e3e3;
-    top: 0;
-    bottom: 0;
-    left: 10px;
-}
-
-.start-button {
-    display: block;
-    width: 100%;
-    padding: 10px 0;
-    background-color: #3498db;
-    color: #fff;
-    text-align: center;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
-.start-button:hover {
-    background-color: #2980b9;
+  .card, .square {
+    width: 100%; /* Full width on medium and small screens */
+  }
 }
 </style>
-  
