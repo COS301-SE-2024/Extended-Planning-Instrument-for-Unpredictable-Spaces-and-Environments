@@ -23,8 +23,17 @@
         <button class="delivered-button" @click="showDialog = true">Delivered</button>
       </div>
     </div>
-    <Dialog header="Upload Image" v-model:visible="showDialog" :modal="true" :closable="false" :draggable="false">
-      <FileUpload name="demo[]" url="./upload" accept="image/*" :auto="true" />
+    <Dialog header="Confirmation" v-model:visible="showDialog" :modal="true" :closable="false" :draggable="false">
+      <div class="dialog-content">
+        <div class="picture-section">
+          <h3>Picture</h3>
+          <FileUpload name="demo[]" url="./upload" accept="image/*" :auto="true" />
+        </div>
+        <div class="signature-section">
+          <h3>Signature</h3>
+          <!-- Signature component or area can be added here -->
+        </div>
+      </div>
       <div class="p-dialog-footer">
         <button @click="showDialog = false" class="p-button p-component p-button-text">Cancel</button>
         <button @click="submitImage" class="p-button p-component p-button-primary">Submit</button>
@@ -60,6 +69,8 @@ const submitImage = () => {
 </script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
 html, body, .main-container, .container {
   height: 100%;
   margin: 0;
@@ -109,6 +120,23 @@ html, body, .main-container, .container {
   width: 15rem;
 }
 
+.bold-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 32px;
+  color: black;
+}
+
+.light-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 100;
+  color: gray;
+}
+
+.small-text {
+  font-size: 15px;
+}
+
 .delivered-button {
   background-color: #a16207;
   color: white;
@@ -137,6 +165,18 @@ html, body, .main-container, .container {
 
 .custom-timeline .p-timeline-event-marker {
   background-color: #000; 
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.picture-section, .signature-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 @media (max-width: 768px) {
