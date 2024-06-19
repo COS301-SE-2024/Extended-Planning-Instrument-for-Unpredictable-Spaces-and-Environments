@@ -64,7 +64,7 @@ const items = [
     icon: 'pi pi-fw pi-map',
     command: () => {
       console.log('Navigating to Tracking')
-      router.push({ name: '/' })
+      router.push({ name: 'packer' })
     }
   },
   {
