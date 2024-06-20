@@ -217,6 +217,21 @@ const signInWithProvider = async (provider) => {
         @close-dialog="toggleDialog"
       />
     </div>
+    <DialogComponent
+      v-if="showDialog"
+      :imagePath="[
+        { src: '/Members/Photos/Login _ landing page1.png', alt: 'Image 1' },
+        { src: '/Members/Photos/Login _ landing page2.png', alt: 'Image 2' }
+        // Add more images as needed
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
   </div>
 </template>
 <script>
@@ -236,7 +251,9 @@ const toggleDialog = () => {
 .p-dialog .p-dialog-header-icon {
   display: none;
 }
-
+.p-dialog-header {
+  display: none;
+}
 .font-inter {
   font-family: 'Inter', sans-serif;
 }

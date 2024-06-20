@@ -1,14 +1,64 @@
+<script setup>
+import { useDark } from '@vueuse/core'
+import Carousel from 'primevue/carousel'
+
+const isDark = useDark()
+
+const emit = defineEmits(['close-dialog'])
+
+const closeDialog = () => {
+  console.log('CLOSING')
+  emit('close-dialog')
+}
+
+// Props for dynamic content
+const props = defineProps({
+  images: {
+    type: Array,
+    required: true
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  contacts: {
+    type: Array,
+    required: true
+  },
+  dialogVisible: {
+    type: Boolean,
+    required: true
+  }
+})
+</script>
+
 <template>
   <Dialog :class="[isDark ? 'dark' : 'light', 'w-full max-w-2xl']" :visible="dialogVisible">
     <div @click="closeDialog" class="w-[5px] cursor-pointer items-left align-left">
       <Button
         icon="pi pi-times"
         iconPos="left"
-        class="font-semibold p-button-text text-white p-2"
+        :class="[
+          isDark ? 'text-red' : 'text-red',
+          'my-4 bg-red-500 rounded-md font-semibold p-button-text p-2'
+        ]"
       />
     </div>
-    <img class="mb-4" :src="imagePath" :alt="altText" />
-
+    <Carousel
+      :value="images"
+      :numVisible="1"
+      :numScroll="1"
+      orientation="horizontal"
+      containerClass="flex items-center"
+    >
+      <template #item="slotProps">
+        <div class="rounded">
+          <div class="relative mx-auto">
+            <img :src="slotProps.data.src" :alt="slotProps.data.alt" class="w-full rounded" />
+          </div>
+        </div>
+      </template>
+    </Carousel>
     <div class="items-center align-center">
       <h2
         :class="[
@@ -35,44 +85,3 @@
     </div>
   </Dialog>
 </template>
-
-<script setup>
-import { useDark } from '@vueuse/core'
-
-const isDark = useDark()
-
-const emit = defineEmits(['close-dialog'])
-
-const closeDialog = () => {
-  console.log('CLOSING')
-  emit('close-dialog')
-}
-
-// Props for dynamic content
-const props = defineProps({
-  imagePath: {
-    type: String,
-    required: true
-  },
-  altText: {
-    type: String,
-    required: true
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  contacts: {
-    type: Array,
-    required: true
-  },
-  dialogVisible: {
-    type: Boolean,
-    required: true
-  }
-})
-</script>
-
-<style scoped>
-/* Add your scoped styles here */
-</style>

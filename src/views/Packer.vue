@@ -6,6 +6,7 @@ import PackerSidebar from '@/components/PackerSidebar.vue'
 import { supabase } from '../supabase'
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
 import { useToast } from 'primevue/usetoast'
+import DialogComponent from '@/components/DialogComponent.vue'
 
 const toast = useToast()
 const isDark = useDark()
@@ -150,8 +151,10 @@ const onError = (error) => {
 }
 
 const onDetect = (result) => {
+  setTimeout(() => {
+    dialogVisible.value = false
+  }, 750)
   toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
-  dialogVisible.value = false
   console.log('QR code detected:', result)
 }
 function paintOutline(detectedCodes, ctx) {
@@ -209,6 +212,11 @@ const trackFunctionOptions = [
   { text: 'bounding box', value: paintBoundingBox }
 ]
 const trackFunctionSelected = ref(trackFunctionOptions[1])
+const images = ref([
+  { src: 'https://example.com/image1.jpg', alt: 'Image 1' },
+  { src: 'https://example.com/image2.jpg', alt: 'Image 2' },
+  { src: 'https://example.com/image3.jpg', alt: 'Image 3' }
+])
 </script>
 
 <template>
@@ -219,6 +227,7 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
     ]"
   >
     <PackerSidebar />
+
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
         <AccordionTab
@@ -239,15 +248,38 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
             @click="dialogVisible = true"
           >
             <span>Scan Barcode</span>
+
             <i class="pi pi-barcode"></i>
           </Button>
         </AccordionTab>
       </Accordion>
+      <p
+        @click="toggleDialog"
+        class="flex items-center justify-center mt-4 text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      >
+        Help
+      </p>
     </div>
   </div>
+  <div>
+    <DialogComponent
+      v-if="showDialog"
+      :images="[
+        { src: '/Members/Photos/main dashboard (packer).png', alt: 'Alternative Image 1' },
+        { src: '/Members/Photos/packer-nav.png', alt: 'Alternative Image 2' },
+        { src: '/Members/Photos/adding a box _ pallett.png', alt: 'Alternative Image 3' }
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
+  </div>
   <Dialog
-    :class="[isDark ? 'dark' : '', ' w-[90%]']"
-    header="Scan Box"
+    :class="[isDark ? 'dark' : '', ' w-[90%] py-4']"
     v-model:visible="dialogVisible"
     :modal="true"
     :closable="false"
@@ -258,7 +290,7 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
       @error="onError"
       @detect="onDetect"
       @camera-on="onCameraReady"
-      class="mb-6 rounded-lg"
+      class="mb-6 mt-6 rounded-lg"
     />
     <div class="flex flex-col items-center align-center">
       <Button
@@ -270,9 +302,20 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
       />
     </div>
   </Dialog>
+
   <Toast />
 </template>
-
+<script>
+export default {
+  components: {
+    DialogComponent
+  }
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+</script>
 <style>
 /* General styles */
 /* General styles for light mode */
@@ -280,7 +323,7 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
 .light .custom-accordion .p-accordion-header .p-accordion-header-link {
   background-color: white;
   color: black;
-  border-bottom: 1px solid black; /* Only apply a border to the bottom */
+  border-bottom: 1px solid black;
 }
 .custom-accordion .p-accordion-header .p-accordion-header-link {
   background-color: #0a0a0a;
@@ -436,5 +479,9 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
 .dark-mode-timeline .p-timeline-event-marker {
   background-color: #262626;
   border: 2px solid #555;
+}
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
+  z-index: 9998 !important; /* Ensure it is above other elements */
 }
 </style>

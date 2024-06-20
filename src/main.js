@@ -29,6 +29,7 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
+import Carousel from 'primevue/carousel'
 
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
@@ -41,7 +42,7 @@ app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
 app.use(ToastService)
-
+app.component('Carousel', Carousel)
 app.component('Toast', Toast)
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)
