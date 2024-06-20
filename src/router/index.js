@@ -7,7 +7,7 @@ import ManageUsers from '../views/ManageUsers.vue';
 import Packer from '../views/Packer.vue';
 import OAuthCallback from '../views/OAuthCallback.vue';
 import Loading from '../views/Loading.vue';
-import { store } from '../store';
+import { supabase } from '../supabase'; // Assuming supabase is imported here
 
 const routes = [
   {
@@ -60,30 +60,64 @@ const router = createRouter({
   routes,
 });
 
+async function getUserSession() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Error fetching session:', error);
+    return null;
+  }
+  return data.session;
+}
+
+async function getUserRole(email) {
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: {
+      type: 'checkRole',
+      email: email
+    }
+  });
+  if (error) {
+    console.error('API Error:', error);
+    return null;
+  }
+  return data.data && data.data[0] ? data.data[0].Role : null;
+}
+
 router.beforeEach(async (to, from, next) => {
-  if (!store.state.authChecked) {
-    if (to.name !== 'loading') {
-      next({ name: 'loading' });
-      await store.dispatch('checkAuth');
-      store.commit('setAuthChecked', true);
-      next({ ...to, replace: true });
-    } else {
-      next();
-    } 
+  if (to.name === 'loading') {
+    next();
+    return;
+  }
+
+  const session = await getUserSession();
+  if (!session) {
+    if (to.meta.requiresAuth) {
+      next({ name: 'login' });
+      return;
+    }
+    next();
+    return;
+  }
+
+  const email = session.user.email;
+  const role = await getUserRole(email);
+
+  if (to.meta.requiresAuth) {
+    if (!session) {
+      next({ name: 'login' });
+      return;
+    }
+    if (role !== to.meta.requiredRole) {
+      next({ name: 'home' });
+      return;
+    }
   } else {
-    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-    if (requiresAuth) {
-      if (!store.state.isAuthenticated) {
-        next({ name: 'login' });
-      } else if (store.state.userRole !== to.meta.requiredRole) {
-        next({ name: 'home' });
-      } else {
-        next();
-      }
-    } else {
-      next();
+    if (to.name === 'login' || to.name === 'SignUp') {
+      next({ name: 'home' });
+      return;
     }
   }
+  next();
 });
 
 export default router;
