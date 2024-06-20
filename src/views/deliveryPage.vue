@@ -2,7 +2,7 @@
   <div class="main-container">
     <Sidebar />
     <div class="container">
-      <div class="square"></div>
+      <img src="@/assets/image.png" alt="Image" class="square">
       <div class="card">
         <div class="header">Shipment #345290</div>
         <Timeline :value="events" class="custom-timeline">
@@ -51,6 +51,7 @@ import { ref } from 'vue';
 import Timeline from 'primevue/timeline';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
+// import Map from '@/components/Map.vue';
 
 const events = ref([
   { status: 'Starting Location', icon: 'pi pi-circle', color: '#9C27B0' },
@@ -152,7 +153,6 @@ html, body, .main-container, .container {
 }
 
 .square {
-  background-color: lightgray;
   width: 50%;
   height: 100vh;
   aspect-ratio: 1 / 1;

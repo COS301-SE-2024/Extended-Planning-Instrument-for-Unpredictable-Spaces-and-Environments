@@ -24,7 +24,7 @@
     "primevue": "^3.52.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
-    "vue2-google-maps": "^0.10.7"
+    "vue-signature-pad": "^3.0.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.8.0",
@@ -43,6 +43,8 @@
     "tailwindcss": "^3.4.3",
     "vite": "^5.2.12",
     "vite-plugin-vue-devtools": "^7.0.25",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "vue-browser-geolocation": "^1.8.0",
+    "vue2-google-maps": "^0.10.7"
   }
 }
