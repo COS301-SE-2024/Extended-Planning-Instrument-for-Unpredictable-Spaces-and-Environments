@@ -24,4 +24,4 @@ jobs:
         run: npm install -g newman
 
       - name: Run Integration Tests
-        run: newman run Tests/Integration.json
+        run: newman run Tests/IntegrationTests.json
