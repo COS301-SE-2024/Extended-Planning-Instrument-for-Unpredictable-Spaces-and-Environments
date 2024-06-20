@@ -42,8 +42,6 @@ import 'primeicons/primeicons.css'
 //     },
 // });
 
-
-
 const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
 
