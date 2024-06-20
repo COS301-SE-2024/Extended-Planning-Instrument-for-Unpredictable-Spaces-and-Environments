@@ -27,6 +27,7 @@ import Button from 'primevue/button'
 import ConfirmationService from 'primevue/confirmationservice'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
+import { store } from './store';
 
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
@@ -37,6 +38,7 @@ app.config.globalProperties.$supabase = supabase
 app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
+app.use(store)
 
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)

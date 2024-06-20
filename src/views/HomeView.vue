@@ -1,3 +1,22 @@
+
+<script setup>
+import { supabase } from '../supabase';
+import { useRouter } from 'vue-router';
+// import { ref } from 'vue';
+
+const router = useRouter();
+
+const logout = async () => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.log(error);
+  } else {
+    router.push({ name: 'login' });
+    console.log('Log out successful');
+  }
+};
+</script>
 <template>
   <div class="home-view">
     <header class="header">
@@ -56,6 +75,7 @@
       <p>The system should be scalable in the sense the algorithm could potentially be used for packing cargo trains, or shipping containers.</p>
     </section>
   </div>
+  <button @click="logout">Logout</button>
 </template>
 
 <script>

@@ -5,7 +5,10 @@ import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { supabase } from '../supabase'
+// import { useRouter } from 'vue-router'
 const isDark = useDark()
+// const router = useRouter()
+
 // const toggleDark = () => {
 //   isDark.value = !isDark.value
 //   console.log('Dark mode:', isDark.value ? 'on' : 'off')
@@ -19,7 +22,25 @@ async function getUsername(){
 onMounted(() => {
   getUsername();
 })
-
+// async function checkAuth() {
+//   try {
+//     // Get the user session
+//     const { data: { session } } = await supabase.auth.getSession();
+//     if (session) {
+//       router.push("/loading")
+//     } else {
+//       // No session found, redirect to the home page
+//       router.push("/");
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//     // Handle any unexpected errors
+//     router.push("/");
+//   }
+// }
+// onMounted(() => {
+//   // checkAuth();
+// })
 const chartData = ref({
   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
   datasets: [

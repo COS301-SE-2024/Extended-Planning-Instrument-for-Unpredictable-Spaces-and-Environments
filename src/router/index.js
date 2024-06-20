@@ -1,68 +1,89 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '../views/LoginView.vue'
-import OAuthCallback from '../views/OAuthCallback.vue'
-import { supabase } from '@/supabase'
+import { createRouter, createWebHistory } from 'vue-router';
+import LoginView from '../views/LoginView.vue';
+import HomeView from '../views/HomeView.vue';
+import SignUpView from '../views/SignUpView.vue';
+import Dashboard from '../views/Dashboard.vue';
+import ManageUsers from '../views/ManageUsers.vue';
+import Packer from '../views/Packer.vue';
+import OAuthCallback from '../views/OAuthCallback.vue';
+import Loading from '../views/Loading.vue';
+import { store } from '../store';
 
-let localUser
+const routes = [
+  {
+    path: '/',
+    name: 'login',
+    component: LoginView,
+  },
+  {
+    path: '/home',
+    name: 'home',
+    component: HomeView,
+  },
+  {
+    path: '/signup',
+    name: 'SignUp',
+    component: SignUpView,
+  },
+  {
+    path: '/dashboard',
+    name: 'dashboard',
+    component: Dashboard,
+    meta: { requiresAuth: true, requiredRole: 'Manager' },
+  },
+  {
+    path: '/manage-users',
+    name: 'manage-users',
+    component: ManageUsers,
+    meta: { requiresAuth: true, requiredRole: 'Manager' },
+  },
+  {
+    path: '/packer',
+    name: 'packer',
+    component: Packer,
+    meta: { requiresAuth: true, requiredRole: 'Packer' },
+  },
+  {
+    path: '/callback',
+    name: 'callback',
+    component: OAuthCallback,
+  },
+  {
+    path: '/loading',
+    name: 'loading',
+    component: Loading,
+  },
+];
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'login',
-      component: LoginView
-    },
-    {
-      path: '/home',
-      name: 'home',
-      component: () => import('../views/HomeView.vue')
-    },
-    {
-      path: '/signup',
-      name: 'SignUp',
-      component: () => import('../views/SignUpView.vue')
-    },
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('../views/Dashboard.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/manage-users',
-      name: 'manage-users',
-      component: () => import('../views/ManageUsers.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/packer',
-      name: 'packer',
-      component: () => import('../views/Packer.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/callback',
-      name: 'callback',
-      component: OAuthCallback
+  routes,
+});
+
+router.beforeEach(async (to, from, next) => {
+  if (!store.state.authChecked) {
+    if (to.name !== 'loading') {
+      next({ name: 'loading' });
+      await store.dispatch('checkAuth');
+      store.commit('setAuthChecked', true);
+      next({ ...to, replace: true });
+    } else {
+      next();
+    } 
+  } else {
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+    if (requiresAuth) {
+      if (!store.state.isAuthenticated) {
+        next({ name: 'login' });
+      } else if (store.state.userRole !== to.meta.requiredRole) {
+        next({ name: 'home' });
+      } else {
+        next();
+      }
+    } else {
+      next();
     }
-  ]
-})
-async function getUser(next) {
-  localUser = await supabase.auth.getSession()
-  console.log(localUser.data.session)
-  if (localUser.data.session == null) {
-    next('/')
-  } else {
-    next()
   }
-}
+});
 
-router.beforeEach((to, from, next) => {
-  if (to.meta.requiresAuth) {
-    getUser(next)
-  } else {
-    next()
-  }
-})
-
-export default router
+export default router;
