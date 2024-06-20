@@ -1,0 +1,461 @@
+{
+	"info": {
+		"_postman_id": "95d32f4f-290e-49e6-86d1-1358eb00ed9e",
+		"name": "API Documentation",
+		"description": "This template contains a boilerplate for documentation that you can quickly customize and reuse.\n\n### How to use this template:\n\n- Replace the content given brackets (()) with your API's details.\n- Tips are formatted in `codespan` - feel free to read and remove them.\n    \n\n---\n\n`Start with a brief overview of what your API offers.`\n\nThe ((product name)) provides many API products, tools, and resources that enable you to ((add product value here)).\n\n`You can also list the APIs you offer, link to the relevant pages, or do both in this section.`\n\n## **Getting started guide**\n\n`List the steps or points required to start using your APIs. Make sure to cover everything required to reach success with your API as quickly as possible.`\n\nTo start using the ((add APIs here)), you need to -\n\n`The points given below are from The Postman API's documentation. You can reference it to write your own getting started guide.`\n\n- You must use a valid API Key to send requests to the API endpoints. You can get your API key from Postman's [integrations dashboard](https://go.postman.co/settings/me/api-keys).\n- The API has [rate and usage limits](https://learning.postman.com/docs/developer/postman-api/postman-api-rate-limits/).\n- The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.\n- The API returns request responses in JSON format. When an API request returns an error, it is sent in the JSON response as an error key.\n    \n\n## Authentication\n\n`Add details on the authorization keys/tokens required, steps that cover how to get them, and the relevant error codes.`\n\nThe ((product name)) API uses ((add your API's authorization type)) for authentication.\n\n`The details given below are from the Postman API's documentation. You can reference it to write your own authentication section.`\n\nPostman uses API keys for authentication. You can generate a Postman API key in the [API keys](https://postman.postman.co/settings/me/api-keys) section of your Postman account settings.\n\nYou must include an API key in each request to the Postman API with the X-Api-Key request header.\n\n### Authentication error response\n\nIf an API key is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.\n\n## Rate and usage limits\n\n`Use this section to cover your APIs' terms of use. Include API limits, constraints, and relevant error codes, so consumers understand the permitted API usage and practices.`\n\n`The example given below is from The Postman API's documentation. Use it as a reference to write your APIs' terms of use.`\n\nAPI access rate limits apply at a per-API key basis in unit time. The limit is 300 requests per minute. Also, depending on your plan, you may have usage limits. If you exceed either limit, your request will return an HTTP 429 Too Many Requests status code.\n\nEach API response returns the following set of headers to help you identify your use status:\n\n| Header | Description |\n| --- | --- |\n| `X-RateLimit-Limit` | The maximum number of requests that the consumer is permitted to make per minute. |\n| `X-RateLimit-Remaining` | The number of requests remaining in the current rate limit window. |\n| `X-RateLimit-Reset` | The time at which the current rate limit window resets in UTC epoch seconds. |\n\n### 503 response\n\nAn HTTP `503` response from our servers indicates there is an unexpected spike in API access traffic. The server is usually operational within the next five minutes. If the outage persists or you receive any other form of an HTTP `5XX` error, [contact support](https://support.postman.com/hc/en-us/requests/new/).\n\n### **Need some help?**\n\n`Add links that customers can refer to whenever they need help.`\n\nIn case you have questions, go through our tutorials ((link to your video or help documentation here)). Or visit our FAQ page ((link to the relevant page)).\n\nOr you can check out our community forum, there’s a good chance our community has an answer for you. Visit our developer forum ((link to developer forum)) to review topics, ask questions, and learn from others.\n\n`You can also document or add links to libraries, code examples, and other resources needed to make a request.`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11896505",
+		"_collection_link": "https://capstone-8263.postman.co/workspace/Capstone-Workspace~4d837e88-8c19-4a03-86bc-81f4561f66b4/collection/11896505-95d32f4f-290e-49e6-86d1-1358eb00ed9e?action=share&source=collection_link&creator=11896505"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "getAllUsers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Content-Type header is application/json\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Data array and its structure should be valid\", function () {",
+									"  const responseData = pm.response.json();",
+									"  ",
+									"  pm.expect(responseData).to.be.an('object');",
+									"  pm.expect(responseData.data).to.be.an('array');",
+									"  pm.expect(responseData.data).to.not.be.empty;",
+									"  ",
+									"  // Check the structure of each object in the data array",
+									"  responseData.data.forEach(function(item) {",
+									"    pm.expect(item).to.have.property('id').that.is.a('number');",
+									"    pm.expect(item).to.have.property('FullName').that.is.a('string');",
+									"    pm.expect(item).to.have.property('Email').that.is.a('string');",
+									"    pm.expect(item).to.have.property('Role').that.is.a('string');",
+									"    pm.expect(item).to.have.property('Phone').that.is.a('string');",
+									"    pm.expect(item).to.have.property('userid').that.is.null;",
+									"  });",
+									"});",
+									"",
+									"",
+									"pm.test(\"Email is in a valid format\", function () {",
+									"  const responseData = pm.response.json();",
+									"  ",
+									"  pm.expect(responseData).to.be.an('object');",
+									"  responseData.data.forEach(function(item) {",
+									"    pm.expect(item.Email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/, \"Email should be in a valid format\");",
+									"  });",
+									"});",
+									"",
+									"",
+									"pm.test(\"Id, FullName, Email, Role, and Phone fields are present and non-empty\", function () {",
+									"  const responseData = pm.response.json();",
+									"  ",
+									"  pm.expect(responseData).to.be.an('object');",
+									"  pm.expect(responseData.data).to.be.an('array').that.is.not.empty;",
+									"",
+									"  responseData.data.forEach(function(item) {",
+									"    pm.expect(item.id).to.exist.and.to.not.be.empty;",
+									"    pm.expect(item.FullName).to.exist.and.to.not.be.empty;",
+									"    pm.expect(item.Email).to.exist.and.to.not.be.empty;",
+									"    pm.expect(item.Role).to.exist.and.to.not.be.empty;",
+									"    pm.expect(item.Phone).to.exist.and.to.not.be.empty;",
+									"  });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\":\"getAllUsers\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/getAllUsers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"getAllUsers"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "224"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "content-encoding",
+									"value": "gzip"
+								},
+								{
+									"key": "date",
+									"value": "Sun, 02 Jun 2024 13:56:30 GMT"
+								},
+								{
+									"key": "X-Kong-Upstream-Latency",
+									"value": "894"
+								},
+								{
+									"key": "X-Kong-Proxy-Latency",
+									"value": "3"
+								},
+								{
+									"key": "Via",
+									"value": "kong/2.8.1"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": [\n        {\n            \"id\": 2,\n            \"FullName\": \"Piet van blerk\",\n            \"Email\": \"Pieitie@gmail.com\",\n            \"Role\": \"unassigned\",\n            \"Phone\": \"0827723456\",\n            \"userid\": null\n        },\n        {\n            \"id\": 3,\n            \"FullName\": \"Kobus  Redeling\",\n            \"Email\": \"kobie@gmail.com\",\n            \"Role\": \"Manager\",\n            \"Phone\": \"09723456676\",\n            \"userid\": null\n        },\n        {\n            \"id\": 8,\n            \"FullName\": \"Poespiel\",\n            \"Email\": \"testtpoes@gmail.com\",\n            \"Role\": \"unassigned\",\n            \"Phone\": \"0828246972\",\n            \"userid\": null\n        },\n        {\n            \"id\": 9,\n            \"FullName\": \"zub\",\n            \"Email\": \"zub@gmail.com\",\n            \"Role\": \"unassigned\",\n            \"Phone\": \"0725223926\",\n            \"userid\": null\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "insertUsers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response has the required Content-Type header with value application/json\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Insert Update field is present in the response\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.have.property(\"Insert Update\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Insert Update field should not be empty\", function () {",
+									"  const responseData = pm.response.json();",
+									"  ",
+									"  pm.expect(responseData[\"Insert Update\"]).to.exist.and.to.not.be.empty;",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response is in a valid JSON format\", function () {",
+									"    pm.response.to.be.json;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\":\"insertUser\",\n    \"fullname\": \"Joel Joseph\",\n    \"email\": \"Joel@janeeb.com\",\n    \"role\": \"manager\",\n    \"phone\": \"0725223926\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"fullname\": \"Jordan Joseph\",\n    \"email\": \"jordan@janeeb.com\",\n    \"role\": \"manager\",\n    \"phone\": \"0725223926\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/insertUser",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"insertUser"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "61"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "content-encoding",
+									"value": "gzip"
+								},
+								{
+									"key": "date",
+									"value": "Sun, 02 Jun 2024 14:22:27 GMT"
+								},
+								{
+									"key": "X-Kong-Upstream-Latency",
+									"value": "987"
+								},
+								{
+									"key": "X-Kong-Proxy-Latency",
+									"value": "1"
+								},
+								{
+									"key": "Via",
+									"value": "kong/2.8.1"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"Insert Update\": \"Succesfully Inserted User!\"\n}"
+						}
+					]
+				},
+				{
+					"name": "updateUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Content-Type header is application/json\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response has the required field 'Role Update'\", function () {",
+									"  const responseData = pm.response.json();",
+									"  pm.expect(responseData).to.have.property('Role Update');",
+									"});",
+									"",
+									"",
+									"pm.test(\"Role Update field should not be empty\", function () {",
+									"  const responseData = pm.response.json();",
+									"  ",
+									"  pm.expect(responseData).to.be.an('object');",
+									"  pm.expect(responseData[\"Role Update\"]).to.exist.and.to.not.be.empty;",
+									"});",
+									"",
+									"",
+									"pm.test(\"Role Update field should be a string\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData[\"Role Update\"]).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\":\"updateUser\",\n    \"email\": \"jordan@janeeb.com\",\n    \"role\": \"TESTTT\",\n    \"phone\":\"0744444444\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"josh@janeeb.com\",\n    \"role\": \"owner\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/updateRole",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"updateRole"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "58"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "content-encoding",
+									"value": "gzip"
+								},
+								{
+									"key": "date",
+									"value": "Sun, 02 Jun 2024 14:27:20 GMT"
+								},
+								{
+									"key": "X-Kong-Upstream-Latency",
+									"value": "1184"
+								},
+								{
+									"key": "X-Kong-Proxy-Latency",
+									"value": "4"
+								},
+								{
+									"key": "Via",
+									"value": "kong/2.8.1"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"Role Update\": \"Succesfully Updated User!\"\n}"
+						}
+					]
+				}
+			],
+			"description": "The `/me` endpoints let you manage information about the authenticated user."
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://rgisazefakhdieigrylb.supabase.co/functions/v1/core"
+		}
+	]
+}
