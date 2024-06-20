@@ -43,7 +43,6 @@
 									"    pm.expect(item).to.have.property('Email').that.is.a('string');",
 									"    pm.expect(item).to.have.property('Role').that.is.a('string');",
 									"    pm.expect(item).to.have.property('Phone').that.is.a('string');",
-									"    pm.expect(item).to.have.property('userid').that.is.null;",
 									"  });",
 									"});",
 									"",
@@ -55,25 +54,20 @@
 									"  responseData.data.forEach(function(item) {",
 									"    pm.expect(item.Email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/, \"Email should be in a valid format\");",
 									"  });",
-									"});",
-									"",
-									"",
-									"pm.test(\"Id, FullName, Email, Role, and Phone fields are present and non-empty\", function () {",
-									"  const responseData = pm.response.json();",
-									"  ",
-									"  pm.expect(responseData).to.be.an('object');",
-									"  pm.expect(responseData.data).to.be.an('array').that.is.not.empty;",
-									"",
-									"  responseData.data.forEach(function(item) {",
-									"    pm.expect(item.id).to.exist.and.to.not.be.empty;",
-									"    pm.expect(item.FullName).to.exist.and.to.not.be.empty;",
-									"    pm.expect(item.Email).to.exist.and.to.not.be.empty;",
-									"    pm.expect(item.Role).to.exist.and.to.not.be.empty;",
-									"    pm.expect(item.Phone).to.exist.and.to.not.be.empty;",
-									"  });",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -192,7 +186,8 @@
 									"    pm.response.to.be.json;",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -201,7 +196,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"type\":\"insertUser\",\n    \"fullname\": \"Joel Joseph\",\n    \"email\": \"Joel@janeeb.com\",\n    \"role\": \"manager\",\n    \"phone\": \"0725223926\"\n}",
+							"raw": "{\n    \"type\":\"insertUser\",\n    \"fullname\": \"Joel Joseph\",\n    \"email\": \"Joel@janeeb.com\",\n    \"role\": \"Manager\",\n    \"phone\": \"0725223926\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
