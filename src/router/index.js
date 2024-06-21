@@ -41,6 +41,11 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/delivery-page',
+      name: 'delivery-page',
+      component: () => import('../views/deliveryPage.vue')
+    },
+    {
       path: '/callback',
       name: 'callback',
       component: OAuthCallback

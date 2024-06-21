@@ -1,5 +1,7 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
+// import Toolbar from 'primevue/toolbar'
+// import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router' // Import the router
 import { supabase } from '@/supabase'
@@ -13,9 +15,9 @@ const isMobileSidebarCollapsed = ref(false)
 const dialogVisible = ref(false)
 
 // Toggle the sidebar collapse state
-const toggleMobileSidebar = () => {
-  isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
-}
+// const toggleMobileSidebar = () => {
+//   isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
+// }
 
 // Function to check window size and update sidebar state
 const checkWindowSize = () => {
@@ -197,13 +199,13 @@ const items = [
         :exact="false"
       >
         <template #item="{ item, props }">
-          <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
+          <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
             <a
               class="h-[45px] flex align-items-center mb-2"
               v-bind="props.action"
               @click="navigate"
             >
-              <span :class="item.icon" />
+              <span :class="item.icon"></span>
               <span
                 class="ml-2 transition-opacity duration-300 ease-in-out"
                 :class="{
@@ -224,7 +226,7 @@ const items = [
             :target="item.target"
             v-bind="props.action"
           >
-            <span :class="item.icon" />
+            <span :class="item.icon"></span>
             <span
               class="ml-2 transition-opacity duration-300 ease-in-out"
               :class="{
