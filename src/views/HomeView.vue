@@ -2,7 +2,11 @@
 import { useDark } from '@vueuse/core'
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { supabase } from '../supabase';
+import { useRouter } from 'vue-router';
+// import { ref } from 'vue';
 
+const router = useRouter();
 const toast = useToast()
 const isDark = useDark()
 const activeIndex = ref(0)
@@ -16,6 +20,16 @@ onMounted(() => {
     })
   }
 })
+const logout = async () => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.log(error);
+  } else {
+    router.push({ name: 'login' });
+    console.log('Log out successful');
+  }
+};
 </script>
 
 <template>
@@ -49,6 +63,7 @@ onMounted(() => {
       </div>
     </div>
   </div>
+  <button @click="logout">Logout</button>
 </template>
 
 <style scoped></style>

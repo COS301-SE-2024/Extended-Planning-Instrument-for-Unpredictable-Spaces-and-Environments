@@ -27,6 +27,7 @@ import Button from 'primevue/button'
 import ConfirmationService from 'primevue/confirmationservice'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
+import { store } from './store';
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
 import Carousel from 'primevue/carousel'
@@ -55,6 +56,7 @@ app.config.globalProperties.$supabase = supabase
 app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
+app.use(store)
 app.use(ToastService)
 app.component('Carousel', Carousel)
 app.component('Toast', Toast)
