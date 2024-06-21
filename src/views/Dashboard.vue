@@ -298,14 +298,22 @@ const chartOptions = ref({
   color: white;
 }
 
-.custom-accordion .p-accordion-content {
-  background-color: inherit;
-  color: inherit;
+.dark .custom-accordion .p-accordion-content {
+  background-color: #0a0a0a;
+  color: white;
+}
+.light .custom-accordion .p-accordion-content {
+  background-color: white;
+  color: black;
 }
 
-.custom-timeline {
-  background-color: inherit;
-  color: inherit;
+.dark .custom-timeline {
+  background-color: #0a0a0a;
+  color: white;
+}
+.light .custom-timeline {
+  background-color: white;
+  color: black;
 }
 
 .custom-timeline .p-timeline-event {
@@ -316,17 +324,11 @@ const chartOptions = ref({
   border-left: 2px solid #555;
 }
 
-.custom-timeline .p-timeline-event-opposite {
-  color: inherit;
+.dark .custom-timeline .p-timeline-event-opposite {
+  color: white;
 }
-
-.custom-timeline .p-timeline-event-content {
-  color: inherit;
-}
-
-.custom-timeline .p-timeline-event-marker {
-  background-color: inherit;
-  border: 2px solid #ccc;
+.light .custom-timeline .p-timeline-event-opposite {
+  color: black;
 }
 
 .dark .custom-timeline .p-timeline-event-marker {

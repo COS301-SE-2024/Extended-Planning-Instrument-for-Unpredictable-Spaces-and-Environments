@@ -43,7 +43,7 @@ const router = createRouter({
     {
       path: '/delivery-page',
       name: 'delivery-page',
-      component: () => import('../views/deliveryPage.vue')
+      component: () => import('../views/DeliveryView.vue')
     },
     {
       path: '/callback',
