@@ -49,7 +49,7 @@ const fetchUsers = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      console.log(data.data)
+      // console.log('This is data.dat from fetch users', data.data)
       customers.value = data.data
       // console.log(customers.value) // Now it should log an array
     }
@@ -72,9 +72,19 @@ const selectedRole = ref(null)
 
 const loading = ref(false)
 
+const selectedCity = ref()
+const cities = ref([
+  { name: 'New York', code: 'NY' },
+  { name: 'Rome', code: 'RM' },
+  { name: 'London', code: 'LDN' },
+  { name: 'Istanbul', code: 'IST' },
+  { name: 'Paris', code: 'PRS' }
+])
+
 const onRemoveThing = (user) => {
   selectedUser.value = { ...user }
   selectedRole.value = roles.value.find((role) => role.name === user.Role) || null
+  // console.log(selectedRole.value)
   dialogVisible.value = true
 }
 const roles = ref([
@@ -344,6 +354,7 @@ const toggleDialog = () => {
 /* PANEL STYLING */
 .p-dropdown-panel {
   background: white;
+  z-index: 9990000;
 }
 .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
   color: #000000;
@@ -362,8 +373,17 @@ const toggleDialog = () => {
   background: white;
   transition: none;
   border-radius: 0;
+  z-index: 500000 !important;
 }
-
+.p-dropdown-panel p-component p-ripple-disabled {
+  z-index: 55555555 !important;
+  position: absolute;
+  top: 476px;
+  left: 351.5px;
+  min-width: 328px;
+  transform-origin: center top;
+  margin-top: calc(var(--p-anchor-gutter));
+}
 /* Dark mode styles */
 .dark {
   background-color: #171717;
@@ -441,6 +461,7 @@ const toggleDialog = () => {
   background: #333333;
   transition: none;
   border-radius: 0;
+  z-index: 9999999 !important;
 }
 
 .p-dialog {
@@ -487,6 +508,6 @@ const toggleDialog = () => {
 }
 .p-dialog-mask {
   background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 9998 !important; /* Ensure it is above other elements */
+  z-index: 98; /* Ensure it is above other elements */
 }
 </style>
