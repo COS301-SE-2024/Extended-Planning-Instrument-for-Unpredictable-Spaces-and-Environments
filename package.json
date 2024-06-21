@@ -28,10 +28,7 @@
     "qrcode.vue": "^3.4.1",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
-    "vue-signature-pad": "^3.0.2"
-    "vue-barcode-reader": "^1.0.3",
-    "vue-qrcode-reader": "^5.5.6",
-    "vue-router": "^4.3.0"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.8.0",
