@@ -300,7 +300,6 @@ const toggleDialog = () => {
   background-color: white;
   color: black;
 }
-
 .p-datatable-thead > tr > th,
 .datatable-light .p-datatable-tfoot > tr > th {
   background-color: rgba(255, 255, 255, 0.226);
@@ -487,6 +486,6 @@ const toggleDialog = () => {
 }
 .p-dialog-mask {
   background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 9998 !important; /* Ensure it is above other elements */
+  z-index: 800 !important ; /* Ensure it is above other elements */
 }
 </style>

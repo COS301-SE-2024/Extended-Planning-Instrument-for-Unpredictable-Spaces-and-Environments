@@ -6,7 +6,7 @@ import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 
-let localUser
+// let localUser
 const dialogVisible = ref(false)
 
 const isDark = useDark()
@@ -14,44 +14,6 @@ const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
-
-async function checkRole() {
-  const { data, error } = await supabase.functions.invoke('core', {
-    body: {
-      type: 'checkRole',
-      email: email.value
-    }
-  })
-  if (error) {
-    console.log('API Error:', error)
-  }
-
-  console.log(data)
-  const role = data.data[0].Role
-  console.log('Role:', role)
-
-  if (role === 'unassigned') {
-    router.push({ name: 'home' })
-  } else if (role === 'Manager') {
-    router.push({ name: 'dashboard' })
-  } else if (role === 'Packer') {
-    router.push({ name: 'packer' })
-  } else {
-    router.push({ name: 'driver' })
-  }
-}
-
-async function checkAuth() {
-  localUser = await supabase.auth.getSession()
-  console.log(localUser)
-  if (localUser.data.session != null) {
-    console.log('hello doos')
-    await checkRole()
-  }
-}
-onMounted(() => {
-  checkAuth()
-})
 
 // Authentication state
 const email = ref('')
@@ -68,8 +30,8 @@ const signIn = async () => {
     alert(error.message)
   } else {
     console.log('User signed in:', user)
-    await checkRole()
-    // router.push({ name: 'dashboard' })
+    // await checkRole()
+    router.push({ name: 'callback' })
   }
 }
 
