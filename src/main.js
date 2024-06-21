@@ -16,30 +16,50 @@ import Avatar from 'primevue/avatar'
 import Calendar from 'primevue/calendar'
 import Chart from 'primevue/chart'
 import Timeline from 'primevue/timeline'
-import Card from 'primevue/card'
+// import Card from 'primevue/card'
 import Accordion from 'primevue/accordion'
 import AccordionTab from 'primevue/accordiontab'
 import Knob from 'primevue/knob'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import ConfirmDialog from 'primevue/confirmdialog'
-import Button from 'primevue/button'
+// import Button from 'primevue/button'
 import ConfirmationService from 'primevue/confirmationservice'
-import Dialog from 'primevue/dialog'
+// import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import { store } from './store';
+import Toast from 'primevue/toast'
+import ToastService from 'primevue/toastservice'
+import Carousel from 'primevue/carousel'
 
+// import 'primeicons/primeicons.css';
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
 import 'primeicons/primeicons.css'
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
+
+// import VueGeolocation from 'vue-browser-geolocation'
+
+// import * as VueGoogleMaps from 'vue2-google-maps'
+
+// app.use(VueGoogleMaps, {
+//     load: {
+//         key: 'YOUR_GOOGLE_MAPS_API_KEY',
+//     },
+// });
 
 const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
+
+// Vue.use(VueGeolocation)
+// app.use(VueGeolocation)
 app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
 app.use(store)
-
+app.use(ToastService)
+app.component('Carousel', Carousel)
+app.component('Toast', Toast)
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)
 app.component('Password', Password)
@@ -58,9 +78,15 @@ app.component('Knob', Knob)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
 app.component('ConfirmDialog', ConfirmDialog)
-app.component('Button', Button)
+// app.component('Button', Button)
 app.component('ConfirmationService', ConfirmationService)
+// app.component('Dialog', Dialog)
+app.component('Button', Button)
 app.component('Dialog', Dialog)
 app.component('Dropdown', Dropdown)
+app.component('QrcodeStream', QrcodeStream)
+app.component('QrcodeDropZone', QrcodeDropZone)
+app.component('QrcodeCapture', QrcodeCapture)
 
+// app.use(VueGeolocation)
 app.mount('#app')

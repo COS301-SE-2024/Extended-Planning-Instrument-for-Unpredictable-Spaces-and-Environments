@@ -1,7 +1,5 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import Toolbar from 'primevue/toolbar'
-import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router' // Import the router
 import { supabase } from '@/supabase'
@@ -10,11 +8,8 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 
-// Add event listener on mounted and remove on unmounted
-
 async function logout() {
   const { error } = await supabase.auth.signOut()
-
   if (error) {
     console.log(error)
   } else {
@@ -68,8 +63,9 @@ const items = [
   }
 ]
 </script>
+
 <template>
-  <div class="w-full text-white">
+  <div :class="[isDark ? 'dark' : 'light', 'h-full']">
     <Menubar :model="items" class="w-full">
       <template #start>
         <svg
@@ -78,7 +74,7 @@ const items = [
           viewBox="0 0 35 40"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          class="h-10"
+          :class="[isDark ? 'text-white' : '', 'h-10']"
         >
           <path d="..." fill="var(--primary-color)" />
           <path d="..." fill="var(--text-color)" />
@@ -137,6 +133,10 @@ const items = [
 .mobile-icon {
   display: none;
 }
+.light {
+  background-color: white;
+  color: black;
+}
 
 /* Update styles for hovered menu item link */
 .dark .p-menu {
@@ -183,8 +183,15 @@ const items = [
   padding: 1rem;
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.87);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
+}
+.p-menubar {
+  padding: 1rem;
+  background: #ffffff;
+  color: rgba(255, 255, 255, 0.87);
+}
+.p-icon {
+  display: inline-block;
+  color: #0a0a0a;
 }
 
 .light .p-menu-list {
@@ -195,12 +202,27 @@ const items = [
   background: transparent;
 }
 .light a {
-  color: black !important;
+  color: rgb(0, 0, 0) !important;
 }
 .p-menu {
   padding: 0.5rem 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.87);
+}
+.dark .p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+}
+.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  transition: none;
+  background: #171717;
+  border-radius: 0;
+  border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
+}
+
+.dark .p-icon {
+  display: inline-block;
+  color: #ffffff;
 }
 .light .p-menuitem {
   &.p-focus {
