@@ -264,13 +264,15 @@ const items = [
       :images="[
         { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
         { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
+        { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
+
         {
           src: '/Members/Photos/manager dashboard (Tracking page).png',
-          alt: 'Alternative Image 3'
+          alt: 'Alternative Image 4'
         },
         {
           src: '/Members/Photos/manager dashboard (Shipments page).png',
-          alt: 'Alternative Image 4'
+          alt: 'Alternative Image 5'
         }
       ]"
       title="Contact Support"

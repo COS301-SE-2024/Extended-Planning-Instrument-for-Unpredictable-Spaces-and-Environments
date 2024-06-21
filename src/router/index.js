@@ -57,7 +57,49 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
+  routes: [
+    {
+      path: '/',
+      name: 'login',
+      component: LoginView
+    },
+    {
+      path: '/home',
+      name: 'home',
+      component: () => import('../views/HomeView.vue')
+    },
+    {
+      path: '/signup',
+      name: 'SignUp',
+      component: () => import('../views/SignUpView.vue')
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../views/Dashboard.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/manage-users',
+      name: 'manage-users',
+      component: () => import('../views/ManageUsers.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/packer',
+      name: 'packer',
+      component: () => import('../views/Packer.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/delivery-page',
+      name: 'delivery-page',
+      component: () => import('../views/DeliveryView.vue')
+    },
+    {
+      path: '/callback',
+      name: 'callback',
+      component: OAuthCallback
 });
 
 async function getUserSession() {

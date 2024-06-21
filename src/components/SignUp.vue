@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useDark } from '@vueuse/core'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
+import DialogComponent from '@/components/DialogComponent.vue'
+const dialogVisible = ref(false)
+
 const isDark = useDark()
 const router = useRouter()
 const toggleDark = () => {
@@ -202,9 +205,40 @@ const signUp = async () => {
         <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
       </button>
     </div>
+    <p
+      @click="toggleDialog"
+      class="mt-4 flex items-center justify-center text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+    >
+      Help
+    </p>
+    <DialogComponent
+      v-if="showDialog"
+      :images="[
+        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        // Add more images as needed
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
   </div>
 </template>
-
+<script>
+export default {
+  components: {
+    DialogComponent
+  }
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=SF+Compact&display=swap');
 

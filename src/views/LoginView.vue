@@ -28,7 +28,7 @@ async function checkRole() {
 
   console.log(data)
   const role = data.data[0].Role
-  // console.log('Role:', role)
+  console.log('Role:', role)
 
   if (role === 'unassigned') {
     router.push({ name: 'home' })
@@ -45,6 +45,7 @@ async function checkAuth() {
   localUser = await supabase.auth.getSession()
   console.log(localUser)
   if (localUser.data.session != null) {
+    console.log('hello doos')
     await checkRole()
   }
 }
@@ -246,9 +247,9 @@ const signInWithProvider = async (provider) => {
     </div>
     <DialogComponent
       v-if="showDialog"
-      :imagePath="[
-        { src: '/Members/Photos/Login _ landing page1.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Login _ landing page2.png', alt: 'Image 2' }
+      :images="[
+        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
         // Add more images as needed
       ]"
       title="Contact Support"
