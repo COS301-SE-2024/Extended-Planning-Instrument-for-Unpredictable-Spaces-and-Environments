@@ -3,6 +3,8 @@ import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
+import DialogComponent from '@/components/DialogComponent.vue'
+
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
@@ -16,27 +18,50 @@ const toggleDark = () => {
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
 const customers = ref([]) // Reactive variable to store customer data
+const dialogVisible = ref(false)
+
+const updateUserInTable = (newUserData) => {
+  const index = customers.value.findIndex((user) => user.id === newUserData.id)
+  if (index !== -1) {
+    customers.value[index] = newUserData
+  } else {
+    customers.value.push(newUserData)
+  }
+}
+
+async function setupSubscription() {
+  await supabase // Await for the subscription to be established
+    .channel('*')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
+      // console.log(payload.new)
+      updateUserInTable(payload.new)
+    })
+    .subscribe()
+}
 
 const fetchUsers = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'GetAllUsers' }),
+      body: JSON.stringify({ type: 'getAllUsers' }),
       method: 'POST'
     })
 
     if (error) {
       console.log('API Error:', error)
     } else {
-      customers.value = JSON.parse(data).data
-      console.log(customers.value) // Now it should log an array
+      console.log(data.data)
+      customers.value = data.data
+      // console.log(customers.value) // Now it should log an array
     }
   } catch (error) {
     console.error('Error fetching data:', error)
   }
 }
-onMounted(fetchUsers)
+onMounted(() => {
+  fetchUsers()
+  setupSubscription()
+})
 
-const dialogVisible = ref(false)
 const selectedUser = ref({
   FullName: '',
   Email: '',
@@ -44,9 +69,8 @@ const selectedUser = ref({
   Phone: ''
 })
 const selectedRole = ref(null)
-const handleRemoveThing = () => {
-  console.log('successfully removed')
-}
+
+const loading = ref(false)
 
 const onRemoveThing = (user) => {
   selectedUser.value = { ...user }
@@ -61,21 +85,15 @@ const roles = ref([
 ])
 
 const saveChanges = async () => {
-  // Save changes to the selectedUser
-  console.log('User details saved:', selectedUser.value)
-  dialogVisible.value = false
+  loading.value = true // Start loading animation
   try {
-    console.log(FullName.value)
-    console.log(Email.value)
-    console.log(selectedRole.value)
-    console.log(Phone.value)
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
-        type: 'UpdateUser',
-        fullname: FullName.value,
-        email: Email.value,
+        type: 'updateUser',
+        fullname: selectedUser.value.FullName,
+        email: selectedUser.value.Email,
         role: selectedRole.value.name,
-        phone: Phone.value
+        phone: selectedUser.value.Phone
       }),
       method: 'POST'
     })
@@ -84,11 +102,12 @@ const saveChanges = async () => {
       console.log('API Error:', error)
       console.log(error.message)
     } else {
-      console.log(customers.value) // Now it should log an array
-      await fetchUsers()
+      dialogVisible.value = false // Close the dialog if successful
     }
   } catch (error) {
     console.error('Error fetching data:', error)
+  } finally {
+    loading.value = false // Stop loading animation
   }
 }
 </script>
@@ -151,6 +170,14 @@ const saveChanges = async () => {
             </template>
           </Column>
         </DataTable>
+      </div>
+      <div class="mt-4 flex items-center justify-center">
+        <p
+          @click="toggleDialog"
+          class="text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        >
+          Help
+        </p>
       </div>
     </div>
   </div>
@@ -229,6 +256,7 @@ const saveChanges = async () => {
       <Button
         label="Save"
         class="w-full font-semibold p-button-text text-white bg-green-800 rounded-xl p-2 mb-3"
+        :loading="loading"
         @click="saveChanges"
       />
 
@@ -241,7 +269,31 @@ const saveChanges = async () => {
       />
     </div>
   </Dialog>
+  <div>
+    <DialogComponent
+      v-if="showDialog"
+      :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
+  </div>
 </template>
+<script>
+export default {
+  components: {
+    DialogComponent
+  }
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+</script>
 <style>
 /* Light mode styles */
 .body {
@@ -432,5 +484,9 @@ const saveChanges = async () => {
 .dark .p-dialog .p-dialog-header {
   background-color: #171717;
   color: white;
+}
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
+  z-index: 9998 !important; /* Ensure it is above other elements */
 }
 </style>

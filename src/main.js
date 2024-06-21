@@ -8,7 +8,8 @@ import InputText from 'primevue/inputtext'
 import FloatLabel from 'primevue/floatlabel'
 import Password from 'primevue/password'
 import InputSwitch from 'primevue/inputswitch'
-// import Menu from 'primevue/menu'
+import Menu from 'primevue/menu'
+import Menubar from 'primevue/menubar'
 import Toolbar from 'primevue/toolbar'
 import Badge from 'primevue/badge'
 import Avatar from 'primevue/avatar'
@@ -26,11 +27,15 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import ConfirmationService from 'primevue/confirmationservice'
 // import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
+import Toast from 'primevue/toast'
+import ToastService from 'primevue/toastservice'
+import Carousel from 'primevue/carousel'
 
 // import 'primeicons/primeicons.css';
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
 import 'primeicons/primeicons.css'
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
 
 // import VueGeolocation from 'vue-browser-geolocation'
 
@@ -50,12 +55,15 @@ app.config.globalProperties.$supabase = supabase
 app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
-
+app.use(ToastService)
+app.component('Carousel', Carousel)
+app.component('Toast', Toast)
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)
 app.component('Password', Password)
 app.component('InputSwitch', InputSwitch)
-// app.component('Menu', Menu)
+app.component('Menu', Menu)
+app.component('Menubar', Menubar)
 app.component('Toolbar', Toolbar)
 app.component('Badge', Badge)
 app.component('Avatar', Avatar)
@@ -71,7 +79,12 @@ app.component('ConfirmDialog', ConfirmDialog)
 // app.component('Button', Button)
 app.component('ConfirmationService', ConfirmationService)
 // app.component('Dialog', Dialog)
+app.component('Button', Button)
+app.component('Dialog', Dialog)
 app.component('Dropdown', Dropdown)
+app.component('QrcodeStream', QrcodeStream)
+app.component('QrcodeDropZone', QrcodeDropZone)
+app.component('QrcodeCapture', QrcodeCapture)
 
 // app.use(VueGeolocation)
 app.mount('#app')

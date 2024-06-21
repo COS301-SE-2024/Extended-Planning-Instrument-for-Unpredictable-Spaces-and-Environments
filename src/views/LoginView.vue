@@ -1,15 +1,56 @@
 <script setup>
 // DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
+import DialogComponent from '@/components/DialogComponent.vue'
+
+let localUser
+const dialogVisible = ref(false)
 
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
+
+async function checkRole() {
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: {
+      type: 'checkRole',
+      email: email.value
+    }
+  })
+  if (error) {
+    console.log('API Error:', error)
+  }
+
+  console.log(data)
+  const role = data.data[0].Role
+  // console.log('Role:', role)
+
+  if (role === 'unassigned') {
+    router.push({ name: 'home' })
+  } else if (role === 'Manager') {
+    router.push({ name: 'dashboard' })
+  } else if (role === 'Packer') {
+    router.push({ name: 'packer' })
+  } else {
+    router.push({ name: 'driver' })
+  }
+}
+
+async function checkAuth() {
+  localUser = await supabase.auth.getSession()
+  console.log(localUser)
+  if (localUser.data.session != null) {
+    await checkRole()
+  }
+}
+onMounted(() => {
+  checkAuth()
+})
 
 // Authentication state
 const email = ref('')
@@ -26,7 +67,8 @@ const signIn = async () => {
     alert(error.message)
   } else {
     console.log('User signed in:', user)
-    router.push({ name: 'dashboard' })
+    await checkRole()
+    // router.push({ name: 'dashboard' })
   }
 }
 
@@ -35,13 +77,14 @@ const signInWithProvider = async (provider) => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/dashboard`
+      redirectTo: `${window.location.origin}/callback`
     }
   })
   if (error) {
     alert(error.message)
   } else {
     console.log(`Redirecting to ${provider} login page`)
+    router.push({ name: 'callback' })
     // Do not navigate to the home page here, handle this in the callback
   }
 }
@@ -115,7 +158,7 @@ const signInWithProvider = async (provider) => {
         />
         <button
           type="submit"
-          class="mb-6 sign-in-button w-full py-2 bg-yellow-600 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          class="mb-6 sign-in-button w-full py-2 bg-yellow-700 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
         >
           Sign In
         </button>
@@ -165,24 +208,79 @@ const signInWithProvider = async (provider) => {
         </p>
       </form>
     </div>
-    <div
-      @click="toggleDark"
-      :class="[
-        isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-        'mb-4 w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
-      ]"
-    >
-      <p class="mr-4 text-gray-500 dark:text-gray-400 text-left">Dark Mode Toggle</p>
-      <button class="focus:outline-none">
-        <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
-      </button>
+    <div class="flex-col">
+      <div
+        @click="toggleDark"
+        :class="[
+          isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
+          'hover:transform hover:-translate-y-1 transition duration-300 mb-4 w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
+        ]"
+      >
+        <p class="mr-4 text-gray-500 dark:text-gray-400 text-left">Dark Mode Toggle</p>
+        <button class="focus:outline-none">
+          <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
+        </button>
+      </div>
+
+      <p
+        @click="toggleDialog"
+        class="flex items-center justify-center mr-4 text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      >
+        Help
+      </p>
     </div>
+
+    <div>
+      <DialogComponent
+        v-if="showDialog"
+        imagePath="/Members/Photos/Login _ landing page.png"
+        altText="Alternative Image"
+        title="Contact Support"
+        :contacts="[
+          { name: 'Call', phone: '+27 12 345 6789', underline: true },
+          { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+        ]"
+        :dialogVisible="showDialog"
+        @close-dialog="toggleDialog"
+      />
+    </div>
+    <DialogComponent
+      v-if="showDialog"
+      :imagePath="[
+        { src: '/Members/Photos/Login _ landing page1.png', alt: 'Image 1' },
+        { src: '/Members/Photos/Login _ landing page2.png', alt: 'Image 2' }
+        // Add more images as needed
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
   </div>
 </template>
-
+<script>
+export default {
+  components: {
+    DialogComponent
+  }
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
+.p-dialog .p-dialog-header-icon {
+  display: none;
+}
+.p-dialog-header {
+  display: none;
+}
 .font-inter {
   font-family: 'Inter', sans-serif;
 }
@@ -237,5 +335,18 @@ body {
 /* Light mode InputSwitch styles */
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
   background-color: orange; /* Change this to your desired orange color */
+}
+
+.dark .p-dialog .p-dialog-content {
+  background-color: #262626;
+}
+.dark .p-dialog .p-dialog-header {
+  background-color: #262626;
+}
+.p-dialog .p-dialog-content {
+  background: white;
+}
+.p-dialog .p-dialog-header {
+  background: white;
 }
 </style>

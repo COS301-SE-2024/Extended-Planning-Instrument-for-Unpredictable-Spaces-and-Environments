@@ -2,14 +2,24 @@
 import { useDark /*, useToggle */ } from '@vueuse/core'
 // import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
-
+import { supabase } from '../supabase'
 const isDark = useDark()
 // const toggleDark = () => {
 //   isDark.value = !isDark.value
 //   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 // }
+let userName
+async function getUsername() {
+  const { data } = await supabase.auth.getSession()
+  userName = data.session.user.identities[0].identity_data.name
+  console.log(userName)
+}
+onMounted(() => {
+  getUsername()
+})
+
 const chartData = ref({
   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
   datasets: [
@@ -97,7 +107,7 @@ const chartOptions = ref({
         </div>
       </div>
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Welcome back</span>, John
+        <span class="font-bold">Welcome back</span>
       </h2>
       <div class="flex flex-wrap mb-4">
         <div class="w-full md:w-[55%] mb-4">
