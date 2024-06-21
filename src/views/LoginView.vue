@@ -15,12 +15,37 @@ const toggleDark = () => {
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
 
+async function checkRole() {
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: {
+      type: 'checkRole',
+      email: email.value
+    }
+  })
+  if (error) {
+    console.log('API Error:', error)
+  }
+
+  console.log(data)
+  const role = data.data[0].Role
+  // console.log('Role:', role)
+
+  if (role === 'unassigned') {
+    router.push({ name: 'home' })
+  } else if (role === 'Manager') {
+    router.push({ name: 'dashboard' })
+  } else if (role === 'Packer') {
+    router.push({ name: 'packer' })
+  } else {
+    router.push({ name: 'driver' })
+  }
+}
+
 async function checkAuth() {
-  //const { data, error } = await supabase.auth.getSession()
   localUser = await supabase.auth.getSession()
   console.log(localUser)
   if (localUser.data.session != null) {
-    router.push('/dashboard')
+    await checkRole()
   }
 }
 onMounted(() => {
@@ -42,7 +67,8 @@ const signIn = async () => {
     alert(error.message)
   } else {
     console.log('User signed in:', user)
-    router.push({ name: 'dashboard' })
+    await checkRole()
+    // router.push({ name: 'dashboard' })
   }
 }
 
@@ -51,13 +77,14 @@ const signInWithProvider = async (provider) => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/dashboard`
+      redirectTo: `${window.location.origin}/callback`
     }
   })
   if (error) {
     alert(error.message)
   } else {
     console.log(`Redirecting to ${provider} login page`)
+    router.push({ name: 'callback' })
     // Do not navigate to the home page here, handle this in the callback
   }
 }
