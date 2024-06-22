@@ -45,7 +45,7 @@ const logout = async () => {
     console.log(error)
   } else {
     router.push({ name: 'login' })
-    console.log('Log out successful')
+    // console.log('Log out successful')
   }
 }
 </script>
