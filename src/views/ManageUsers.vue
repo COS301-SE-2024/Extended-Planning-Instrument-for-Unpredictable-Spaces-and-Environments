@@ -224,12 +224,14 @@ const saveChanges = async () => {
       </div>
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="Role">Role</label>
+
         <Dropdown
           :class="[
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600',
+            { 'z-99999999999999999': true } // Adjust z-index here
           ]"
           v-model="selectedRole"
           :options="roles"
@@ -442,6 +444,9 @@ const toggleDialog = () => {
   border-radius: 0;
 }
 
+p-dialog-mask p-component-overlay p-component-overlay-enter {
+  z-index: 90999999;
+}
 .p-dialog {
   background-color: rgb(255, 255, 255);
   color: black;
@@ -487,5 +492,19 @@ const toggleDialog = () => {
 .p-dialog-mask {
   background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
   z-index: 800 !important ; /* Ensure it is above other elements */
+}
+
+.p-dropdown-panel.p-component.p-ripple-disabled {
+  z-index: 99999999 !important;
+  color: black;
+}
+.p-inputtext {
+  color: black;
+}
+.dark .p-inputtext {
+  color: white;
+}
+.dark .p-dropdown-panel.p-component.p-ripple-disabled {
+  z-index: 99999999 !important;
 }
 </style>
