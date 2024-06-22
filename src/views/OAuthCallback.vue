@@ -18,7 +18,7 @@ async function handleOAuthCallback() {
     console.error('Error fetching session:', error)
     return
   }
-  console.log(data)
+  // console.log(data)
   if (data.session) {
     const user = data.session.user
     const email = user.user_metadata.email || user.email // Access email from user metadata or fallback to user.email

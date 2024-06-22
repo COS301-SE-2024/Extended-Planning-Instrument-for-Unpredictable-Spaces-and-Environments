@@ -7,6 +7,7 @@ import ManageUsers from '../views/ManageUsers.vue'
 import Packer from '../views/Packer.vue'
 import OAuthCallback from '../views/OAuthCallback.vue'
 import Loading from '../views/Loading.vue'
+import DeliveryView from '@/views/DeliveryView.vue'
 import { supabase } from '../supabase' // Assuming supabase is imported here
 
 const routes = [
@@ -42,6 +43,12 @@ const routes = [
     name: 'packer',
     component: Packer,
     meta: { requiresAuth: true, requiredRole: 'Packer' }
+  },
+  {
+    path: '/driver',
+    name: 'driver',
+    component: DeliveryView,
+    meta: { requiresAuth: true, requiredRole: 'Driver' }
   },
   {
     path: '/callback',
@@ -113,8 +120,19 @@ router.beforeEach(async (to, from, next) => {
     }
   } else {
     if (to.name === 'login' || to.name === 'SignUp') {
-      next({ name: 'home' })
-      return
+      if (role === 'Manager') {
+        next({ name: 'dashboard' })
+        return
+      } else if (role === 'Packer') {
+        next({ name: 'packer' })
+        return
+      } else if (role === 'Driver') {
+        next({ name: 'driver' })
+        return
+      } else {
+        next({ name: 'home' })
+        return
+      }
     }
   }
   next()

@@ -40,7 +40,7 @@ const props = defineProps({
         iconPos="left"
         :class="[
           isDark ? 'text-red' : 'text-red',
-          'my-4 bg-red-500 rounded-md font-semibold p-button-text p-2'
+          'my-4 text-white bg-red-500 rounded-md font-semibold p-button-text p-2'
         ]"
       />
     </div>

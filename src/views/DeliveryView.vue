@@ -1,16 +1,32 @@
 <template>
-  <div class="flex w-full h-[auto] bg-neutral-950">
-    <Sidebar />
-    <div class="w-full bg-neutral-950 text-white flex-col mb-10">
-      <div class="flex w-[auto] content-center mr-4 p-2">
-        <img
-          src="@/assets/image.png"
-          alt="Image"
-          style="object-fit: cover; width: 100; border-radius: 5px"
-        />
+  <div
+    :class="[
+      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black',
+      ' h-[auto] flex flex-col '
+    ]"
+  >
+    <DeliverySidebar />
+    <div
+      :class="[
+        isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
+        'w-full  text-white flex-col mb-10'
+      ]"
+    >
+      <div
+        :class="[
+          isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
+          'flex w-[auto] content-center p-4'
+        ]"
+      >
+        <img src="@/assets/image.png" alt="Image" style="object-fit: cover; border-radius: 5px" />
       </div>
-      <div class="card h-[auto] flex flex-col v">
-        <div class="m-4 header">Shipment #345290</div>
+      <div
+        :class="[
+          isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
+          'card h-[auto] flex flex-col p-4'
+        ]"
+      >
+        <h1 class="pb-8 text-3xl font-bold">Shipment #345290</h1>
         <div class="flex flex-row">
           <Timeline :value="events" class="customized-timeline">
             <template #marker="slotProps">
@@ -22,7 +38,13 @@
               </span>
             </template>
             <template #content="slotProps">
-              <Card class="bg-neutral-800 text-white rounded-md" style="width: 95%">
+              <Card
+                :class="[
+                  isDark ? 'dark bg-neutral-950 text-white ' : 'light bg-white-100 text-black',
+                  'rounded-md'
+                ]"
+                style="width: 95%"
+              >
                 <template #title>
                   {{ slotProps.item.status }}
                 </template>
@@ -30,13 +52,15 @@
                   {{ slotProps.item.date }} {{ slotProps.item.time }}
                   {{ slotProps.item.location }}
                   {{ slotProps.item.coordinates }}
-
                   <div
                     v-if="slotProps.item.status === 'Delivered'"
                     class="flex flex-row w-full justify-center items-end content-end mt-10"
                   >
                     <button
-                      :class="slotProps.item.past ? 'bg-amber-600' : 'bg-gray-500'"
+                      :class="[
+                        slotProps.item.past ? '  bg-amber-600' : ' bg-gray-500',
+                        'text-white'
+                      ]"
                       :disabled="!slotProps.item.past"
                       class="p-2 rounded-md w-full"
                       @click="showDialog = true"
@@ -85,17 +109,22 @@
 </template>
 
 <script setup>
+import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
 import 'primevue/resources/themes/saga-blue/theme.css'
 import 'primevue/resources/primevue.min.css'
-import Sidebar from '@/components/Sidebar.vue'
+import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import { ref } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
 import FileUpload from 'primevue/fileupload'
 // import Map from '@/components/Map.vue';
-
+const isDark = useDark()
+const toggleDark = () => {
+  isDark.value = !isDark.value
+  console.log('Dark mode:', isDark.value ? 'on' : 'off')
+}
 const events = ref([
   {
     status: 'On Route',
@@ -194,7 +223,16 @@ const submitImage = () => {
 
 .p-card .p-card-body {
   padding-top: 0.5rem;
-  /* padding: 1rem; */
+  background-color: #ffffff;
+  border-radius: 20px;
+  color: black;
+}
+
+.dark .p-card .p-card-body {
+  padding-top: 0.5rem;
+  background-color: #0a0a0a;
+  border-radius: 10px;
+  color: white;
 }
 .p-card .p-card-content {
   display: flex;
@@ -205,7 +243,10 @@ const submitImage = () => {
 .p-timeline {
   gap: 0.5rem;
 }
-
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
+  z-index: 9998 !important; /* Ensure it is above other elements */
+}
 .p-timeline-left .p-timeline-event-opposite {
   text-align: left;
   padding: 0;

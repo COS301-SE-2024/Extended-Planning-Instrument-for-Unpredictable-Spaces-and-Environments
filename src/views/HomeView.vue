@@ -2,16 +2,43 @@
 import { useDark } from '@vueuse/core'
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { supabase } from '../supabase';
-import { useRouter } from 'vue-router';
+import { supabase } from '../supabase'
+import { useRouter } from 'vue-router'
 // import { ref } from 'vue';
 
-const router = useRouter();
+const router = useRouter()
 const toast = useToast()
 const isDark = useDark()
 const activeIndex = ref(0)
 
+// let session = await getUserSession()
+
+const changeUserRoute = () => {
+  router.push({ name: 'callback' })
+}
+
+// async function getUserSession() {
+//   const { data, error } = await supabase.auth.getSession()
+//   if (error) {
+//     console.error('Error fetching session:', error)
+//     return null
+//   }
+//   return data.session
+// }
+
+async function setupSubscription() {
+  await supabase // Await for the subscription to be established
+    .channel('*')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
+      // console.log(payload.new)
+      changeUserRoute()
+    })
+    .subscribe()
+}
+
 onMounted(() => {
+  setupSubscription()
+
   const video = document.querySelector('video')
   if (video) {
     video.muted = true
@@ -21,15 +48,15 @@ onMounted(() => {
   }
 })
 const logout = async () => {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut()
 
   if (error) {
-    console.log(error);
+    console.log(error)
   } else {
-    router.push({ name: 'login' });
-    console.log('Log out successful');
+    router.push({ name: 'login' })
+    console.log('Log out successful')
   }
-};
+}
 </script>
 
 <template>
