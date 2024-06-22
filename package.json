@@ -31,7 +31,6 @@
     "vue-barcode-reader": "^1.0.3",
     "vue-qrcode-reader": "^5.5.6",
     "vue-router": "^4.3.0",
-    "vue-qrcode-reader": "^5.5.6",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
