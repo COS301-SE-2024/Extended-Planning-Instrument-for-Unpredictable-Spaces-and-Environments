@@ -7,7 +7,7 @@ import ManageUsers from '../views/ManageUsers.vue';
 import Packer from '../views/Packer.vue';
 import OAuthCallback from '../views/OAuthCallback.vue';
 import Loading from '../views/Loading.vue';
-import { supabase } from '../supabase'; // Assuming supabase is imported here
+import { supabase } from '../supabase';
 
 const routes = [
   {
@@ -73,8 +73,8 @@ async function getUserRole(email) {
   const { data, error } = await supabase.functions.invoke('core', {
     body: {
       type: 'checkRole',
-      email: email
-    }
+      email: email,
+    },
   });
   if (error) {
     console.error('API Error:', error);
@@ -113,8 +113,16 @@ router.beforeEach(async (to, from, next) => {
     }
   } else {
     if (to.name === 'login' || to.name === 'SignUp') {
-      next({ name: 'home' });
-      return;
+      if (role === 'Manager') {
+        next({ name: 'dashboard' });
+        return;
+      } else if (role === 'Packer') {
+        next({ name: 'packer' });
+        return;
+      } else {
+        next({ name: 'home' });
+        return;
+      }
     }
   }
   next();
