@@ -17,15 +17,6 @@ const changeUserRoute = () => {
   router.push({ name: 'callback' })
 }
 
-// async function getUserSession() {
-//   const { data, error } = await supabase.auth.getSession()
-//   if (error) {
-//     console.error('Error fetching session:', error)
-//     return null
-//   }
-//   return data.session
-// }
-
 async function setupSubscription() {
   await supabase // Await for the subscription to be established
     .channel('*')
