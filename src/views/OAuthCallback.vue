@@ -48,17 +48,17 @@ async function checkRole(email) {
     return
   }
 
-  console.log('OAuthCallback ', data)
+  // console.log('OAuthCallback ', data)
   const role = data.data[0].Role
 
-  if (role === 'unassigned') {
-    router.push({ name: 'home' })
+  if (role === 'Driver') {
+    router.push({ name: 'driver' })
   } else if (role === 'Manager') {
     router.push({ name: 'dashboard' })
   } else if (role === 'Packer') {
     router.push({ name: 'packer' })
   } else {
-    router.push({ name: 'driver' })
+    router.push({ name: 'home' })
   }
 }
 
