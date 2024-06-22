@@ -12,7 +12,7 @@
 [![Demo1 Thumbnail](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/7ec24e36-c321-47a7-9b28-6e699b44fad6)](https://youtu.be/gZwCVpCP_zM)
 
 ## All Requirement Documents 📄
-[Requirements Docs](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/tree/6ba059a9192c98474a62b385e1c452ab71c3aec8/Docs)
+[Requirements Docs](Docs)
 
 ## Project Management 📋
 [GitHub Project Board](https://github.com/orgs/COS301-SE-2024/projects/87)
