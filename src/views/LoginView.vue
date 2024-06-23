@@ -37,20 +37,23 @@ const signIn = async () => {
 
 // Sign in with OAuth provider
 const signInWithProvider = async (provider) => {
+  console.log(`signInWithProvider called with provider: ${provider}`);
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo: `${window.location.origin}/callback`
     }
-  })
+  });
   if (error) {
-    alert(error.message)
+    alert(error.message);
   } else {
     console.log(`Redirecting to ${provider} login page`)
     router.push({ name: 'callback' })
+
     // Do not navigate to the home page here, handle this in the callback
   }
-}
+};
+
 </script>
 
 <template>
@@ -132,7 +135,7 @@ const signInWithProvider = async (provider) => {
         </div>
 
         <div class="flex justify-center mb-8">
-          <button
+          <button data-provider="google"
             @click.prevent="signInWithProvider('google')"
             :class="[
               isDark
@@ -145,7 +148,7 @@ const signInWithProvider = async (provider) => {
               <i class="pi pi-google"></i>
             </div>
           </button>
-          <button
+          <button data-provider="github"
             @click.prevent="signInWithProvider('github')"
             :class="[
               isDark
