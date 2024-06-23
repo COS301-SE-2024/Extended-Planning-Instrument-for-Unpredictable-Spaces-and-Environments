@@ -3,6 +3,8 @@ import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
+import DialogComponent from '@/components/DialogComponent.vue'
+
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
@@ -16,6 +18,7 @@ const toggleDark = () => {
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
 const customers = ref([]) // Reactive variable to store customer data
+const dialogVisible = ref(false)
 
 const updateUserInTable = (newUserData) => {
   const index = customers.value.findIndex((user) => user.id === newUserData.id)
@@ -46,7 +49,8 @@ const fetchUsers = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      customers.value = JSON.parse(data).data
+      console.log(data.data)
+      customers.value = data.data
       // console.log(customers.value) // Now it should log an array
     }
   } catch (error) {
@@ -58,7 +62,6 @@ onMounted(() => {
   setupSubscription()
 })
 
-const dialogVisible = ref(false)
 const selectedUser = ref({
   FullName: '',
   Email: '',
@@ -168,6 +171,14 @@ const saveChanges = async () => {
           </Column>
         </DataTable>
       </div>
+      <div class="mt-4 flex items-center justify-center">
+        <p
+          @click="toggleDialog"
+          class="text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        >
+          Help
+        </p>
+      </div>
     </div>
   </div>
 
@@ -213,12 +224,14 @@ const saveChanges = async () => {
       </div>
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="Role">Role</label>
+
         <Dropdown
           :class="[
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600',
+            { 'z-99999999999999999': true } // Adjust z-index here
           ]"
           v-model="selectedRole"
           :options="roles"
@@ -258,14 +271,37 @@ const saveChanges = async () => {
       />
     </div>
   </Dialog>
+  <div>
+    <DialogComponent
+      v-if="showDialog"
+      :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
+  </div>
 </template>
+<script>
+export default {
+  components: {
+    DialogComponent
+  }
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+</script>
 <style>
 /* Light mode styles */
 .body {
   background-color: white;
   color: black;
 }
-
 .p-datatable-thead > tr > th,
 .datatable-light .p-datatable-tfoot > tr > th {
   background-color: rgba(255, 255, 255, 0.226);
@@ -408,6 +444,9 @@ const saveChanges = async () => {
   border-radius: 0;
 }
 
+p-dialog-mask p-component-overlay p-component-overlay-enter {
+  z-index: 90999999;
+}
 .p-dialog {
   background-color: rgb(255, 255, 255);
   color: black;
@@ -449,5 +488,23 @@ const saveChanges = async () => {
 .dark .p-dialog .p-dialog-header {
   background-color: #171717;
   color: white;
+}
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
+  z-index: 800 !important ; /* Ensure it is above other elements */
+}
+
+.p-dropdown-panel.p-component.p-ripple-disabled {
+  z-index: 99999999 !important;
+  color: black;
+}
+.p-inputtext {
+  color: black;
+}
+.dark .p-inputtext {
+  color: white;
+}
+.dark .p-dropdown-panel.p-component.p-ripple-disabled {
+  z-index: 99999999 !important;
 }
 </style>

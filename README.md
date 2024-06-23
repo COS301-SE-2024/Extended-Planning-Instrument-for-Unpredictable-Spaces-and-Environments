@@ -9,10 +9,10 @@
 ![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/unitTest.yml/badge.svg) [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)
 
 ## Demo Video 🎥
-[![Demo1 Thumbnail](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/7ec24e36-c321-47a7-9b28-6e699b44fad6)](https://youtu.be/gZwCVpCP_zM)
+[![Demo1 Thumbnail](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/7ec24e36-c321-47a7-9b28-6e699b44fad6)](https://www.youtube.com/playlist?list=PLGYYgsVv-70oToZzb5FKrY-J9i_26m-jt)
 
-## Functional Requirements (SRS) Document 📄
-[Functional Requirements (SRS)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/2318fb0a157eebf2b4eaec26539ad3bbcb7649e6/Docs/Requirement%20Specification%20v1.pdf)
+## All Requirement Documents 📄
+[Requirements Docs](Docs)
 
 ## Project Management 📋
 [GitHub Project Board](https://github.com/orgs/COS301-SE-2024/projects/87)
