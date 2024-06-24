@@ -95,3 +95,4 @@ describe('SidebarComponent.vue', () => {
     expect(mockToggleDark).toHaveBeenCalled();
   });
 });
+

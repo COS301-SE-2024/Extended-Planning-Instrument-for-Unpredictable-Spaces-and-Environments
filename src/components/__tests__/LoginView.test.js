@@ -92,7 +92,6 @@ describe('LoginView Component', () => {
     await passwordInput.setValue('password123');
     expect(wrapper.vm.password).toBe('password123');
   });
-
   // it('checks OAuth provider buttons existence and functionality', async () => {
   //   const wrapper = createWrapper();
   
@@ -128,6 +127,7 @@ describe('LoginView Component', () => {
   //   // Restore the original function
   //   signInWithProviderMock.mockRestore();
   // });
+
   
   it('navigates to the dashboard if user session is active', async () => {
     supabaseMock.auth.getSession.mockResolvedValueOnce({ data: { session: {} } });
@@ -142,6 +142,7 @@ describe('LoginView Component', () => {
   it('renders dark mode correctly', async () => {
     isDarkMock.value = true;
     const wrapper = createWrapper();
+
 
     expect(wrapper.find('.dark').exists()).toBe(true);
     expect(wrapper.find('.dark').classes()).toContain('bg-neutral-900');
@@ -206,3 +207,4 @@ describe('LoginView Component', () => {
   });
   
 });
+

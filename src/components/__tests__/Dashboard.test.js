@@ -80,6 +80,7 @@ describe('Dashboard Component', () => {
           },
           Divider: { template: '<div></div>' }, // Added stub for Divider
           Password: { template: '<div></div>' }, // Added stub for Password
+
         },
         directives: {
           ripple: {},
