@@ -20,6 +20,26 @@ vi.mock('@vueuse/core', () => {
   };
 });
 
+vi.mock('../../supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              identities: [{
+                identity_data: {
+                  name: 'Test User',
+                },
+              }],
+            },
+          },
+        },
+      }),
+    },
+  },
+}));
+
 describe('Dashboard Component', () => {
   let isDarkMock;
   let toggleDarkMock;
@@ -58,6 +78,9 @@ describe('Dashboard Component', () => {
           routerLink: {
             template: '<a><slot /></a>',
           },
+          Divider: { template: '<div></div>' }, // Added stub for Divider
+          Password: { template: '<div></div>' }, // Added stub for Password
+
         },
         directives: {
           ripple: {},

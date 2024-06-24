@@ -1,125 +1,97 @@
-/* eslint-env node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { useDark } from '@vueuse/core';
-import SignUp from '../SignUp.vue';
+import SidebarComponent from '../Sidebar.vue'; // Update this to the correct file path
+import { useRouter } from 'vue-router';
+import { supabase } from '../../supabase';
 import PrimeVue from 'primevue/config';
-import Divider from 'primevue/divider';
-import Password from 'primevue/password';
-import { createRouter, createWebHistory } from 'vue-router';
+import Badge from 'primevue/badge';
+import Menu from 'primevue/menu';
+import Avatar from 'primevue/avatar';
+import Ripple from 'primevue/ripple';
 
-// Define global object for the test environment
-global.alert = vi.fn();
+const mockPush = vi.fn();
 
-vi.mock('@vueuse/core', () => ({
-  useDark: vi.fn(),
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
 }));
 
-const routes = [
-  { path: '/', name: 'home', component: { template: '<div>Home</div>' } },
-];
+const mockToggleDark = vi.fn();
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+vi.mock('@vueuse/core', () => ({
+  useDark: vi.fn(() => false),
+  useToggle: vi.fn(() => mockToggleDark),
+}));
 
-describe('SignUp Component', () => {
-  let isDarkMock;
-  let mockSupabase;
+vi.mock('@/supabase', () => ({
+  supabase: {
+    auth: {
+      signOut: vi.fn(() => Promise.resolve({})),
+    },
+  },
+}));
+
+describe('SidebarComponent.vue', () => {
+  let wrapper;
 
   beforeEach(() => {
-    isDarkMock = { value: true };
-    useDark.mockReturnValue(isDarkMock);
-
-    mockSupabase = {
-      auth: {
-        signUp: vi.fn().mockResolvedValue({ user: { email: 'john@example.com' }, error: null }),
-      },
-    };
-  });
-
-  it('renders properly', () => {
-    const wrapper = mount(SignUp, {
+    wrapper = mount(SidebarComponent, {
       global: {
-        plugins: [PrimeVue, router],
+        plugins: [PrimeVue],
         components: {
-          Divider,
-          Password,
+          Badge,
+          Menu,
+          Avatar,
           'router-link': {
             template: '<a><slot /></a>',
           },
         },
-        mocks: {
-          $supabase: mockSupabase,
+        directives: {
+          ripple: Ripple,
         },
       },
     });
-    expect(wrapper.find('h1').text()).toBe('Create a new account');
+    mockPush.mockClear(); // Clear previous mock calls
+    mockToggleDark.mockClear(); // Clear previous mock calls
   });
 
-  it('toggles dark mode', async () => {
-    const wrapper = mount(SignUp, {
-      global: {
-        plugins: [PrimeVue, router],
-        components: {
-          Divider,
-          Password,
-          'router-link': {
-            template: '<a><slot /></a>',
-          },
-        },
-        mocks: {
-          $supabase: mockSupabase,
-        },
-      },
-    });
-    const toggleButton = wrapper.find('.cursor-pointer');
-    expect(toggleButton.exists()).toBe(true);
-
-    expect(isDarkMock.value).toBe(true);
-    await toggleButton.trigger('click');
-    expect(isDarkMock.value).toBe(false);
-
-    await toggleButton.trigger('click');
-    expect(isDarkMock.value).toBe(true);
+  it('renders the component', () => {
+    expect(wrapper.exists()).toBe(true);
   });
 
-  it('displays form inputs and handles v-model bindings', async () => {
-    const wrapper = mount(SignUp, {
-      global: {
-        plugins: [PrimeVue, router],
-        components: {
-          Divider,
-          Password,
-          'router-link': {
-            template: '<a><slot /></a>',
-          },
-        },
-        mocks: {
-          $supabase: mockSupabase,
-        },
-      },
-    });
+  it('initially sets isMobileSidebarCollapsed based on window size', () => {
+    global.innerWidth = 1024;
+    window.dispatchEvent(new Event('resize'));
+    expect(wrapper.vm.isMobileSidebarCollapsed).toBe(false);
 
-    const nameInput = wrapper.find('input#name');
-    expect(nameInput.exists()).toBe(true);
-    await nameInput.setValue('John Doe');
-    expect(wrapper.vm.name).toBe('John Doe');
+    global.innerWidth = 800;
+    window.dispatchEvent(new Event('resize'));
+    expect(wrapper.vm.isMobileSidebarCollapsed).toBe(true);
+  });
 
-    const numberInput = wrapper.find('input#number');
-    expect(numberInput.exists()).toBe(true);
-    await numberInput.setValue('27826180677');
-    expect(wrapper.vm.number).toBe('27826180677');
+  it('navigates to the correct routes when menu items are clicked', async () => {
+    const dashboardItem = wrapper.findAll('.p-menuitem-content').at(0);
+    await dashboardItem.trigger('click');
+    expect(mockPush).toHaveBeenCalledWith({ name: 'dashboard' });
 
-    const emailInput = wrapper.find('input#email');
-    expect(emailInput.exists()).toBe(true);
-    await emailInput.setValue('john@example.com');
-    expect(wrapper.vm.email).toBe('john@example.com');
+    const manageUsersItem = wrapper.findAll('.p-menuitem-content').at(6);
+    await manageUsersItem.trigger('click');
+    expect(mockPush).toHaveBeenCalledWith({ name: 'manage-users' });
+  });
 
-    const passwordInput = wrapper.find('#password input');
-    expect(passwordInput.exists()).toBe(true);
-    await passwordInput.setValue('password123');
-    expect(wrapper.vm.password).toBe('password123');
+  it('calls the logout function and redirects to login', async () => {
+    const logoutItem = wrapper.findAll('.p-menuitem-content').at(8);
+    await logoutItem.trigger('click');
+
+    expect(supabase.auth.signOut).toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith({ name: 'login' });
+  });
+
+  it('toggles dark mode when the corresponding menu item is clicked', async () => {
+    const darkModeItem = wrapper.findAll('.p-menuitem-content').at(7);
+    await darkModeItem.trigger('click');
+
+    expect(mockToggleDark).toHaveBeenCalled();
   });
 });

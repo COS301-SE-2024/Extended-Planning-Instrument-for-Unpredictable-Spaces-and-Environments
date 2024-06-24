@@ -91,63 +91,85 @@ async function getUserRole(email) {
 }
 
 router.beforeEach(async (to, from, next) => {
+  console.log('Navigating to:', to.name);
+
   if (to.name === 'loading') {
-    next()
-    return
+    console.log('Navigating to loading, proceeding without checks');
+    next();
+    return;
   }
 
-  const session = await getUserSession()
+  const session = await getUserSession();
+  console.log('Session:', session);
+
   if (!session) {
     if (to.meta.requiresAuth) {
-      next({ name: 'login' })
-      return
+      console.log('No session and route requires auth, redirecting to login');
+      next({ name: 'login' });
+      return;
     }
-    next()
-    return
+    console.log('No session and route does not require auth, proceeding');
+    next();
+    return;
   }
 
-  const email = session.user.email
-  const role = await getUserRole(email)
+  const email = session.user.email;
+  console.log('User email:', email);
+
+  const role = await getUserRole(email);
+  console.log('User role:', role);
 
   if (to.meta.requiresAuth) {
     if (!session) {
-      next({ name: 'login' })
-      return
+      console.log('Session not found, redirecting to login');
+      next({ name: 'login' });
+      return;
     }
     if (role !== to.meta.requiredRole) {
+      console.log('Role does not match required role for route');
       // Redirect to the appropriate role-based page
       if (role === 'Manager') {
-        next({ name: 'dashboard' })
-        return
+        console.log('Redirecting to dashboard');
+        next({ name: 'dashboard' });
+        return;
       } else if (role === 'Packer') {
-        next({ name: 'packer' })
-        return
+        console.log('Redirecting to packer');
+        next({ name: 'packer' });
+        return;
       } else if (role === 'Driver') {
-        next({ name: 'driver' })
-        return
+        console.log('Redirecting to driver');
+        next({ name: 'driver' });
+        return;
       } else {
-        next({ name: 'home' })
-        return
+        console.log('Unknown role, redirecting to home');
+        next({ name: 'home' });
+        return;
       }
     }
   } else {
     if (to.name === 'login' || to.name === 'SignUp') {
       if (role === 'Manager') {
-        next({ name: 'dashboard' })
-        return
+        console.log('Already logged in as Manager, redirecting to dashboard');
+        next({ name: 'dashboard' });
+        return;
       } else if (role === 'Packer') {
-        next({ name: 'packer' })
-        return
+        console.log('Already logged in as Packer, redirecting to packer');
+        next({ name: 'packer' });
+        return;
       } else if (role === 'Driver') {
-        next({ name: 'driver' })
-        return
+        console.log('Already logged in as Driver, redirecting to driver');
+        next({ name: 'driver' });
+        return;
       } else {
-        next({ name: 'home' })
-        return
+        console.log('Unknown role, redirecting to home');
+        next({ name: 'home' });
+        return;
       }
     }
   }
-  next()
-})
+  console.log('Proceeding to route');
+  next();
+});
+
 
 export default router

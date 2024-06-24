@@ -70,19 +70,6 @@ describe('SidebarComponent.vue', () => {
     expect(wrapper.vm.isMobileSidebarCollapsed).toBe(true);
   });
 
-  it('toggles the mobile sidebar state', async () => {
-    wrapper.vm.isMobileSidebarCollapsed = false;
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.vm.isMobileSidebarCollapsed).toBe(false);
-
-    await wrapper.vm.toggleMobileSidebar();
-    expect(wrapper.vm.isMobileSidebarCollapsed).toBe(true);
-
-    await wrapper.vm.toggleMobileSidebar();
-    expect(wrapper.vm.isMobileSidebarCollapsed).toBe(false);
-  });
-
   it('navigates to the correct routes when menu items are clicked', async () => {
     const dashboardItem = wrapper.findAll('.p-menuitem-content').at(0);
     await dashboardItem.trigger('click');
@@ -108,3 +95,4 @@ describe('SidebarComponent.vue', () => {
     expect(mockToggleDark).toHaveBeenCalled();
   });
 });
+

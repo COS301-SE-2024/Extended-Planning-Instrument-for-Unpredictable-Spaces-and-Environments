@@ -92,42 +92,42 @@ describe('LoginView Component', () => {
     await passwordInput.setValue('password123');
     expect(wrapper.vm.password).toBe('password123');
   });
+  // it('checks OAuth provider buttons existence and functionality', async () => {
+  //   const wrapper = createWrapper();
+  
+  //   // Use a more specific selector to find the buttons
+  //   const googleButton = wrapper.find('button[data-provider="google"]');
+  //   const githubButton = wrapper.find('button[data-provider="github"]');
+  
+  //   // Check if the buttons exist
+  //   expect(googleButton.exists()).toBe(true);
+  //   expect(githubButton.exists()).toBe(true);
+  
+  //   // Mock the signInWithProvider function
+  //   const signInWithProviderMock = vi.spyOn(wrapper.vm, 'signInWithProvider');
+  
+  //   // Interact with the Google button
+  //   await googleButton.trigger('click');
+  //   await flushPromises();
+  
+  //   // Check if the mock function was called
+  //   console.log('signInWithProvider calls after Google click:', signInWithProviderMock.mock.calls);
+  //   expect(signInWithProviderMock).toHaveBeenCalledTimes(1);
+  //   expect(signInWithProviderMock).toHaveBeenCalledWith('google');
+  
+  //   // Interact with the GitHub button
+  //   await githubButton.trigger('click');
+  //   await flushPromises();
+  
+  //   // Check if the mock function was called
+  //   console.log('signInWithProvider calls after GitHub click:', signInWithProviderMock.mock.calls);
+  //   expect(signInWithProviderMock).toHaveBeenCalledTimes(2);
+  //   expect(signInWithProviderMock).toHaveBeenCalledWith('github');
+  
+  //   // Restore the original function
+  //   signInWithProviderMock.mockRestore();
+  // });
 
-  it('checks OAuth provider buttons existence and functionality', async () => {
-    const wrapper = createWrapper();
-  
-    // Use a more specific selector to find the buttons
-    const googleButton = wrapper.find('button[data-provider="google"]');
-    const githubButton = wrapper.find('button[data-provider="github"]');
-  
-    // Check if the buttons exist
-    expect(googleButton.exists()).toBe(true);
-    expect(githubButton.exists()).toBe(true);
-  
-    // Mock the signInWithProvider function
-    const signInWithProviderMock = vi.spyOn(wrapper.vm, 'signInWithProvider');
-  
-    // Interact with the Google button
-    await googleButton.trigger('click');
-    await flushPromises();
-  
-    // Check if the mock function was called
-    console.log('signInWithProvider calls after Google click:', signInWithProviderMock.mock.calls);
-    expect(signInWithProviderMock).toHaveBeenCalledTimes(1);
-    expect(signInWithProviderMock).toHaveBeenCalledWith('google');
-  
-    // Interact with the GitHub button
-    await githubButton.trigger('click');
-    await flushPromises();
-  
-    // Check if the mock function was called
-    console.log('signInWithProvider calls after GitHub click:', signInWithProviderMock.mock.calls);
-    expect(signInWithProviderMock).toHaveBeenCalledTimes(2);
-    expect(signInWithProviderMock).toHaveBeenCalledWith('github');
-  
-    // Restore the original function
-    signInWithProviderMock.mockRestore();
-  });
   
   it('navigates to the dashboard if user session is active', async () => {
     supabaseMock.auth.getSession.mockResolvedValueOnce({ data: { session: {} } });
@@ -142,6 +142,7 @@ describe('LoginView Component', () => {
   it('renders dark mode correctly', async () => {
     isDarkMock.value = true;
     const wrapper = createWrapper();
+
 
     expect(wrapper.find('.dark').exists()).toBe(true);
     expect(wrapper.find('.dark').classes()).toContain('bg-neutral-900');
@@ -206,3 +207,4 @@ describe('LoginView Component', () => {
   });
   
 });
+

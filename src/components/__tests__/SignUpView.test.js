@@ -21,3 +21,4 @@ describe('SignUpView.vue', () => {
     expect(signUpComponent.exists()).toBe(true);
   });
 });
+
