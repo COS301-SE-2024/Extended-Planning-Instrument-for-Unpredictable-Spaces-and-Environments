@@ -1,56 +1,59 @@
 <script setup>
-import { ref } from 'vue';
-import { useDark } from '@vueuse/core';
-import { supabase } from '../supabase';
-import { useRouter } from 'vue-router';
-const isDark = useDark();
-const router = useRouter();
-const toggleDark = () => {
-  isDark.value = !isDark.value;
-  console.log('Dark mode:', isDark.value ? 'on' : 'off');
-};
+import { ref } from 'vue'
+import { useDark } from '@vueuse/core'
+import { supabase } from '../supabase'
+import { useRouter } from 'vue-router'
+import DialogComponent from '@/components/DialogComponent.vue'
+const dialogVisible = ref(false)
 
-const name = ref('');
-const number = ref('');
-const email = ref('');
-const password = ref('');
+const isDark = useDark()
+const router = useRouter()
+const toggleDark = () => {
+  isDark.value = !isDark.value
+  console.log('Dark mode:', isDark.value ? 'on' : 'off')
+}
+
+const name = ref('')
+const number = ref('')
+const email = ref('')
+const password = ref('')
 
 const signUp = async () => {
   try {
-    console.log(email.value);
-    console.log(password.value);
+    console.log(email.value)
+    console.log(password.value)
     const { user, error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value
-    });
+    })
     if (error) {
-      alert(error.message);
+      alert(error.message)
     } else {
-      console.log('User signed up:', user);
-      alert('Sign up successful!');
+      console.log('User signed up:', user)
+      alert('Sign up successful!')
       const { data, error } = await supabase.functions.invoke('core', {
         body: {
-          type: 'InsertUser',
+          type: 'insertUser',
           fullname: name.value,
           email: email.value,
           role: 'unassigned',
           phone: number.value
         }
-      });
-      console.log(name.value, email.value, number.value);
-      console.log('This is data.data ' + data.data);
+      })
+      console.log(name.value, email.value, number.value)
+      // console.log('This is data.data ' + data.data);
       if (error) {
-        console.log('API Error:', error);
+        console.log('API Error:', error)
       } else {
-        console.log("you are reaching here")
-        router.push({ name: 'home' });
+        // console.log("you are reaching here")
+        router.push({ name: 'home' })
       }
     }
   } catch (error) {
-    console.error('Error signing up:', error);
-    alert('Error signing up.');
+    console.error('Error signing up:', error)
+    alert('Error signing up.')
   }
-};
+}
 </script>
 
 <template>
@@ -103,7 +106,9 @@ const signUp = async () => {
           />
         </div>
         <div class="form-group">
-          <label for="number" :class="[isDark ? 'text-white' : 'text-neutral-900', 'block font-bold']"
+          <label
+            for="number"
+            :class="[isDark ? 'text-white' : 'text-neutral-900', 'block font-bold']"
             >Phone Number</label
           >
           <input
@@ -200,9 +205,40 @@ const signUp = async () => {
         <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
       </button>
     </div>
+    <p
+      @click="toggleDialog"
+      class="mt-4 flex items-center justify-center text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+    >
+      Help
+    </p>
+    <DialogComponent
+      v-if="showDialog"
+      :images="[
+        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        // Add more images as needed
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
   </div>
 </template>
-
+<script>
+export default {
+  components: {
+    DialogComponent
+  }
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=SF+Compact&display=swap');
 

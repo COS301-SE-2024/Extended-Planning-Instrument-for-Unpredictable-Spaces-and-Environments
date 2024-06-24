@@ -2,14 +2,45 @@
 import { useDark /*, useToggle */ } from '@vueuse/core'
 // import Toolbar from 'primevue/toolbar'
 import InputText from 'primevue/inputtext'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
-
+import { supabase } from '../supabase'
+// import { useRouter } from 'vue-router'
 const isDark = useDark()
+// const router = useRouter()
+
 // const toggleDark = () => {
 //   isDark.value = !isDark.value
 //   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 // }
+let userName
+async function getUsername() {
+  const { data } = await supabase.auth.getSession()
+  userName = data.session.user.identities[0].identity_data.name
+  console.log(userName)
+}
+onMounted(() => {
+  getUsername()
+})
+// async function checkAuth() {
+//   try {
+//     // Get the user session
+//     const { data: { session } } = await supabase.auth.getSession();
+//     if (session) {
+//       router.push("/loading")
+//     } else {
+//       // No session found, redirect to the home page
+//       router.push("/");
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//     // Handle any unexpected errors
+//     router.push("/");
+//   }
+// }
+// onMounted(() => {
+//   // checkAuth();
+// })
 const chartData = ref({
   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
   datasets: [
@@ -97,7 +128,7 @@ const chartOptions = ref({
         </div>
       </div>
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Welcome back</span>, John
+        <span class="font-bold">Welcome back</span>
       </h2>
       <div class="flex flex-wrap mb-4">
         <div class="w-full md:w-[55%] mb-4">
@@ -288,14 +319,22 @@ const chartOptions = ref({
   color: white;
 }
 
-.custom-accordion .p-accordion-content {
-  background-color: inherit;
-  color: inherit;
+.dark .custom-accordion .p-accordion-content {
+  background-color: #0a0a0a;
+  color: white;
+}
+.light .custom-accordion .p-accordion-content {
+  background-color: white;
+  color: black;
 }
 
-.custom-timeline {
-  background-color: inherit;
-  color: inherit;
+.dark .custom-timeline {
+  background-color: #0a0a0a;
+  color: white;
+}
+.light .custom-timeline {
+  background-color: white;
+  color: black;
 }
 
 .custom-timeline .p-timeline-event {
@@ -306,17 +345,11 @@ const chartOptions = ref({
   border-left: 2px solid #555;
 }
 
-.custom-timeline .p-timeline-event-opposite {
-  color: inherit;
+.dark .custom-timeline .p-timeline-event-opposite {
+  color: white;
 }
-
-.custom-timeline .p-timeline-event-content {
-  color: inherit;
-}
-
-.custom-timeline .p-timeline-event-marker {
-  background-color: inherit;
-  border: 2px solid #ccc;
+.light .custom-timeline .p-timeline-event-opposite {
+  color: black;
 }
 
 .dark .custom-timeline .p-timeline-event-marker {

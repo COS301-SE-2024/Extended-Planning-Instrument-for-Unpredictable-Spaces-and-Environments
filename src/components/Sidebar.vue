@@ -1,20 +1,23 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import Toolbar from 'primevue/toolbar'
-import InputText from 'primevue/inputtext'
+// import Toolbar from 'primevue/toolbar'
+// import InputText from 'primevue/inputtext'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router' // Import the router
+import { supabase } from '@/supabase'
+import DialogComponent from '@/components/DialogComponent.vue'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 
 const isMobileSidebarCollapsed = ref(false)
+const dialogVisible = ref(false)
 
 // Toggle the sidebar collapse state
-const toggleMobileSidebar = () => {
-  isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
-}
+// const toggleMobileSidebar = () => {
+//   isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
+// }
 
 // Function to check window size and update sidebar state
 const checkWindowSize = () => {
@@ -31,6 +34,24 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
+
+async function logout() {
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    console.log(error)
+  } else {
+    router.push({ name: 'login' })
+    console.log('Log out successful')
+  }
+}
+components: {
+  DialogComponent
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
 
 const items = [
   {
@@ -54,7 +75,7 @@ const items = [
     icon: 'pi pi-fw pi-map',
     command: () => {
       console.log('Navigating to Tracking')
-      router.push({ name: '/' })
+      router.push({ name: 'packer' })
     }
   },
   {
@@ -104,7 +125,15 @@ const items = [
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
       console.log('Logging Out')
-      router.push({ name: 'login' }) // Navigate to the login page after logout
+      logout()
+    }
+  },
+  {
+    label: 'Help',
+    icon: 'pi pi-fw pi-question',
+    command: () => {
+      console.log('Opening Help Menu')
+      toggleDialog()
     }
   }
 ]
@@ -170,13 +199,13 @@ const items = [
         :exact="false"
       >
         <template #item="{ item, props }">
-          <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
+          <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
             <a
               class="h-[45px] flex align-items-center mb-2"
               v-bind="props.action"
               @click="navigate"
             >
-              <span :class="item.icon" />
+              <span :class="item.icon"></span>
               <span
                 class="ml-2 transition-opacity duration-300 ease-in-out"
                 :class="{
@@ -197,7 +226,7 @@ const items = [
             :target="item.target"
             v-bind="props.action"
           >
-            <span :class="item.icon" />
+            <span :class="item.icon"></span>
             <span
               class="ml-2 transition-opacity duration-300 ease-in-out"
               :class="{
@@ -228,6 +257,32 @@ const items = [
         <span class="text-sm">Admin</span>
       </span>
     </button>
+  </div>
+  <div>
+    <DialogComponent
+      v-if="showDialog"
+      :images="[
+        { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
+        { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
+        { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
+
+        {
+          src: '/Members/Photos/manager dashboard (Tracking page).png',
+          alt: 'Alternative Image 4'
+        },
+        {
+          src: '/Members/Photos/manager dashboard (Shipments page).png',
+          alt: 'Alternative Image 5'
+        }
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
   </div>
 </template>
 
@@ -346,5 +401,9 @@ const items = [
   span {
     color: white !important;
   }
+}
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
+  z-index: 9998 !important; /* Ensure it is above other elements */
 }
 </style>
