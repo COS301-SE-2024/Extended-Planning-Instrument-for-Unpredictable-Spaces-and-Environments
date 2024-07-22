@@ -26,7 +26,7 @@
           'card h-[auto] flex flex-col p-4'
         ]"
       >
-        <h1 class="pb-8 text-3xl font-bold">Shipment #345290</h1>
+        <p class="pb-8 text-3xl font-bold">Shipment #345290</p>
         <div class="flex flex-row">
           <Timeline :value="events" class="customized-timeline">
             <template #marker="slotProps">
@@ -58,7 +58,7 @@
                   >
                     <button
                       :class="[
-                        slotProps.item.past ? '  bg-amber-600' : ' bg-gray-500',
+                        slotProps.item.past ? '  bg-amber-600' : ' bg-violet-900',
                         'text-white'
                       ]"
                       :disabled="!slotProps.item.past"
@@ -149,8 +149,8 @@ const events = ref([
     status: 'On Route',
     location: '413 The Meridian Solheim Johannesburg 0014',
     icon: 'pi pi-map-marker',
-    color: '#d97706',
-    line_colour: '#6b7280', //grey
+    color: '#2e1065',
+    line_colour: '#2e1065', //purple
     past: false
   },
   {
@@ -160,11 +160,11 @@ const events = ref([
     date: '15/10/2020',
     time: '10:30',
     icon: 'pi pi-box',
-    color: '#6b7280',
-    line_colour: '#6b7280', //grey
+    color: '#2e1065',
+    line_colour: '#2e1065', //purple
     past: false
   },
-  { status: 'Complete', icon: 'pi pi-flag', color: '#6b7280', past: false, line_colour: '#6b7280' }
+  { status: 'Complete', icon: 'pi pi-flag', color: '#14532d', past: false, line_colour: '#6b7280' }
 ])
 
 const showDialog = ref(false)

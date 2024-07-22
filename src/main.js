@@ -31,6 +31,7 @@ import { store } from './store'
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
 import Carousel from 'primevue/carousel'
+import FileUpload from 'primevue/fileupload'
 
 import 'primeicons/primeicons.css'
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
@@ -47,6 +48,7 @@ app.use(ConfirmationService)
 app.use(store)
 app.use(ToastService)
 app.component('Carousel', Carousel)
+app.component('FileUpload', FileUpload)
 app.component('Toast', Toast)
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)

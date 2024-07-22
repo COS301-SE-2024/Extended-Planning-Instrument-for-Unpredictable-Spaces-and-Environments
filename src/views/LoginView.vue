@@ -72,14 +72,11 @@ const signInWithProvider = async (provider) => {
         :class="[isDark ? 'text-neutral-300' : 'text-neutral-700', 'mb-6 pi pi-truck']"
         style="font-size: 2rem"
       ></i>
-      <h1
-        :class="[
-          isDark ? 'dark text-white' : 'text-neutral-800',
-          'mb-2 text-left text-3xl font-normal'
-        ]"
+      <p
+        :class="[isDark ? 'text-white' : ' text-neutral-800 ', 'text-3xl flex items-center  mb-2 ']"
       >
         Sign in to Janeeb Solutions
-      </h1>
+      </p>
       <h2 class="mb-10 text-neutral-700 dark:text-neutral-400 text-left">
         Streamlined Cargo Solutions
       </h2>
@@ -292,10 +289,11 @@ body {
   border: 1px solid #171717;
 }
 
-.dark h1 {
+.specific-container .dark h1 {
   color: white !important;
   background-color: #262626 !important;
 }
+
 .dark .p-password input:focus {
   border-color: rgb(161 98 7);
 }

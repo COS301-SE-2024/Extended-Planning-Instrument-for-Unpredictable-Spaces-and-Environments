@@ -73,14 +73,11 @@ const signUp = async () => {
         :class="[isDark ? 'text-neutral-300' : 'text-neutral-800', 'mb-6 pi pi-truck']"
         style="font-size: 2rem"
       ></i>
-      <h1
-        :class="[
-          isDark ? 'dark text-white' : 'text-neutral-800',
-          'mb-2 text-left text-3xl font-normal'
-        ]"
+      <p
+        :class="[isDark ? 'text-white' : ' text-neutral-800 ', 'text-3xl flex items-center  mb-2 ']"
       >
-        Create a new account
-      </h1>
+        Create your new account
+      </p>
       <h2 class="mb-10 text-gray-500 dark:text-gray-400 text-left">
         Join us and revolutionize logistics efficiency.
       </h2>

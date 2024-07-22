@@ -53,6 +53,11 @@ const toggleDialog = () => {
   showDialog.value = !showDialog.value
 }
 
+const showShipment = ref(false)
+const toggleShipment = () => {
+  showShipment.value = !showShipment.value
+}
+
 const items = [
   {
     label: 'Dashboard',
@@ -78,16 +83,7 @@ const items = [
       router.push({ name: 'packer' })
     }
   },
-  {
-    label: 'Messages',
-    icon: 'pi pi-fw pi-envelope',
-    severity: 'warning',
-    badge: '5',
-    command: () => {
-      console.log('Navigating to Messages')
-      router.push({ name: '/' })
-    }
-  },
+
   {
     label: 'Inventory',
     icon: 'pi pi-fw pi-box',
@@ -96,14 +92,7 @@ const items = [
       router.push({ name: '/' })
     }
   },
-  {
-    label: 'Profile',
-    icon: 'pi pi-fw pi-user',
-    command: () => {
-      console.log('Navigating to Profile')
-      router.push({ name: '/' })
-    }
-  },
+
   {
     label: 'Manage Users',
     icon: 'pi pi-fw pi-lock',
@@ -175,6 +164,7 @@ const items = [
       </div>
 
       <button
+        @click="toggleShipment"
         class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-yellow-700 text-white mb-4 flex items-center"
         :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
       >
@@ -259,6 +249,31 @@ const items = [
     </button>
   </div>
   <div>
+    <Dialog
+      v-model:visible="showShipment"
+      :class="[isDark ? 'dark' : '', 'w-[90%] rounded-lg']"
+      header="Add shipments"
+      :modal="true"
+      @close-dialog="toggleShipment"
+    >
+      <div class="flex flex-col items-center justify-center m-4">
+        <p class="mb-4 text-3xl">New Shipment</p>
+
+        <FileUpload
+          mode="basic"
+          name="demo[]"
+          url="/api/upload"
+          accept=".csv"
+          :maxFileSize="1000000"
+          @upload="onUpload"
+          :auto="true"
+          chooseLabel="Browse"
+        />
+        <Button class="mt-4 py-2 px-6 disabled bg-green-800">Process Shipment</Button>
+        <Button @click="toggleShipment" class="mt-4 py-2 px-6 disabled bg-red-800">Cancel</Button>
+      </div>
+    </Dialog>
+
     <DialogComponent
       v-if="showDialog"
       :images="[
@@ -344,11 +359,11 @@ const items = [
 
 /* Additional media query for sidebar collapse */
 @media (max-width: 1024px) {
-  .p-menuitem {
+  .specific-container .p-menuitem {
     width: 48px !important;
     border-radius: 1rem;
   }
-  .p-menu {
+  .specific-container .p-menu {
     width: 48px !important;
     background-color: transparent !important;
   }
@@ -405,5 +420,9 @@ const items = [
 .p-dialog-mask {
   background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
   z-index: 9998 !important; /* Ensure it is above other elements */
+}
+.dark h1 {
+  color: white !important;
+  background-color: #0c0a09 !important;
 }
 </style>

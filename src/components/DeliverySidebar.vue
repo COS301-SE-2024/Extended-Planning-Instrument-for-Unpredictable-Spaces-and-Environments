@@ -196,6 +196,12 @@ const items = [
   }
 }
 
+@media (max-width: 1024px) {
+  .p-menuitem {
+    width: 100%;
+    border-radius: 1rem;
+  }
+}
 .dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
 }
