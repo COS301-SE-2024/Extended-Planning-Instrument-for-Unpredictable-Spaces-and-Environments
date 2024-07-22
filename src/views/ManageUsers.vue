@@ -129,7 +129,7 @@ const saveChanges = async () => {
             isDark
               ? 'border-neutral-500 bg-neutral-900 text-white'
               : 'border-gray-500 bg-white text-black',
-            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-yellow-600'
+            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-orange-500'
           ]"
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
@@ -163,7 +163,7 @@ const saveChanges = async () => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-yellow-700 text-gray-100 rounded-xl p-2"
+                class="bg-orange-500 text-gray-100 rounded-xl p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -174,7 +174,7 @@ const saveChanges = async () => {
       <div class="mt-4 flex items-center justify-center">
         <p
           @click="toggleDialog"
-          class="text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+          class="text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
         >
           Help
         </p>
@@ -192,7 +192,7 @@ const saveChanges = async () => {
     <div
       :class="[
         isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
-        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
       ]"
       class="flex flex-col"
     >
@@ -203,7 +203,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.FullName"
           id="FullName"
@@ -216,7 +216,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.Email"
           id="Email"
@@ -230,7 +230,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600',
+            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
             { 'z-99999999999999999': true } // Adjust z-index here
           ]"
           v-model="selectedRole"
@@ -247,7 +247,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.Phone"
           id="Phone"
@@ -266,7 +266,7 @@ const saveChanges = async () => {
         icon="pi pi-arrow-left"
         iconPos="left"
         label="Back"
-        class="font-semibold w-auto p-button-text text-yellow-700 p-2"
+        class="font-semibold w-auto p-button-text text-orange-500 p-2"
         @click="dialogVisible = false"
       />
     </div>

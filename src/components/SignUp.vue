@@ -95,7 +95,7 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600'
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
             ]"
             type="text"
             id="name"
@@ -116,7 +116,7 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600'
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
             ]"
             type="text"
             id="number"
@@ -137,7 +137,7 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600'
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
             ]"
             type="email"
             id="email"
@@ -179,14 +179,14 @@ const signUp = async () => {
 
           <button
             type="submit"
-            class="mb-6 sign-in-button w-full py-2 bg-yellow-600 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+            class="mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
           >
             Create new account
           </button>
         </div>
         <p class="text-gray-500 dark:text-gray-400 text-center">
           Already have an account?
-          <router-link to="/" class="text-yellow-600">Login</router-link>
+          <router-link to="/" class="text-orange-500">Login</router-link>
         </p>
       </form>
     </div>
@@ -207,7 +207,7 @@ const signUp = async () => {
     </div>
     <p
       @click="toggleDialog"
-      class="mt-4 flex items-center justify-center text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
     >
       Help
     </p>

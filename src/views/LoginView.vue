@@ -37,23 +37,22 @@ const signIn = async () => {
 
 // Sign in with OAuth provider
 const signInWithProvider = async (provider) => {
-  console.log(`signInWithProvider called with provider: ${provider}`);
+  console.log(`signInWithProvider called with provider: ${provider}`)
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo: `${window.location.origin}/callback`
     }
-  });
+  })
   if (error) {
-    alert(error.message);
+    alert(error.message)
   } else {
     console.log(`Redirecting to ${provider} login page`)
     router.push({ name: 'callback' })
 
     // Do not navigate to the home page here, handle this in the callback
   }
-};
-
+}
 </script>
 
 <template>
@@ -101,7 +100,7 @@ const signInWithProvider = async (provider) => {
               isDark
                 ? 'text-white  bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600'
+              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
             ]"
           />
         </div>
@@ -124,7 +123,7 @@ const signInWithProvider = async (provider) => {
         />
         <button
           type="submit"
-          class="mb-6 sign-in-button w-full py-2 bg-yellow-700 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          class="mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
         >
           Sign In
         </button>
@@ -135,7 +134,8 @@ const signInWithProvider = async (provider) => {
         </div>
 
         <div class="flex justify-center mb-8">
-          <button data-provider="google"
+          <button
+            data-provider="google"
             @click.prevent="signInWithProvider('google')"
             :class="[
               isDark
@@ -148,7 +148,8 @@ const signInWithProvider = async (provider) => {
               <i class="pi pi-google"></i>
             </div>
           </button>
-          <button data-provider="github"
+          <button
+            data-provider="github"
             @click.prevent="signInWithProvider('github')"
             :class="[
               isDark
@@ -170,7 +171,7 @@ const signInWithProvider = async (provider) => {
           ]"
         >
           Don't have an account ?
-          <router-link to="/SignUp" class="ml-2 text-yellow-600"> Sign up</router-link>
+          <router-link to="/SignUp" class="ml-2 text-orange-500"> Sign up</router-link>
         </p>
       </form>
     </div>
@@ -190,7 +191,7 @@ const signInWithProvider = async (provider) => {
 
       <p
         @click="toggleDialog"
-        class="flex items-center justify-center mr-4 text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        class="flex items-center justify-center mr-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help
       </p>
@@ -291,6 +292,10 @@ body {
   border: 1px solid #171717;
 }
 
+.dark h1 {
+  color: white !important;
+  background-color: #262626 !important;
+}
 .dark .p-password input:focus {
   border-color: rgb(161 98 7);
 }

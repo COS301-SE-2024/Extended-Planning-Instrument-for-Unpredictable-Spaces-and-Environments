@@ -114,7 +114,7 @@ const chartOptions = ref({
             isDark
               ? 'border-neutral-500 bg-neutral-900 text-white'
               : 'border-gray-500 bg-white text-black',
-            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-yellow-600'
+            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-orange-500'
           ]"
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
