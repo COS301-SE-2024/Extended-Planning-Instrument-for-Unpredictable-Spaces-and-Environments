@@ -8,6 +8,9 @@ import { insertUser } from './Users/insertUser.ts'
 import { updateUser } from './Users/updateUser.ts'
 import { checkRole } from './Users/checkRole.ts'
 
+//Package
+import { insertPackage } from './Packages/insertPackage.ts'
+
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo'
@@ -49,6 +52,19 @@ Deno.serve(async (req) => {
             requestBody.email,
             requestBody.role,
             requestBody.phone
+          )
+        )
+      }
+      if (requestBody.type == 'insertPackage') {
+        return responseBuilder(
+          await insertPackage(
+            supabaseUser,
+            requestBody.Shipment_id,
+            requestBody.Width,
+            requestBody.Length,
+            requestBody.Height,
+            requestBody.Weight,
+            requestBody.Volume
           )
         )
       }
