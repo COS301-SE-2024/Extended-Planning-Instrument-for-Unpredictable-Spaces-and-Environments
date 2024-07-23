@@ -10,6 +10,7 @@ import { checkRole } from './Users/checkRole.ts'
 
 //Package
 import { insertPackage } from './Packages/insertPackage.ts'
+import { uploadFile } from './Packages/uploadCSV.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -36,6 +37,16 @@ function responseBuilder(data: any) {
     headers: { 'Content-Type': 'application/json', ...corsHeaders }
   })
 }
+
+const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+fileInput.addEventListener('change', async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (file) {
+    const result = await uploadFile(supabaseUser, file);
+    console.log(result);
+  }
+});
 
 Deno.serve(async (req) => {
   try {
