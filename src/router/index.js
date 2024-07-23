@@ -118,7 +118,10 @@ router.beforeEach(async (to, from, next) => {
 
   const role = await getUserRole(email)
   console.log('User role:', role)
-
+  if (role === 'Manager') {
+    next()
+    return
+  }
   if (to.meta.requiresAuth) {
     if (!session) {
       console.log('Session not found, redirecting to login')

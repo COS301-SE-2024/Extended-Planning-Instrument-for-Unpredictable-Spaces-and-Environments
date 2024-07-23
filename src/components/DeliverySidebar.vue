@@ -81,7 +81,7 @@ const items = [
 
 <template>
   <div :class="[isDark ? 'dark' : 'light', 'h-full']">
-    <Menubar :model="items" class="w-full">
+    <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
           width="35"
@@ -197,11 +197,12 @@ const items = [
 }
 
 @media (max-width: 1024px) {
-  .p-menuitem {
+  .specific-menubar .p-menuitem {
     width: 100%;
     border-radius: 1rem;
   }
 }
+
 .dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
 }

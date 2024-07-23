@@ -68,18 +68,29 @@ const signInWithProvider = async (provider) => {
         'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
       ]"
     >
-      <i
-        :class="[isDark ? 'text-neutral-300' : 'text-neutral-700', 'mb-6 pi pi-truck']"
-        style="font-size: 2rem"
-      ></i>
+      <img
+        v-if="isDark"
+        src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+        alt="Dark Mode Image"
+        class="mb-10"
+        style="width: 10rem; height: auto"
+      />
+      <img
+        v-else
+        src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+        alt="Light Mode Image"
+        class="mb-10"
+        style="width: 10rem; height: auto"
+      />
+
       <p
-        :class="[isDark ? 'text-white' : ' text-neutral-800 ', 'text-3xl flex items-center  mb-2 ']"
+        :class="[
+          isDark ? 'text-white' : ' text-neutral-800 ',
+          'text-3xl flex items-center  font-bold mb-6 '
+        ]"
       >
-        Sign in to Janeeb Solutions
+        Sign in
       </p>
-      <h2 class="mb-10 text-neutral-700 dark:text-neutral-400 text-left">
-        Streamlined Cargo Solutions
-      </h2>
 
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">

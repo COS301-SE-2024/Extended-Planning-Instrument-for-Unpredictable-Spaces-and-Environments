@@ -28,6 +28,28 @@ const updateUserInTable = (newUserData) => {
     customers.value.push(newUserData)
   }
 }
+const currentUser = ref(null)
+async function fetchCurrentUser() {
+  const session = await supabase.auth.getSession()
+  if (session.data.session) {
+    const { user } = session.data.session
+    // Assuming you have a way to fetch user details, like their name
+    const { data, error } = await supabase
+      .from('Users')
+      .select('FullName')
+      .eq('Email', user.email)
+      .single()
+
+    if (error) {
+      console.log('Error fetching user:', error)
+    } else {
+      currentUser.value = data.FullName
+      console.log('Current user fetched:', currentUser.value)
+    }
+  } else {
+    console.log('No session found')
+  }
+}
 
 async function setupSubscription() {
   await supabase // Await for the subscription to be established
@@ -59,6 +81,7 @@ const fetchUsers = async () => {
 }
 onMounted(() => {
   fetchUsers()
+  fetchCurrentUser() // Fetch current user info on mount
   setupSubscription()
 })
 
@@ -110,6 +133,13 @@ const saveChanges = async () => {
     loading.value = false // Stop loading animation
   }
 }
+const nameWithYou = (user) => {
+  console.log('nameWithYou function called with:', user)
+  if (currentUser.value && user.FullName === currentUser.value) {
+    return `${user.FullName} (You)`
+  }
+  return user.FullName
+}
 </script>
 
 <template>
@@ -155,7 +185,11 @@ const saveChanges = async () => {
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="FullName" header="Full Name" style="width: 25%"></Column>
+          <Column field="FullName" header="Full Name" style="width: 25%">
+            <template #body="slotProps">
+              {{ nameWithYou(slotProps.data) }}
+            </template>
+          </Column>
           <Column field="Email" header="Email" style="width: 25%"></Column>
           <Column field="Role" header="Role" style="width: 25%"></Column>
           <Column field="Phone" header="Phone Number" style="width: 25%"></Column>

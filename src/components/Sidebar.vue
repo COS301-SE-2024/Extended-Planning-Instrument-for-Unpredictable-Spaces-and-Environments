@@ -1,9 +1,7 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-// import Toolbar from 'primevue/toolbar'
-// import InputText from 'primevue/inputtext'
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router' // Import the router
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
 
@@ -12,12 +10,35 @@ const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 
 const isMobileSidebarCollapsed = ref(false)
-const dialogVisible = ref(false)
 
-// Toggle the sidebar collapse state
-// const toggleMobileSidebar = () => {
-//   isMobileSidebarCollapsed.value = !isMobileSidebarCollapsed.value
-// }
+const userFullName = ref('')
+const userRole = ref('')
+const avatarLabel = computed(() => {
+  return userFullName.value ? userFullName.value.charAt(0).toUpperCase() : 'P'
+})
+const fetchUserDetails = async () => {
+  const session = await supabase.auth.getSession()
+  if (session.data.session) {
+    const { user } = session.data.session
+    const { data, error } = await supabase
+      .from('Users')
+      .select('FullName, Role')
+      .eq('Email', user.email)
+      .single()
+
+    if (error) {
+      console.log('Error fetching user:', error)
+    } else {
+      userFullName.value = data.FullName
+      userRole.value = data.Role
+      console.log('Got Details !', data.Role)
+      console.log('Got Details !', data.FullName)
+      console.log('Initial is : ', userFullName.value.charAt(0).toUpperCase())
+    }
+  } else {
+    console.log('No session found')
+  }
+}
 
 // Function to check window size and update sidebar state
 const checkWindowSize = () => {
@@ -27,6 +48,9 @@ const checkWindowSize = () => {
 
 // Add event listener on mounted and remove on unmounted
 onMounted(() => {
+  fetchUserDetails()
+  console.log(userFullName.value)
+
   checkWindowSize()
   window.addEventListener('resize', checkWindowSize)
 })
@@ -62,44 +86,32 @@ const items = [
   {
     label: 'Dashboard',
     icon: 'pi pi-fw pi-clipboard',
-    command: () => {
-      console.log('Navigating to Dashboard')
-      router.push({ name: 'dashboard' }) // Navigate to the login page after logout
-    }
+    route: 'dashboard',
+    active: false
   },
   {
     label: 'Shipments',
     icon: 'pi pi-fw pi-truck',
-    command: () => {
-      console.log('Navigating to Shipments')
-      router.push({ name: '/' })
-    }
+    route: '/',
+    active: false
   },
   {
     label: 'Tracking',
     icon: 'pi pi-fw pi-map',
-    command: () => {
-      console.log('Navigating to Tracking')
-      router.push({ name: 'packer' })
-    }
+    route: 'packer',
+    active: false
   },
-
   {
     label: 'Inventory',
     icon: 'pi pi-fw pi-box',
-    command: () => {
-      console.log('Navigating to Inventory')
-      router.push({ name: '/' })
-    }
+    route: '/',
+    active: false
   },
-
   {
     label: 'Manage Users',
     icon: 'pi pi-fw pi-lock',
-    command: () => {
-      console.log('Navigating to Manage Users')
-      router.push({ name: 'manage-users' })
-    }
+    route: 'manage-users',
+    active: false
   },
   {
     label: 'Dark Mode Toggle',
@@ -146,21 +158,30 @@ const items = [
           { 'justify-center': isMobileSidebarCollapsed }
         ]"
       >
-        <i
-          class="pi pi-truck"
-          :class="{
-            'ml-3 opacity-0': isMobileSidebarCollapsed,
-            'ml-4  mr-4': !isMobileSidebarCollapsed,
-            'text-black': !isDark,
-            'text-white': isDark
-          }"
-        ></i>
-        <h1
-          :style="{ color: isDark ? 'white' : 'black' }"
-          :class="[' mr-4 font-semibold mb-4 mt-2 transition-opacity duration-300 ease-in-out']"
-        >
-          {{ isMobileSidebarCollapsed ? 'JS' : 'JANEEB SOLUTIONS' }}
-        </h1>
+        <div class="logo-container">
+          <img
+            v-if="isMobileSidebarCollapsed"
+            :src="
+              isDark
+                ? '/Members/Photos/Logos/Logo-Icon-Dark.svg'
+                : '/Members/Photos/Logos/Logo-Icon-Light.svg'
+            "
+            alt="JS Logo"
+            class="mr-4 mb-4 mt-2"
+            style="width: 5rem; height: auto"
+          />
+          <img
+            v-else
+            :src="
+              isDark
+                ? '/Members/Photos/Logos/Wording-Thin-Dark.svg'
+                : '/Members/Photos/Logos/Wording-Thin-Light.svg'
+            "
+            alt="Janeeb Solutions Logo"
+            class="mr-4 mb-4 mt-2 ml-2"
+            style="width: 10rem; height: auto"
+          />
+        </div>
       </div>
 
       <button
@@ -182,10 +203,10 @@ const items = [
 
       <!-- Menu -->
       <Menu
-        :class="[isDark ? 'dark' : 'light']"
+        :class="[isDark ? 'dark' : 'light', 'specific-container']"
         :model="items"
         :router="router"
-        class="w-full md:w-15rem p-menu-custom"
+        class="w-full md:w-15rem p-menu-custom specific-container"
         :exact="false"
       >
         <template #item="{ item, props }">
@@ -231,20 +252,23 @@ const items = [
       </Menu>
     </div>
 
-    <!-- John Doe Section -->
     <button
       class="relative overflow-hidden w-full p-link flex align-items-center text-color hover:surface-200 border-noround"
     >
       <div class="flex-shrink-0">
-        <!-- Wrap Avatar in a div to maintain aspect ratio -->
-        <Avatar label="P" class="mr-2 border border-neutral-900" size="large" shape="circle" />
+        <Avatar
+          :label="avatarLabel"
+          class="mr-2 border border-neutral-900"
+          size="large"
+          shape="circle"
+        />
       </div>
       <span
         class="inline-flex flex-col transition-opacity duration-300 ease-in-out"
         :class="{ 'opacity-0': isMobileSidebarCollapsed }"
       >
-        <span class="font-bold">John Doe</span>
-        <span class="text-sm">Admin</span>
+        <span class="font-bold">{{ userFullName }}</span>
+        <span class="text-sm">{{ userRole }}</span>
       </span>
     </button>
   </div>
@@ -329,7 +353,7 @@ const items = [
 }
 
 .dark .p-menuitem:hover > .p-menuitem-content {
-  background-color: #a16207 !important;
+  background-color: #262626 !important;
   border-radius: 1rem;
 }
 
@@ -347,12 +371,12 @@ const items = [
 }
 
 @media (max-width: 1024px) {
-  .p-menuitem {
-    width: auto;
+  .specific-container .p-menuitem {
+    width: 48px !important;
     border-radius: 1rem;
   }
-  .p-menu {
-    width: auto;
+  .specific-container .p-menu {
+    width: 48px !important;
     background-color: transparent !important;
   }
 }
@@ -367,8 +391,23 @@ const items = [
     width: 48px !important;
     background-color: transparent !important;
   }
+
+  .dark .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content {
+    background-color: #262626 !important;
+    border-radius: 1rem;
+  }
+}
+.specific-container .p-menuitem {
+  border-radius: 1rem;
+}
+.specific-container .p-menu {
+  background-color: transparent !important;
 }
 
+.dark .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content {
+  background-color: #262626 !important;
+  border-radius: 1rem;
+}
 .light .p-menu {
   color: black;
   background-color: #0a0a0a;
@@ -409,7 +448,7 @@ const items = [
 }
 
 .light .p-menuitem:hover > .p-menuitem-content {
-  background-color: #a16207 !important;
+  background-color: #262626 !important;
   border-radius: 1rem;
 
   /* Explicitly set color for spans inside */
@@ -424,5 +463,14 @@ const items = [
 .dark h1 {
   color: white !important;
   background-color: #0c0a09 !important;
+}
+
+.light .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content {
+  background-color: #f3f4f6 !important;
+  border-radius: 1rem;
+}
+
+.light .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content span {
+  color: black !important;
 }
 </style>
