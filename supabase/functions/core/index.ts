@@ -15,6 +15,7 @@ import { getAllPackages } from './Packages/getAllPackages.ts'
 
 //Shipment
 import { getAllShipments } from './Shipments/getAllShipments.ts'
+import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
 
 //Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
@@ -83,6 +84,14 @@ Deno.serve(async (req) => {
             requestBody.Height,
             requestBody.Weight,
             requestBody.Volume
+          )
+        )
+      }
+      if (requestBody.type == 'getShipmentByDeliveryID') {
+        return responseBuilder(
+          await getShipmentByDeliveryID(
+            supabaseUser,
+            requestBody.deliveryID
           )
         )
       }
