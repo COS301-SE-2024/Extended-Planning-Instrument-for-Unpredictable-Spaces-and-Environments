@@ -31,9 +31,6 @@ const fetchUserDetails = async () => {
     } else {
       userFullName.value = data.FullName
       userRole.value = data.Role
-      console.log('Got Details !', data.Role)
-      console.log('Got Details !', data.FullName)
-      console.log('Initial is : ', userFullName.value.charAt(0).toUpperCase())
     }
   } else {
     console.log('No session found')
@@ -43,14 +40,11 @@ const fetchUserDetails = async () => {
 // Function to check window size and update sidebar state
 const checkWindowSize = () => {
   isMobileSidebarCollapsed.value = window.innerWidth < 1024
-  console.log('Small window size: ' + window.innerWidth)
 }
 
 // Add event listener on mounted and remove on unmounted
 onMounted(() => {
   fetchUserDetails()
-  console.log(userFullName.value)
-
   checkWindowSize()
   window.addEventListener('resize', checkWindowSize)
 })
@@ -92,19 +86,19 @@ const items = [
   {
     label: 'Shipments',
     icon: 'pi pi-fw pi-truck',
-    route: '/',
+    route: '/shipments',
     active: false
   },
   {
     label: 'Tracking',
     icon: 'pi pi-fw pi-map',
-    route: 'packer',
+    route: 'tracking',
     active: false
   },
   {
     label: 'Inventory',
     icon: 'pi pi-fw pi-box',
-    route: '/',
+    route: '/inventory',
     active: false
   },
   {
