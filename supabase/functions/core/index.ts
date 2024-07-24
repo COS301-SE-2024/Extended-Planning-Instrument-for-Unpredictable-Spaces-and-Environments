@@ -11,6 +11,13 @@ import { checkRole } from './Users/checkRole.ts'
 //Package
 import { insertPackage } from './Packages/insertPackage.ts'
 import { uploadFile } from './Packages/uploadCSV.ts'
+import { getAllPackages } from './Packages/getAllPackages.ts'
+
+//Shipment
+import { getAllShipments } from './Shipments/getAllShipments.ts'
+
+//Deliveries
+import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -38,15 +45,15 @@ function responseBuilder(data: any) {
   })
 }
 
-const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-fileInput.addEventListener('change', async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (file) {
-    const result = await uploadFile(supabaseUser, file);
-    console.log(result);
-  }
-});
+// const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+// fileInput.addEventListener('change', async (event: Event) => {
+//   const target = event.target as HTMLInputElement;
+//   const file = target.files?.[0];
+//   if (file) {
+//     const result = await uploadFile(supabaseUser, file);
+//     console.log(result);
+//   }
+// });
 
 Deno.serve(async (req) => {
   try {
@@ -81,6 +88,15 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getAllUsers') {
         return responseBuilder(await getAllUsers(supabaseUser))
+      }
+      if (requestBody.type == 'getAllPackages') {
+        return responseBuilder(await getAllPackages(supabaseUser))
+      }
+      if (requestBody.type == 'getAllShipments') {
+        return responseBuilder(await getAllShipments(supabaseUser))
+      }
+      if (requestBody.type == 'getAllDeliveries') {
+        return responseBuilder(await getAllDeliveries(supabaseUser))
       }
       if (requestBody.type == 'checkRole') {
         return responseBuilder(await checkRole(supabaseUser, requestBody.email))
