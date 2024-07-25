@@ -1,7 +1,7 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import Timeline from 'primevue/timeline'
@@ -17,8 +17,14 @@ const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
 }
+const showDialog = ref(false)
+const signaturePad = ref(null)
+
+const toggleDialog = () => {
+  console.log('Toggling dialog')
+  dialogVisible.value = !dialogVisible.value
+}
 const dialogVisible = ref(false)
-const getRawData = (refData) => JSON.parse(JSON.stringify(refData))
 const shipmentsByDelivery = ref([])
 const deliveries = ref([])
 const events = ref([
@@ -93,31 +99,42 @@ const getShipmentsByDeliveryID = async () => {
 //   }))
 // })
 const groupedDeliveries = computed(() => {
-  console.log('Computing grouped deliveries')
+  // console.log('Computing grouped deliveries')
 
-  return Object.entries(shipmentsByDelivery.value).flatMap(([deliveryId, shipments]) => {
-    console.log('Processing deliveryId:', deliveryId)
+  const groupedByDeliveryId = {}
+
+  // Only process deliveries that exist in shipmentsByDelivery
+  Object.entries(shipmentsByDelivery.value).forEach(([deliveryId, shipments]) => {
+    // console.log('Processing deliveryId:', deliveryId)
 
     const delivery = deliveries.value.find((d) => d.id.toString() === deliveryId)
-    console.log('Delivery:', delivery)
+    // console.log('Delivery:', delivery)
 
-    return shipments.map((shipment, index) => {
-      console.log('Shipment:', shipment)
-
-      return {
-        status: shipment.Status || 'Unknown',
-        time: shipment.Created_at || delivery?.Start_time || 0,
+    if (delivery) {
+      groupedByDeliveryId[deliveryId] = {
         delivery_id: deliveryId,
-        driver_id: delivery?.Driver_id || 0,
-        shipment_id: shipment.id,
-        icon: 'pi pi-box',
-        color: index === shipments.length - 1 ? '#14532d' : '#d97706',
-        line_colour: index === shipments.length - 1 ? '#6b7280' : '#d97706',
-        past: index < shipments.length - 1
+        driver_id: delivery.Driver_id || 0,
+        shipments: shipments.map((shipment, index) => ({
+          status: shipment.Status || 'Unknown',
+          time: shipment.Created_at || delivery.Start_time || 0,
+          shipment_id: shipment.id,
+          icon: 'pi pi-box',
+          color: index === shipments.length - 1 ? '#14532d' : '#d97706',
+          line_colour: index === shipments.length - 1 ? '#6b7280' : '#d97706',
+          past: index < shipments.length - 1
+        }))
       }
-    })
+    }
   })
+
+  // Only return deliveries that have shipments
+  return Object.values(groupedByDeliveryId).filter((group) => group.shipments.length > 0)
 })
+
+function formattedDateTime(slotProps) {
+  const options = { dateStyle: 'medium', timeStyle: 'short' }
+  return new Date(slotProps.item.time).toLocaleString('en-US', options)
+}
 
 async function setupSubscription() {
   await supabase
@@ -133,6 +150,8 @@ onMounted(() => {
   setupSubscription()
   getAllDeliveries()
 })
+
+// Watch for changes to isDark to update pen color
 
 const loading = ref(false)
 </script>
@@ -167,6 +186,7 @@ const loading = ref(false)
           />
         </div>
       </div>
+
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
         <span class="font-bold">Track deliveries</span>
       </h2>
@@ -179,7 +199,11 @@ const loading = ref(false)
             :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
           >
             <div class="flex flex-row">
-              <Timeline :value="[group]" class="customized-timeline">
+              <Timeline
+                :value="group.shipments"
+                layout="horizontal"
+                class="customized-timeline w-full"
+              >
                 <template #marker="slotProps">
                   <span
                     class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
@@ -189,39 +213,36 @@ const loading = ref(false)
                   </span>
                 </template>
                 <template #content="slotProps">
-                  <Card
-                    :class="[
-                      isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
-                      'rounded-md'
-                    ]"
-                    style="width: 95%"
-                  >
-                    <template #title>
-                      {{ slotProps.item.status }}
-                    </template>
-                    <template #content>
-                      {{ slotProps.item.date }} {{ slotProps.item.time }}
-                      <br />
-                      <p class="text-neutral-500">Delivery ID : {{ slotProps.item.delivery_id }}</p>
-                      <p class="text-neutral-500">Driver ID : {{ slotProps.item.driver_id }}</p>
-                      <div
-                        v-if="slotProps.item.status === 'Delivered'"
-                        class="flex flex-row w-full justify-center items-end content-end mt-10"
-                      >
-                        <button
-                          :class="[
-                            slotProps.item.past ? 'bg-amber-600' : 'bg-violet-900',
-                            'text-white'
-                          ]"
-                          :disabled="!slotProps.item.past"
-                          class="p-2 rounded-md w-full"
-                          @click="showDialog = true"
-                        >
-                          Confirm Delivery
-                        </button>
-                      </div>
-                    </template>
-                  </Card>
+                  <div class="timeline-card-wrapper">
+                    <Card
+                      :class="[
+                        isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
+                        'rounded-xl border border-neutral-500 h-full'
+                      ]"
+                    >
+                      <template #title>
+                        <div class="card-title">{{ slotProps.item.status }}</div>
+                      </template>
+                      <template #content>
+                        <div class="card-content">
+                          <div class="flex flex-col gap-2">
+                            <div>
+                              <p class="text-neutral-500">Time:</p>
+                              <span>{{ formattedDateTime(slotProps) }}</span>
+                            </div>
+                            <div>
+                              <p class="text-neutral-500">Delivery ID:</p>
+                              {{ group.delivery_id }}
+                            </div>
+                            <div>
+                              <p class="text-neutral-500">Driver ID:</p>
+                              {{ group.driver_id }}
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </Card>
+                  </div>
                 </template>
                 <template #connector="slotProps">
                   <span
@@ -235,9 +256,7 @@ const loading = ref(false)
         </Accordion>
       </div>
       <!-- Users Table -->
-      <div>
-        <p class="pb-8 text-3xl font-bold">Delivery 1</p>
-      </div>
+
       <div class="mt-4 flex items-center justify-center">
         <p
           @click="toggleDialog"
@@ -249,95 +268,6 @@ const loading = ref(false)
     </div>
   </div>
 
-  <Dialog
-    :class="[isDark ? 'dark' : '', ' w-[400px]']"
-    header="Edit User Profile"
-    v-model:visible="dialogVisible"
-    :modal="true"
-    :closable="false"
-  >
-    <div
-      :class="[
-        isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
-        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
-      ]"
-      class="flex flex-col"
-    >
-      <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="FullName">Full Name</label>
-        <InputText
-          :class="[
-            isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
-              : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
-          ]"
-          v-model="selectedUser.FullName"
-          id="FullName"
-        />
-      </div>
-      <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="Email">Email</label>
-        <InputText
-          :class="[
-            isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
-              : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
-          ]"
-          v-model="selectedUser.Email"
-          id="Email"
-        />
-      </div>
-      <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="Role">Role</label>
-
-        <Dropdown
-          :class="[
-            isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
-              : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
-            { 'z-99999999999999999': true } // Adjust z-index here
-          ]"
-          v-model="selectedRole"
-          :options="roles"
-          optionLabel="name"
-          placeholder="Select a Role"
-          class="w-full md:w-14rem"
-        />
-      </div>
-      <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="Phone">Phone Number</label>
-        <InputText
-          :class="[
-            isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
-              : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
-          ]"
-          v-model="selectedUser.Phone"
-          id="Phone"
-        />
-      </div>
-    </div>
-    <div class="flex flex-col items-center align-center">
-      <Button
-        label="Save"
-        class="w-full font-semibold p-button-text text-white bg-green-800 rounded-xl p-2 mb-3"
-        :loading="loading"
-        @click="saveChanges"
-      />
-
-      <Button
-        icon="pi pi-arrow-left"
-        iconPos="left"
-        label="Back"
-        class="font-semibold w-auto p-button-text text-orange-500 p-2"
-        @click="dialogVisible = false"
-      />
-    </div>
-  </Dialog>
   <div>
     <DialogComponent
       v-if="showDialog"
@@ -354,13 +284,34 @@ const loading = ref(false)
 </template>
 <script>
 export default {
+  name: 'MySignaturePad',
+  data() {
+    return {
+      option1: {
+        penColor: 'rgb(255, 255, 255)',
+        backgroundColor: 'rgb(23,23,23)'
+      },
+      option2: {
+        penColor: 'rgb(0,0,0)',
+        backgroundColor: 'rgb(255, 255, 255)'
+      },
+      disabled: false,
+      dataUrl: 'https://avatars2.githubusercontent.com/u/17644818?s=460&v=4'
+    }
+  },
+  methods: {
+    undo() {
+      this.$refs.signaturePad.undoSignature()
+    },
+    save() {
+      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
+      console.log(isEmpty)
+      console.log(data)
+    }
+  },
   components: {
     DialogComponent
   }
-}
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
 }
 </script>
 <style>
@@ -573,5 +524,34 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 }
 .dark .p-dropdown-panel.p-component.p-ripple-disabled {
   z-index: 99999999 !important;
+}
+
+.timeline-card-wrapper {
+  flex: 1;
+  margin: 0 8px; /* Equal spacing between cards */
+  min-width: 0;
+}
+
+.timeline-card-wrapper :deep(.p-card) {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Full height */
+}
+
+.timeline-card-wrapper :deep(.p-card-body),
+.timeline-card-wrapper :deep(.p-card-content) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.p-timeline {
+  display: flex;
+  justify-content: space-between;
+}
+
+.p-timeline-event {
+  flex-grow: 1;
 }
 </style>

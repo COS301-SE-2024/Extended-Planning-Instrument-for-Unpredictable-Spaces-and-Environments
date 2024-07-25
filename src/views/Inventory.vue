@@ -17,7 +17,10 @@ const toggleDark = () => {
   isDark.value = !isDark.value
 }
 const dialogVisible = ref(false)
-
+function formattedDateTime(slotProps) {
+  const options = { dateStyle: 'medium', timeStyle: 'short' }
+  return new Date(slotProps.item.time).toLocaleString('en-US', options)
+}
 const packages = ref([])
 const getAllPackages = async () => {
   try {
@@ -32,6 +35,11 @@ const getAllPackages = async () => {
     } else {
       console.log(data.data)
       packages.value = data.data
+      const formattedShipments = data.data.map((packages) => ({
+        ...packages,
+        Packed_time: formattedDateTime({ item: { time: packages.Packed_time } })
+      }))
+      packages.value = formattedShipments
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -98,14 +106,14 @@ const loading = ref(false)
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="id" header="Package ID" style="width: 25%"> </Column>
-          <Column field="Shipment_id" header="Shipment ID" style="width: 25%"></Column>
-          <Column field="Weight" header="Weight" style="width: 25%"></Column>
-          <Column field="Packed_time" header="Packed Time" style="width: 25%"></Column>
-          <Column field="Width" header="Width" style="width: 25%"></Column>
-          <Column field="Length" header="Length" style="width: 25%"></Column>
-          <Column field="Height" header="Height" style="width: 25%"></Column>
-          <Column field="Volume" header="Volume" style="width: 25%"></Column>
+          <Column field="id" header="Package ID"> </Column>
+          <Column field="Shipment_id" header="Shipment ID"></Column>
+          <Column field="Weight" header="Weight"></Column>
+          <Column field="Packed_time" header="Packed Time"></Column>
+          <Column field="Width" header="Width"></Column>
+          <Column field="Length" header="Length"></Column>
+          <Column field="Height" header="Height"></Column>
+          <Column field="Volume" header="Volume"></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">

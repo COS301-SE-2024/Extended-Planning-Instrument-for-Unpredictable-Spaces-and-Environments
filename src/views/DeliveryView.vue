@@ -63,7 +63,7 @@
                       ]"
                       :disabled="!slotProps.item.past"
                       class="p-2 rounded-md w-full"
-                      @click="showDialog = true"
+                      @click="toggleDialog"
                     >
                       Confirm Delivery
                     </button>
@@ -82,27 +82,55 @@
       </div>
     </div>
     <Dialog
-      header="Confirmation"
-      v-model:visible="showDialog"
+      :class="[isDark ? 'dark' : '', ' w-[400px]']"
+      header="Edit User Profile"
+      v-model:visible="dialogVisible"
       :modal="true"
       :closable="false"
-      :draggable="false"
     >
-      <div class="dialog-content">
-        <div class="picture-section">
-          <h3>Picture</h3>
-          <FileUpload name="demo[]" url="./upload" accept="image/*" :auto="true" />
-        </div>
-        <div class="signature-section">
-          <h3>Signature</h3>
-          <!-- Signature component or area can be added here -->
+      <div
+        :class="[
+          isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
+          'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+        ]"
+        class="flex flex-col"
+      >
+        <div id="app" class="text-white">
+          <VueSignaturePad
+            width="100%"
+            height="500px"
+            ref="signaturePad"
+            :options="option1"
+            v-if="isDark"
+          />
+          <VueSignaturePad
+            width="100%"
+            height="500px"
+            ref="signaturePad"
+            :options="option2"
+            v-else
+          />
+
+          <div>
+            <Button
+              class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
+              @click="save"
+              >Save</Button
+            >
+            <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
+              >Undo</Button
+            >
+          </div>
         </div>
       </div>
-      <div class="p-dialog-footer">
-        <button @click="showDialog = false" class="p-button p-component p-button-text">
-          Cancel
-        </button>
-        <button @click="submitImage" class="p-button p-component p-button-primary">Submit</button>
+      <div class="flex flex-col items-center align-center">
+        <Button
+          icon="pi pi-arrow-left"
+          iconPos="left"
+          label="Back"
+          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          @click="dialogVisible = false"
+        />
       </div>
     </Dialog>
   </div>
@@ -166,15 +194,48 @@ const events = ref([
   },
   { status: 'Complete', icon: 'pi pi-flag', color: '#14532d', past: false, line_colour: '#6b7280' }
 ])
-
 const showDialog = ref(false)
+const dialogVisible = ref(false)
+
+const toggleDialog = () => {
+  console.log('Toggling dialog')
+  dialogVisible.value = !dialogVisible.value
+}
 
 const submitImage = () => {
   console.log('Image submitted')
   showDialog.value = false
 }
 </script>
-
+<script>
+export default {
+  name: 'MySignaturePad',
+  data() {
+    return {
+      option1: {
+        penColor: 'rgb(255, 255, 255)',
+        backgroundColor: 'rgb(23,23,23)'
+      },
+      option2: {
+        penColor: 'rgb(0,0,0)',
+        backgroundColor: 'rgb(255, 255, 255)'
+      },
+      disabled: false,
+      dataUrl: 'https://avatars2.githubusercontent.com/u/17644818?s=460&v=4'
+    }
+  },
+  methods: {
+    undo() {
+      this.$refs.signaturePad.undoSignature()
+    },
+    save() {
+      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
+      console.log(isEmpty)
+      console.log(data)
+    }
+  }
+}
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 

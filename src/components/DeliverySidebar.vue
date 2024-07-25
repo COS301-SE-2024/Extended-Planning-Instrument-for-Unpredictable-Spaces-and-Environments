@@ -199,7 +199,7 @@ const items = [
 @media (max-width: 1024px) {
   .specific-menubar .p-menuitem {
     width: 100%;
-    border-radius: 1rem;
+    border-radius: 0rem;
   }
 }
 

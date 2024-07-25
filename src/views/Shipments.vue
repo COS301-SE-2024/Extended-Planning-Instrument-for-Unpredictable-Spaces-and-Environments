@@ -17,7 +17,10 @@ const toggleDark = () => {
   isDark.value = !isDark.value
 }
 const dialogVisible = ref(false)
-
+function formattedDateTime(slotProps) {
+  const options = { dateStyle: 'medium', timeStyle: 'short' }
+  return new Date(slotProps.item.time).toLocaleString('en-US', options)
+}
 const shipments = ref([])
 const getAllShipments = async () => {
   try {
@@ -32,6 +35,12 @@ const getAllShipments = async () => {
     } else {
       console.log(data.data)
       shipments.value = data.data
+      const formattedShipments = data.data.map((shipment) => ({
+        ...shipment,
+        Start_time: formattedDateTime({ item: { time: shipment.Start_time } }),
+        End_time: formattedDateTime({ item: { time: shipment.End_time } })
+      }))
+      shipments.value = formattedShipments
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -98,12 +107,12 @@ const loading = ref(false)
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="id" header="Shipment ID" style="width: 25%"> </Column>
-          <Column field="Start_time" header="Start Time" style="width: 25%"></Column>
-          <Column field="Destination" header="Destination" style="width: 25%"></Column>
-          <Column field="Status" header="Status" style="width: 25%"></Column>
-          <Column field="End_time" header="End Time" style="width: 25%"></Column>
-          <Column field="Delivery_id" header="Delivery ID" style="width: 25%"></Column>
+          <Column field="id" header="Shipment ID"> </Column>
+          <Column field="Start_time" header="Start Time"></Column>
+          <Column field="Destination" header="Destination"></Column>
+          <Column field="Status" header="Status"></Column>
+          <Column field="End_time" header="End Time"></Column>
+          <Column field="Delivery_id" header="Delivery ID"></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">
