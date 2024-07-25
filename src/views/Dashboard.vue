@@ -7,6 +7,11 @@ import Sidebar from '@/components/Sidebar.vue'
 import { supabase } from '../supabase'
 // import { useRouter } from 'vue-router'
 const isDark = useDark()
+const chartData = ref({
+  labels: [],
+  datasets: []
+})
+
 // const router = useRouter()
 
 // const toggleDark = () => {
@@ -41,37 +46,76 @@ onMounted(() => {
 // onMounted(() => {
 //   // checkAuth();
 // })
-const chartData = ref({
-  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-  datasets: [
-    {
-      label: 'Algorithm 1',
-      data: [1, 2, 1, 3, 3, 2, 1],
-      borderColor: '#f5a142',
-      backgroundColor: '#000000'
-    },
-    {
-      label: 'Algorithm 2',
-      data: [2, 3, 1, 2, 2, 1, 1],
-      borderColor: '#4300a1',
-      backgroundColor: '#000000'
-    }
-  ],
-  options: {
-    scales: {
-      x: {
-        grid: {
-          color: 'red' // Change the color of the x-axis grid lines
+// const chartData = ref({
+//   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+//   datasets: [
+//     {
+//       label: 'Algorithm 1',
+//       data: [1, 2, 1, 3, 3, 2, 1],
+//       borderColor: '#f5a142',
+//       backgroundColor: '#000000'
+//     },
+//     {
+//       label: 'Algorithm 2',
+//       data: [2, 3, 1, 2, 2, 1, 1],
+//       borderColor: '#4300a1',
+//       backgroundColor: '#000000'
+//     }
+//   ],
+//   options: {
+//     scales: {
+//       x: {
+//         grid: {
+//           color: 'red' // Change the color of the x-axis grid lines
+//         }
+//       },
+//       y: {
+//         grid: {
+//           color: 'blue' // Change the color of the y-axis grid lines
+//         }
+//       }
+//     }
+//   }
+// })
+const getAllShipments = async () => {
+  try {
+    console.log('TRYING')
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllShipments' }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      const statusCounts = {
+        Processing: 0,
+        Shipped: 0,
+        Delivered: 0
+      }
+
+      data.data.forEach((shipment) => {
+        const status = shipment.Status.trim()
+        if (statusCounts[status] !== undefined) {
+          statusCounts[status]++
         }
-      },
-      y: {
-        grid: {
-          color: 'blue' // Change the color of the y-axis grid lines
-        }
+      })
+
+      chartData.value = {
+        labels: ['Processing', 'Shipped', 'Delivered'],
+        datasets: [
+          {
+            label: 'Shipments Status',
+            data: [statusCounts.Processing, statusCounts.Shipped, statusCounts.Delivered],
+            backgroundColor: ['#171717', '#f97316', '#5b21b6']
+          }
+        ]
       }
     }
+  } catch (error) {
+    console.error('Error fetching data:', error)
   }
-})
+}
 
 const events = [
   { status: 'Ordered', date: '15/10/2020 10:30', icon: 'pi pi-shopping-cart', color: '#9C27B0' },
@@ -80,20 +124,27 @@ const events = [
   { status: 'Delivered', date: '16/10/2020 10:00', icon: 'pi pi-check', color: '#607D8B' }
 ]
 
-const chartOptions = ref({
-  scales: {
-    x: {
-      grid: {
-        color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
-      }
-    },
-    y: {
-      grid: {
-        color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
-      },
-      beginAtZero: true
-    }
-  }
+// const chartOptions = ref({
+//   scales: {
+//     x: {
+//       grid: {
+//         color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
+//       }
+//     },
+//     y: {
+//       grid: {
+//         color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
+//       },
+//       beginAtZero: true
+//     }
+//   }
+// })
+
+const chartOptions = {
+  responsive: true
+}
+onMounted(() => {
+  getAllShipments()
 })
 </script>
 
@@ -131,32 +182,43 @@ const chartOptions = ref({
         <span class="font-bold">Welcome back</span>
       </h2>
       <div class="flex flex-wrap mb-4">
-        <div class="w-full md:w-[55%] mb-4">
+        <div class="w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'p-4 rounded-xl h-full flex flex-col'
+              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
             ]"
           >
             <h2 class="mb-6 font-bold">Shipment Overview</h2>
-            <div class="w-full flex-grow">
-              <Chart type="line" :data="chartData" :options="chartOptions" class="h-full w-full" />
+            <div class="flex-grow">
+              <Chart type="bar" :data="chartData" :options="chartOptions" class="h-full w-full" />
+            </div>
+          </div>
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
+            ]"
+          >
+            <h2 class="mb-6 font-bold">Shipment Overview</h2>
+            <div class="flex-grow">
+              <Chart type="bar" :data="chartData" :options="chartOptions" class="h-full w-full" />
             </div>
           </div>
         </div>
 
-        <div class="w-full ml-2 md:w-[43%] mb-4 flex flex-col">
+        <div class="w-full mb-4 gap-4 flex flex-row">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex-grow p-4 rounded-xl flex flex-col mb-4'
+              'flex-grow p-4 rounded-xl flex flex-col '
             ]"
           >
-            <h2 class="mb-1 text-xl font-bold">Current Shipments</h2>
+            <h2 class="mb-1 text-xl font-bold">Total Packages</h2>
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="value"
-                valueColor="Orange"
+                valueColor="#5b21b6"
                 rangeColor="Black"
                 :class="[isDark ? 'dark' : 'light']"
               />
@@ -172,19 +234,18 @@ const chartOptions = ref({
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex-grow p-4 rounded-xl flex flex-col'
+              'flex-grow p-4 rounded-xl flex flex-col '
             ]"
           >
-            <h2 class="mb-1 text-xl font-bold">Current Shipments</h2>
+            <h2 class="mb-1 text-xl font-bold">Deliveries</h2>
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="value"
-                valueColor="Orange"
+                valueColor="#f97316"
                 rangeColor="Black"
-                class="flex-grow-0"
                 :class="[isDark ? 'dark' : 'light']"
               />
-              <div class="ml-2 flex flex-col">
+              <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Completed</h2>
                 <p class="font-light">223/300</p>
                 <h2 class="mb-1 font-bold">In Progress</h2>
@@ -456,6 +517,7 @@ const chartOptions = ref({
 </style>
 <script>
 import '../assets/tailwind.css'
+import { ConstantColorFactor } from 'three'
 
 export default {
   data() {
