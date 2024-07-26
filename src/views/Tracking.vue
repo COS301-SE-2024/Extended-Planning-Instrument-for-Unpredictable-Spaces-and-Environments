@@ -1,6 +1,8 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
+import ProgressSpinner from 'primevue/progressspinner'
+
 import { ref, watch, computed, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -27,6 +29,7 @@ const toggleDialog = () => {
 const dialogVisible = ref(false)
 const shipmentsByDelivery = ref([])
 const deliveries = ref([])
+
 const events = ref([
   {
     status: 'Loading...', // Default status
@@ -46,7 +49,7 @@ const events = ref([
     line_colour: '#6b7280'
   }
 ])
-
+const visible = ref(true) // Use ref to make it reactive
 const getAllDeliveries = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -59,6 +62,7 @@ const getAllDeliveries = async () => {
       deliveries.value = data.data
       // Call getShipmentsByDeliveryID here, after deliveries are populated
       await getShipmentsByDeliveryID()
+      visible.value = false // Update the reactive reference
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -85,6 +89,7 @@ const getShipmentsByDeliveryID = async () => {
           shipmentsByDelivery.value[delivery.id] = []
         }
         shipmentsByDelivery.value[delivery.id].push(...data.data)
+        console.log(shipmentsByDelivery.value[delivery.id])
       }
     } catch (error) {
       console.error(`Error fetching shipments for delivery ${delivery.id}:`, error)
@@ -125,6 +130,7 @@ const groupedDeliveries = computed(() => {
         }))
       }
     }
+    // console.log(delivery.shipments[0].shipment_id)
   })
 
   // Only return deliveries that have shipments
@@ -165,6 +171,7 @@ const loading = ref(false)
   >
     <Sidebar />
     <!-- Main Content -->
+
     <div class="flex flex-col p-4 ml-2 w-full">
       <!-- Search Input -->
       <div class="w-full md:w-[300px] mb-4">
@@ -186,74 +193,89 @@ const loading = ref(false)
           />
         </div>
       </div>
-
-      <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Track deliveries</span>
-      </h2>
-      <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
-        <Accordion :activeIndex="0" class="custom-accordion w-full">
-          <AccordionTab
-            v-for="group in groupedDeliveries"
-            :key="group.delivery_id"
-            :header="`Delivery ID: ${group.delivery_id}`"
-            :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
-          >
-            <div class="flex flex-row">
-              <Timeline
-                :value="group.shipments"
-                layout="horizontal"
-                class="customized-timeline w-full"
-              >
-                <template #marker="slotProps">
-                  <span
-                    class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
-                    :style="{ backgroundColor: slotProps.item.color }"
-                  >
-                    <i :class="slotProps.item.icon"></i>
-                  </span>
-                </template>
-                <template #content="slotProps">
-                  <div class="timeline-card-wrapper">
-                    <Card
-                      :class="[
-                        isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
-                        'rounded-xl border border-neutral-500 h-full'
-                      ]"
+      <div class="loading-new" v-if="visible">
+        <ProgressSpinner
+          style="width: 150px; height: 150px"
+          strokeWidth="4"
+          animationDuration=".5s"
+          aria-label="Custom ProgressSpinner"
+        />
+      </div>
+      <div v-if="!visible">
+        <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+          <span class="font-bold">Track deliveries</span>
+        </h2>
+        <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+          <Accordion :activeIndex="0" class="custom-accordion w-full">
+            <AccordionTab
+              v-for="group in groupedDeliveries"
+              :key="group.delivery_id"
+              :header="`Delivery ID: ${group.delivery_id}`"
+              :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
+            >
+              <div class="flex flex-row">
+                <Timeline
+                  :value="group.shipments"
+                  layout="horizontal"
+                  class="customized-timeline w-full"
+                >
+                  <template #marker="slotProps">
+                    <span
+                      class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
+                      :style="{ backgroundColor: slotProps.item.color }"
                     >
-                      <template #title>
-                        <div class="card-title">{{ slotProps.item.status }}</div>
-                      </template>
-                      <template #content>
-                        <div class="card-content">
-                          <div class="flex flex-col gap-2">
-                            <div>
-                              <p class="text-neutral-500">Time:</p>
-                              <span>{{ formattedDateTime(slotProps) }}</span>
-                            </div>
-                            <div>
-                              <p class="text-neutral-500">Delivery ID:</p>
-                              {{ group.delivery_id }}
-                            </div>
-                            <div>
-                              <p class="text-neutral-500">Driver ID:</p>
-                              {{ group.driver_id }}
+                      <i :class="slotProps.item.icon"></i>
+                    </span>
+                  </template>
+                  <template #content="slotProps">
+                    <div class="timeline-card-wrapper">
+                      <Card
+                        :class="[
+                          isDark
+                            ? 'dark bg-neutral-950 text-white'
+                            : 'light bg-white-100 text-black',
+                          'rounded-xl border border-neutral-500 h-full'
+                        ]"
+                      >
+                        <template #title>
+                          <div class="card-title">{{ slotProps.item.status }}</div>
+                        </template>
+                        <template #content>
+                          <div class="card-content">
+                            <div class="flex flex-col gap-2">
+                              <div>
+                                <p class="text-neutral-500">Time:</p>
+                                <span>{{ formattedDateTime(slotProps) }}</span>
+                              </div>
+                              <div>
+                                <p class="text-neutral-500">Delivery ID:</p>
+                                {{ group.delivery_id }}
+                              </div>
+                              <div>
+                                <p class="text-neutral-500">Driver ID:</p>
+                                {{ group.driver_id }}
+                              </div>
+                              <div>
+                                <p class="text-neutral-500">Shipment ID:</p>
+                                {{ slotProps.item.shipment_id }}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </template>
-                    </Card>
-                  </div>
-                </template>
-                <template #connector="slotProps">
-                  <span
-                    class="p-timeline-event-connector"
-                    :style="{ backgroundColor: slotProps.item.line_colour }"
-                  ></span>
-                </template>
-              </Timeline>
-            </div>
-          </AccordionTab>
-        </Accordion>
+                        </template>
+                      </Card>
+                    </div>
+                  </template>
+                  <template #connector="slotProps">
+                    <span
+                      class="p-timeline-event-connector"
+                      :style="{ backgroundColor: slotProps.item.line_colour }"
+                    ></span>
+                  </template>
+                </Timeline>
+              </div>
+            </AccordionTab>
+          </Accordion>
+        </div>
       </div>
       <!-- Users Table -->
 
@@ -553,5 +575,29 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 
 .p-timeline-event {
   flex-grow: 1;
+}
+.loading-new {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #171717; /* Dim background */
+  position: relative;
+  overflow: hidden;
+}
+
+.logo {
+  width: 500px; /* Adjust size as needed */
+  margin-bottom: 20px; /* Space between logo and spinner */
+}
+
+.ProgressSpinner {
+  z-index: 2;
+}
+
+/* Target the spinner's circle directly */
+.p-progress-spinner-circle {
+  stroke: rgb(182, 119, 2) !important;
 }
 </style>

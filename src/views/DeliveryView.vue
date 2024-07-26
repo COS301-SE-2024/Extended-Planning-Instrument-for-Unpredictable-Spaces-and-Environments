@@ -82,7 +82,6 @@
       </div>
     </div>
     <Dialog
-      :class="[isDark ? 'dark' : '', ' w-[600px]']"
       header="Edit User Profile"
       v-model:visible="dialogVisible"
       :modal="true"
