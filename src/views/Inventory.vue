@@ -4,6 +4,7 @@ import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
@@ -21,6 +22,15 @@ function formattedDateTime(slotProps) {
   const options = { dateStyle: 'medium', timeStyle: 'short' }
   return new Date(slotProps.item.time).toLocaleString('en-US', options)
 }
+
+// search functionality
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+const onGlobalFilterChange = (e) => {
+  filters.value.global.value = e.target.value
+}
+
 const packages = ref([])
 const getAllPackages = async () => {
   try {
@@ -85,7 +95,9 @@ const loading = ref(false)
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
+            v-model="filters['global'].value"
             placeholder="Search"
+            @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
               'focus:outline-none focus:ring-0'
@@ -102,6 +114,17 @@ const loading = ref(false)
         <DataTable
           :class="[isDark ? 'dark' : '']"
           :value="packages"
+          :filters="filters"
+          :globalFilterFields="[
+            'id',
+            'Shipment_id',
+            'Weight',
+            'Packed_time',
+            'Width',
+            'Length',
+            'Height',
+            'Volume'
+          ]"
           paginator
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"

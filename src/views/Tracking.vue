@@ -2,26 +2,21 @@
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
 import ProgressSpinner from 'primevue/progressspinner'
-
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
+import { FilterMatchMode } from 'primevue/api'
+
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA'
-// SUPA BASE
 const supabase = createClient(supabaseUrl, supabaseKey)
 const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-}
 const showDialog = ref(false)
-const signaturePad = ref(null)
-
 const toggleDialog = () => {
   console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
@@ -29,27 +24,111 @@ const toggleDialog = () => {
 const dialogVisible = ref(false)
 const shipmentsByDelivery = ref([])
 const deliveries = ref([])
+// search functionality
+const searchQuery = ref('')
+const onGlobalFilterChange = (e) => {
+  searchQuery.value = e.target.value.toLowerCase()
+}
+const filteredGroupedDeliveries = computed(() => {
+  console.log('searching ')
 
-const events = ref([
-  {
-    status: 'Loading...', // Default status
-    time: 0, // Default time
-    delivery_id: 0, // Default delivery_id
-    driver_id: 0, // Default driver_id
-    icon: 'pi pi-map-marker',
-    color: '#d97706',
-    line_colour: '#d97706',
-    past: true
-  },
-  {
-    status: 'Complete',
-    icon: 'pi pi-flag',
-    color: '#14532d',
-    past: false,
-    line_colour: '#6b7280'
+  if (!searchQuery.value) {
+    console.log('returning ')
+    return groupedDeliveries.value
   }
-])
-const visible = ref(true) // Use ref to make it reactive
+
+  return groupedDeliveries.value.filter((group) => {
+    const deliveryIdMatch = group.delivery_id.toString().includes(searchQuery.value)
+    const driverIdMatch = group.driver_id.toString().includes(searchQuery.value)
+
+    const shipmentMatch = group.shipments.some(
+      (shipment) =>
+        shipment.status.toLowerCase().includes(searchQuery.value) ||
+        shipment.shipment_id.toString().includes(searchQuery.value) ||
+        (shipment.destination &&
+          shipment.destination.toString().toLowerCase().includes(searchQuery.value)) ||
+        formattedDateTime({ item: { time: shipment.time } })
+          .toLowerCase()
+          .includes(searchQuery.value)
+    )
+
+    return deliveryIdMatch || driverIdMatch || shipmentMatch
+  })
+})
+async function setupSubscription() {
+  const channel = supabase
+    .channel('*')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
+      const updatedShipment = payload.new
+      console.log('Updating ', updatedShipment)
+
+      const deliveryId = updatedShipment.Delivery_id
+      if (shipmentsByDelivery.value[deliveryId]) {
+        const shipmentIndex = shipmentsByDelivery.value[deliveryId].findIndex(
+          (s) => s.id === updatedShipment.id
+        )
+
+        if (shipmentIndex !== -1) {
+          // Update existing shipment
+          shipmentsByDelivery.value[deliveryId][shipmentIndex] = {
+            ...shipmentsByDelivery.value[deliveryId][shipmentIndex],
+            id: updatedShipment.id,
+            Start_time: updatedShipment.Start_time,
+            Destination: updatedShipment.Destination,
+            Status: updatedShipment.Status,
+            End_time: updatedShipment.End_time,
+            Delivery_id: updatedShipment.Delivery_id,
+            Fitness_Value: updatedShipment.Fitness_Value
+          }
+        } else {
+          // Add new shipment
+          shipmentsByDelivery.value[deliveryId].push({
+            id: updatedShipment.id,
+            Start_time: updatedShipment.Start_time,
+            Destination: updatedShipment.Destination,
+            Status: updatedShipment.Status,
+            End_time: updatedShipment.End_time,
+            Delivery_id: updatedShipment.Delivery_id,
+            Fitness_Value: updatedShipment.Fitness_Value
+          })
+        }
+
+        // Trigger reactive update
+        shipmentsByDelivery.value = { ...shipmentsByDelivery.value }
+
+        // Update the groupedDeliveries computed property
+        updateGroupedDeliveries(deliveryId)
+      }
+    })
+    .subscribe()
+}
+
+function updateGroupedDeliveries(deliveryId) {
+  if (groupedDeliveries.value) {
+    const groupIndex = groupedDeliveries.value.findIndex(
+      (group) => group.delivery_id.toString() === deliveryId.toString()
+    )
+    if (groupIndex !== -1) {
+      const updatedShipments = shipmentsByDelivery.value[deliveryId].map((shipment, index) => ({
+        status: shipment.Status || 'Unknown',
+        time: shipment.Start_time || 0,
+        shipment_id: shipment.id,
+        destination: shipment.Destination,
+        icon: 'pi pi-box',
+        color: getStatusColor(shipment.Status),
+        line_colour:
+          index === shipmentsByDelivery.value[deliveryId].length - 1
+            ? '#6b7280'
+            : getStatusColor(shipment.Status),
+        past: index < shipmentsByDelivery.value[deliveryId].length - 1
+      }))
+
+      groupedDeliveries.value[groupIndex].shipments = updatedShipments
+      groupedDeliveries.value = [...groupedDeliveries.value]
+    }
+  }
+}
+const visible = ref(true)
 const getAllDeliveries = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -60,9 +139,8 @@ const getAllDeliveries = async () => {
       console.log('API Error:', error)
     } else {
       deliveries.value = data.data
-      // Call getShipmentsByDeliveryID here, after deliveries are populated
       await getShipmentsByDeliveryID()
-      visible.value = false // Update the reactive reference
+      visible.value = false
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -70,14 +148,14 @@ const getAllDeliveries = async () => {
 }
 
 const getShipmentsByDeliveryID = async () => {
-  shipmentsByDelivery.value = {} // Reset the shipments object
+  shipmentsByDelivery.value = {}
 
   for (const delivery of deliveries.value) {
     try {
       const { data, error } = await supabase.functions.invoke('core', {
         body: JSON.stringify({
           type: 'getShipmentByDeliveryID',
-          deliveryID: delivery.id // Use the actual delivery ID here
+          deliveryID: delivery.id
         }),
         method: 'POST'
       })
@@ -89,51 +167,53 @@ const getShipmentsByDeliveryID = async () => {
           shipmentsByDelivery.value[delivery.id] = []
         }
         shipmentsByDelivery.value[delivery.id].push(...data.data)
-        console.log(shipmentsByDelivery.value[delivery.id])
+        // console.log(shipmentsByDelivery.value[delivery.id])
       }
     } catch (error) {
       console.error(`Error fetching shipments for delivery ${delivery.id}:`, error)
     }
   }
 }
+const getStatusColor = (status) => {
+  const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
+  switch (cleanStatus) {
+    case 'shipped':
+      return '#d97706'
+    case 'processing':
+      return '#6b7280'
+    case 'delivered':
+      return '#14532d'
+    default:
+      console.log('Error fetching status: ' + status)
+      return '#6b7280'
+  }
+}
 
-// const groupedDeliveries = computed(() => {
-//   return Object.entries(shipmentsByDelivery.value).map(([deliveryId, shipments]) => ({
-//     deliveryId,
-//     shipments
-//   }))
-// })
 const groupedDeliveries = computed(() => {
-  // console.log('Computing grouped deliveries')
-
   const groupedByDeliveryId = {}
 
-  // Only process deliveries that exist in shipmentsByDelivery
   Object.entries(shipmentsByDelivery.value).forEach(([deliveryId, shipments]) => {
-    // console.log('Processing deliveryId:', deliveryId)
-
     const delivery = deliveries.value.find((d) => d.id.toString() === deliveryId)
-    // console.log('Delivery:', delivery)
-
     if (delivery) {
       groupedByDeliveryId[deliveryId] = {
         delivery_id: deliveryId,
         driver_id: delivery.Driver_id || 0,
-        shipments: shipments.map((shipment, index) => ({
-          status: shipment.Status || 'Unknown',
-          time: shipment.Created_at || delivery.Start_time || 0,
-          shipment_id: shipment.id,
-          icon: 'pi pi-box',
-          color: index === shipments.length - 1 ? '#14532d' : '#d97706',
-          line_colour: index === shipments.length - 1 ? '#6b7280' : '#d97706',
-          past: index < shipments.length - 1
-        }))
+        shipments: shipments.map((shipment, index) => {
+          const status = shipment.Status || 'Unknown'
+          return {
+            status: status,
+            time: shipment.Created_at || delivery.Start_time || 0,
+            shipment_id: shipment.id,
+            destination: shipment.Destination,
+            icon: 'pi pi-box',
+            color: getStatusColor(status),
+            line_colour: index === shipments.length - 1 ? '#6b7280' : getStatusColor(status),
+            past: index < shipments.length - 1
+          }
+        })
       }
     }
-    // console.log(delivery.shipments[0].shipment_id)
   })
-
-  // Only return deliveries that have shipments
   return Object.values(groupedByDeliveryId).filter((group) => group.shipments.length > 0)
 })
 
@@ -142,22 +222,10 @@ function formattedDateTime(slotProps) {
   return new Date(slotProps.item.time).toLocaleString('en-US', options)
 }
 
-async function setupSubscription() {
-  await supabase
-    .channel('*')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-      // console.log(payload.new)
-      updateUserInTable(payload.new)
-    })
-    .subscribe()
-}
-
 onMounted(() => {
   setupSubscription()
   getAllDeliveries()
 })
-
-// Watch for changes to isDark to update pen color
 
 const loading = ref(false)
 </script>
@@ -170,7 +238,6 @@ const loading = ref(false)
     ]"
   >
     <Sidebar />
-    <!-- Main Content -->
 
     <div class="flex flex-col p-4 ml-2 w-full">
       <!-- Search Input -->
@@ -185,7 +252,9 @@ const loading = ref(false)
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
-            placeholder="Search"
+            v-model="searchQuery"
+            placeholder="Search deliveries..."
+            @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
               'focus:outline-none focus:ring-0'
@@ -208,7 +277,7 @@ const loading = ref(false)
         <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
           <Accordion :activeIndex="0" class="custom-accordion w-full">
             <AccordionTab
-              v-for="group in groupedDeliveries"
+              v-for="group in filteredGroupedDeliveries"
               :key="group.delivery_id"
               :header="`Delivery ID: ${group.delivery_id}`"
               :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
@@ -243,6 +312,10 @@ const loading = ref(false)
                         <template #content>
                           <div class="card-content">
                             <div class="flex flex-col gap-2">
+                              <div>
+                                <p class="text-neutral-500">Destination:</p>
+                                {{ slotProps.item.destination }}
+                              </div>
                               <div>
                                 <p class="text-neutral-500">Time:</p>
                                 <span>{{ formattedDateTime(slotProps) }}</span>

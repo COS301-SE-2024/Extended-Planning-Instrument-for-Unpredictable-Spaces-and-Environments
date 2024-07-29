@@ -13,10 +13,7 @@ const supabaseKey =
 // SUPA BASE
 const supabase = createClient(supabaseUrl, supabaseKey)
 const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
+
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
 

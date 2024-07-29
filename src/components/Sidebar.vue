@@ -226,7 +226,6 @@ const items = [
           <a
             class="h-[45px] flex align-items-center mb-2"
             v-else
-            v-ripple
             :href="item.url"
             :target="item.target"
             v-bind="props.action"

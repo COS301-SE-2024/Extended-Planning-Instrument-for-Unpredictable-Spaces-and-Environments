@@ -214,25 +214,7 @@ onMounted(() => {
     <!-- Main Content -->
     <div class="flex flex-col p-4 ml-2 w-full">
       <!-- Search Input -->
-      <div class="w-full md:w-[300px] mb-4">
-        <div
-          :class="[
-            isDark
-              ? 'border-neutral-500 bg-neutral-900 text-white'
-              : 'border-gray-500 bg-white text-black',
-            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-orange-500'
-          ]"
-        >
-          <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-          <InputText
-            placeholder="Search"
-            :class="[
-              isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
-              'focus:outline-none focus:ring-0'
-            ]"
-          />
-        </div>
-      </div>
+
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
         <span class="font-bold">Welcome back</span>
       </h2>
