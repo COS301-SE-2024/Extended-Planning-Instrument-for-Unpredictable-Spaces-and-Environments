@@ -11,7 +11,6 @@ import Loading from '../views/Loading.vue'
 import Inventory from '../views/Inventory.vue'
 import Tracking from '../views/Tracking.vue'
 import Shipments from '../views/Shipments.vue'
-
 import { supabase } from '../supabase'
 
 const routes = [

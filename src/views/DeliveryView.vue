@@ -1,3 +1,105 @@
+<script setup>
+import { useDark } from '@vueuse/core'
+import 'primeicons/primeicons.css'
+import 'primevue/resources/themes/saga-blue/theme.css'
+import 'primevue/resources/primevue.min.css'
+import DeliverySidebar from '@/components/DeliverySidebar.vue'
+import Map from '@/components/Map.vue'
+
+import { ref } from 'vue'
+import Timeline from 'primevue/timeline'
+import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
+import FileUpload from 'primevue/fileupload'
+// import Map from '@/components/Map.vue';
+const isDark = useDark()
+const toggleDark = () => {
+  isDark.value = !isDark.value
+  console.log('Dark mode:', isDark.value ? 'on' : 'off')
+}
+const events = ref([
+  {
+    status: 'On Route',
+    location: '1268 Burnett Street Hatfield Pretoria 0012',
+    icon: 'pi pi-map-marker',
+    color: '#d97706',
+    line_colour: '#d97706',
+    past: true
+  },
+  {
+    status: 'Delivered',
+    location: 'Cape Town',
+    coordinates: '-33.9249, 18.4241',
+    date: '15/10/2020',
+    time: '10:30',
+    icon: 'pi pi-box',
+    color: '#d97706', //orange
+    line_colour: '#d97706',
+    past: true
+  },
+  {
+    status: 'On Route',
+    location: '413 The Meridian Solheim Johannesburg 0014',
+    icon: 'pi pi-map-marker',
+    color: '#2e1065',
+    line_colour: '#2e1065', //purple
+    past: false
+  },
+  {
+    status: 'Delivered',
+    location: 'Johannesburg',
+    coordinates: '-26.2041, 28.0473',
+    date: '15/10/2020',
+    time: '10:30',
+    icon: 'pi pi-box',
+    color: '#2e1065',
+    line_colour: '#2e1065', //purple
+    past: false
+  },
+  { status: 'Complete', icon: 'pi pi-flag', color: '#14532d', past: false, line_colour: '#6b7280' }
+])
+const showDialog = ref(false)
+const dialogVisible = ref(false)
+
+const toggleDialog = () => {
+  console.log('Toggling dialog')
+  dialogVisible.value = !dialogVisible.value
+}
+
+const submitImage = () => {
+  console.log('Image submitted')
+  showDialog.value = false
+}
+</script>
+<script>
+export default {
+  name: 'MySignaturePad',
+  data() {
+    return {
+      option1: {
+        penColor: 'rgb(255, 255, 255)',
+        backgroundColor: 'rgb(23,23,23)'
+      },
+      option2: {
+        penColor: 'rgb(0,0,0)',
+        backgroundColor: 'rgb(255, 255, 255)'
+      },
+      disabled: false,
+      dataUrl: 'https://avatars2.githubusercontent.com/u/17644818?s=460&v=4'
+    }
+  },
+  methods: {
+    undo() {
+      this.$refs.signaturePad.undoSignature()
+    },
+    save() {
+      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
+      console.log(isEmpty)
+      console.log(data)
+    }
+  }
+}
+</script>
 <template>
   <div
     :class="[
@@ -15,17 +117,11 @@
       <div
         :class="[
           isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
-          'flex w-[auto] content-center p-4'
-        ]"
-      >
-        <img src="@/assets/image.png" alt="Image" style="object-fit: cover; border-radius: 5px" />
-      </div>
-      <div
-        :class="[
-          isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
           'card h-[auto] flex flex-col p-4'
         ]"
       >
+        <Map />
+
         <p class="pb-8 text-3xl font-bold">Shipment #345290</p>
         <div class="flex flex-row">
           <Timeline :value="events" class="customized-timeline">
@@ -135,106 +231,6 @@
   </div>
 </template>
 
-<script setup>
-import { useDark } from '@vueuse/core'
-import 'primeicons/primeicons.css'
-import 'primevue/resources/themes/saga-blue/theme.css'
-import 'primevue/resources/primevue.min.css'
-import DeliverySidebar from '@/components/DeliverySidebar.vue'
-import { ref } from 'vue'
-import Timeline from 'primevue/timeline'
-import Card from 'primevue/card'
-import Dialog from 'primevue/dialog'
-import FileUpload from 'primevue/fileupload'
-// import Map from '@/components/Map.vue';
-const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
-const events = ref([
-  {
-    status: 'On Route',
-    location: '1268 Burnett Street Hatfield Pretoria 0012',
-    icon: 'pi pi-map-marker',
-    color: '#d97706',
-    line_colour: '#d97706',
-    past: true
-  },
-  {
-    status: 'Delivered',
-    location: 'Cape Town',
-    coordinates: '-33.9249, 18.4241',
-    date: '15/10/2020',
-    time: '10:30',
-    icon: 'pi pi-box',
-    color: '#d97706', //orange
-    line_colour: '#d97706',
-    past: true
-  },
-  {
-    status: 'On Route',
-    location: '413 The Meridian Solheim Johannesburg 0014',
-    icon: 'pi pi-map-marker',
-    color: '#2e1065',
-    line_colour: '#2e1065', //purple
-    past: false
-  },
-  {
-    status: 'Delivered',
-    location: 'Johannesburg',
-    coordinates: '-26.2041, 28.0473',
-    date: '15/10/2020',
-    time: '10:30',
-    icon: 'pi pi-box',
-    color: '#2e1065',
-    line_colour: '#2e1065', //purple
-    past: false
-  },
-  { status: 'Complete', icon: 'pi pi-flag', color: '#14532d', past: false, line_colour: '#6b7280' }
-])
-const showDialog = ref(false)
-const dialogVisible = ref(false)
-
-const toggleDialog = () => {
-  console.log('Toggling dialog')
-  dialogVisible.value = !dialogVisible.value
-}
-
-const submitImage = () => {
-  console.log('Image submitted')
-  showDialog.value = false
-}
-</script>
-<script>
-export default {
-  name: 'MySignaturePad',
-  data() {
-    return {
-      option1: {
-        penColor: 'rgb(255, 255, 255)',
-        backgroundColor: 'rgb(23,23,23)'
-      },
-      option2: {
-        penColor: 'rgb(0,0,0)',
-        backgroundColor: 'rgb(255, 255, 255)'
-      },
-      disabled: false,
-      dataUrl: 'https://avatars2.githubusercontent.com/u/17644818?s=460&v=4'
-    }
-  },
-  methods: {
-    undo() {
-      this.$refs.signaturePad.undoSignature()
-    },
-    save() {
-      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-      console.log(isEmpty)
-      console.log(data)
-    }
-  }
-}
-</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 
