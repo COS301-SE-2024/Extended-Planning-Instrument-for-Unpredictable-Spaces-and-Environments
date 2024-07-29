@@ -39,7 +39,7 @@ export default {
 
     const initMap = async () => {
       const loader = new Loader({
-        apiKey: 'AIzaSyCN_j1aJRd3lvq4koaghz5L_rsCVOiiJAI',
+        apiKey: '',
         version: 'weekly',
         libraries: ['places']
       })
