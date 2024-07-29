@@ -1,145 +1,3 @@
-<script setup>
-import { useDark, useToggle } from '@vueuse/core'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { supabase } from '@/supabase'
-import DialogComponent from '@/components/DialogComponent.vue'
-
-const isDark = useDark()
-const toggleDark = useToggle(isDark) // Proper toggle function
-const router = useRouter() // Use the router instance
-
-const isMobileSidebarCollapsed = ref(false)
-
-const userFullName = ref('')
-const userRole = ref('')
-const avatarLabel = computed(() => {
-  return userFullName.value ? userFullName.value.charAt(0).toUpperCase() : 'P'
-})
-const fetchUserDetails = async () => {
-  const session = await supabase.auth.getSession()
-  if (session.data.session) {
-    const { user } = session.data.session
-    const { data, error } = await supabase
-      .from('Users')
-      .select('FullName, Role')
-      .eq('Email', user.email)
-      .single()
-
-    if (error) {
-      console.log('Error fetching user:', error)
-    } else {
-      userFullName.value = data.FullName
-      userRole.value = data.Role
-      console.log('Got Details !', data.Role)
-      console.log('Got Details !', data.FullName)
-      console.log('Initial is : ', userFullName.value.charAt(0).toUpperCase())
-    }
-  } else {
-    console.log('No session found')
-  }
-}
-
-// Function to check window size and update sidebar state
-const checkWindowSize = () => {
-  isMobileSidebarCollapsed.value = window.innerWidth < 1024
-  console.log('Small window size: ' + window.innerWidth)
-}
-
-// Add event listener on mounted and remove on unmounted
-onMounted(() => {
-  fetchUserDetails()
-  console.log(userFullName.value)
-
-  checkWindowSize()
-  window.addEventListener('resize', checkWindowSize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', checkWindowSize)
-})
-
-async function logout() {
-  const { error } = await supabase.auth.signOut()
-
-  if (error) {
-    console.log(error)
-  } else {
-    router.push({ name: 'login' })
-    console.log('Log out successful')
-  }
-}
-components: {
-  DialogComponent
-}
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
-}
-
-const showShipment = ref(false)
-const toggleShipment = () => {
-  showShipment.value = !showShipment.value
-}
-
-const items = [
-  {
-    label: 'Dashboard',
-    icon: 'pi pi-fw pi-clipboard',
-    route: 'dashboard',
-    active: false
-  },
-  {
-    label: 'Shipments',
-    icon: 'pi pi-fw pi-truck',
-    route: '/',
-    active: false
-  },
-  {
-    label: 'Tracking',
-    icon: 'pi pi-fw pi-map',
-    route: 'packer',
-    active: false
-  },
-  {
-    label: 'Inventory',
-    icon: 'pi pi-fw pi-box',
-    route: '/',
-    active: false
-  },
-  {
-    label: 'Manage Users',
-    icon: 'pi pi-fw pi-lock',
-    route: 'manage-users',
-    active: false
-  },
-  {
-    label: 'Dark Mode Toggle',
-    icon: 'pi pi-fw pi-moon',
-    command: () => {
-      console.log('Toggling Dark Mode')
-      toggleDark() // Correctly call the toggle function
-    }
-  },
-  {
-    label: 'Log Out',
-    icon: 'pi pi-fw pi-sign-out',
-    command: () => {
-      console.log('Logging Out')
-      logout()
-    }
-  },
-  {
-    label: 'Help',
-    icon: 'pi pi-fw pi-question',
-    command: () => {
-      console.log('Opening Help Menu')
-      toggleDialog()
-    }
-  }
-]
-</script>
-
 <template>
   <!-- Sidebar -->
   <div
@@ -272,58 +130,208 @@ const items = [
       </span>
     </button>
   </div>
-  <div>
-    <Dialog
-      v-model:visible="showShipment"
-      :class="[isDark ? 'dark' : '', 'w-[90%] rounded-lg']"
-      header="Add shipments"
-      :modal="true"
-      @close-dialog="toggleShipment"
-    >
-      <div class="flex flex-col items-center justify-center m-4">
-        <p class="mb-4 text-3xl">New Shipment</p>
 
-        <FileUpload
-          mode="basic"
-          name="demo[]"
-          url="/api/upload"
-          accept=".csv"
-          :maxFileSize="1000000"
-          @upload="onUpload"
-          :auto="true"
-          chooseLabel="Browse"
-        />
-        <Button class="mt-4 py-2 px-6 disabled bg-green-800">Process Shipment</Button>
-        <Button @click="toggleShipment" class="mt-4 py-2 px-6 disabled bg-red-800">Cancel</Button>
-      </div>
-    </Dialog>
+  <Dialog
+    v-model:visible="showShipment"
+    :class="[isDark ? 'dark' : '', 'w-[90%] rounded-lg']"
+    header="Add shipments"
+    :modal="true"
+    @close-dialog="toggleShipment"
+  >
+    <div class="flex flex-col items-center justify-center m-4">
+      <p class="mb-4 text-3xl">New Shipment</p>
 
-    <DialogComponent
-      v-if="showDialog"
-      :images="[
-        { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
-        { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
-        { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
+      <input
+        type="file"
+        accept=".csv"
+        @change="onFileChange"
+        class="mb-4"
+      />
+      <Button @click="processShipment" class="mt-4 py-2 px-6 bg-green-800">Process Shipment</Button>
+      <Button @click="toggleShipment" class="mt-4 py-2 px-6 bg-red-800">Cancel</Button>
+    </div>
+  </Dialog>
 
-        {
-          src: '/Members/Photos/manager dashboard (Tracking page).png',
-          alt: 'Alternative Image 4'
-        },
-        {
-          src: '/Members/Photos/manager dashboard (Shipments page).png',
-          alt: 'Alternative Image 5'
-        }
-      ]"
-      title="Contact Support"
-      :contacts="[
-        { name: 'Call', phone: '+27 12 345 6789', underline: true },
-        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
-      ]"
-      :dialogVisible="showDialog"
-      @close-dialog="toggleDialog"
-    />
-  </div>
+  <DialogComponent
+    v-if="showDialog"
+    :images="[
+      { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
+      { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
+      { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
+      { src: '/Members/Photos/manager dashboard (Tracking page).png', alt: 'Alternative Image 4' },
+      { src: '/Members/Photos/manager dashboard (Shipments page).png', alt: 'Alternative Image 5' }
+    ]"
+    title="Contact Support"
+    :contacts="[
+      { name: 'Call', phone: '+27 12 345 6789', underline: true },
+      { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+    ]"
+    :dialogVisible="showDialog"
+    @close-dialog="toggleDialog"
+  />
 </template>
+
+<script setup>
+import { useDark, useToggle } from '@vueuse/core'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { createClient } from '@supabase/supabase-js'
+import DialogComponent from '@/components/DialogComponent.vue'
+
+// Initialize Supabase client
+const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
+const supabaseKey =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo'
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+const isDark = useDark()
+const toggleDark = useToggle(isDark)
+const router = useRouter()
+
+const isMobileSidebarCollapsed = ref(false)
+const userFullName = ref('')
+const userRole = ref('')
+const avatarLabel = computed(() => {
+  return userFullName.value ? userFullName.value.charAt(0).toUpperCase() : 'P'
+})
+
+const fetchUserDetails = async () => {
+  const session = await supabase.auth.getSession()
+  if (session.data.session) {
+    const { user } = session.data.session
+    const { data, error } = await supabase
+      .from('Users')
+      .select('FullName, Role')
+      .eq('Email', user.email)
+      .single()
+
+    if (error) {
+      console.log('Error fetching user:', error)
+    } else {
+      userFullName.value = data.FullName
+      userRole.value = data.Role
+    }
+  } else {
+    console.log('No session found')
+  }
+}
+
+const checkWindowSize = () => {
+  isMobileSidebarCollapsed.value = window.innerWidth < 1024
+}
+
+onMounted(() => {
+  fetchUserDetails()
+  checkWindowSize()
+  window.addEventListener('resize', checkWindowSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkWindowSize)
+})
+
+const logout = async () => {
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    console.log(error)
+  } else {
+    router.push({ name: 'login' })
+  }
+}
+
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+
+const showShipment = ref(false)
+const toggleShipment = () => {
+  showShipment.value = !showShipment.value
+}
+
+const selectedFile = ref(null)
+const onFileChange = (event) => {
+  selectedFile.value = event.target.files[0]
+}
+
+const processShipment = async () => {
+  if (!selectedFile.value) {
+    alert("Please select a file")
+    return
+  }
+
+  try {
+    const { data, error } = await supabase.storage
+      .from('data_bucket')
+      .upload(`Upload-${selectedFile.value.name}`, selectedFile.value)
+
+    if (error) {
+      console.error("Error uploading file:", error)
+      alert("Failed to upload file")
+    } else {
+      alert("File uploaded successfully")
+    }
+  } catch (error) {
+    console.error("Error uploading file:", error)
+    alert("Error uploading file")
+  }
+}
+
+const items = [
+  {
+    label: 'Dashboard',
+    icon: 'pi pi-fw pi-clipboard',
+    route: 'dashboard',
+    active: false
+  },
+  {
+    label: 'Shipments',
+    icon: 'pi pi-fw pi-truck',
+    route: '/',
+    active: false
+  },
+  {
+    label: 'Tracking',
+    icon: 'pi pi-fw pi-map',
+    route: 'packer',
+    active: false
+  },
+  {
+    label: 'Inventory',
+    icon: 'pi pi-fw pi-box',
+    route: '/',
+    active: false
+  },
+  {
+    label: 'Manage Users',
+    icon: 'pi pi-fw pi-lock',
+    route: 'manage-users',
+    active: false
+  },
+  {
+    label: 'Dark Mode Toggle',
+    icon: 'pi pi-fw pi-moon',
+    command: () => {
+      toggleDark()
+    }
+  },
+  {
+    label: 'Log Out',
+    icon: 'pi pi-fw pi-sign-out',
+    command: () => {
+      logout()
+    }
+  },
+  {
+    label: 'Help',
+    icon: 'pi pi-fw pi-question',
+    command: () => {
+      toggleDialog()
+    }
+  }
+]
+</script>
 
 <style>
 /* General styles */
@@ -331,14 +339,12 @@ const items = [
   display: none;
 }
 
-/* When the screen width is less than 768px, show the mobile icon */
 @media (max-width: 1024px) {
   .mobile-icon {
     display: inline;
   }
 }
 
-/* Update styles for hovered menu item link */
 .dark .p-menu {
   background-color: #0a0a0a;
 }
@@ -358,7 +364,7 @@ const items = [
 }
 
 .p-calendar {
-  width: 100%; /* Take up full width of parent */
+  width: 100%;
   height: auto;
 }
 
@@ -379,27 +385,17 @@ const items = [
     width: 48px !important;
     background-color: transparent !important;
   }
-}
-
-/* Additional media query for sidebar collapse */
-@media (max-width: 1024px) {
-  .specific-container .p-menuitem {
-    width: 48px !important;
-    border-radius: 1rem;
-  }
-  .specific-container .p-menu {
-    width: 48px !important;
-    background-color: transparent !important;
-  }
 
   .dark .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content {
     background-color: #262626 !important;
     border-radius: 1rem;
   }
 }
+
 .specific-container .p-menuitem {
   border-radius: 1rem;
 }
+
 .specific-container .p-menu {
   background-color: transparent !important;
 }
@@ -408,14 +404,17 @@ const items = [
   background-color: #262626 !important;
   border-radius: 1rem;
 }
+
 .light .p-menu {
   color: black;
   background-color: #0a0a0a;
   background: #0a0a0a;
 }
+
 .light .p-menuitem {
   color: black;
 }
+
 .light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
   stroke: black !important;
@@ -423,9 +422,11 @@ const items = [
   background-color: white;
   background: transparent;
 }
+
 .light a {
   color: black !important;
 }
+
 .p-menu {
   padding: 0.5rem 0;
   background: transparent;
@@ -433,13 +434,13 @@ const items = [
   border-radius: 4px;
   min-width: 12.5rem;
 }
+
 .light .p-menuitem {
   &.p-focus {
     > .p-menuitem-content {
       background-color: #f3f4f6 !important;
       border-radius: 1rem;
 
-      /* Explicitly set color for spans inside */
       span {
         color: black !important;
       }
@@ -451,15 +452,16 @@ const items = [
   background-color: #262626 !important;
   border-radius: 1rem;
 
-  /* Explicitly set color for spans inside */
   span {
     color: white !important;
   }
 }
+
 .p-dialog-mask {
-  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 9998 !important; /* Ensure it is above other elements */
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 9998 !important;
 }
+
 .dark h1 {
   color: white !important;
   background-color: #0c0a09 !important;
