@@ -12,10 +12,10 @@ class Box:
         self.length = length
         self.volume = width * height * length
         self.weight = weight
-        self.density = weight / self.volume 
+        self.density = weight / self.volume
 
     def rotate(self, new_width, new_height, new_length):
-        return Box(self.id, new_width, new_height, new_length, self.weight) 
+        return Box(self.id, new_width, new_height, new_length, self.weight)
 
 class Container:
     def __init__(self, width, height, length):
@@ -109,18 +109,10 @@ class Container:
         for space in self.remaining_space:
             print(f"Space at ({space[0]}, {space[1]}, {space[2]}) with dimensions {space[3]}x{space[4]}x{space[5]}")
 
-
-def select_random_rows(csv_file):
-    df = pd.read_csv(csv_file)
-    num_rows = random.randint(60, 80)
-    random_rows = df.sample(n=num_rows) 
-    random_rows = random_rows.reset_index(drop=True)
-    return random_rows
-
 def initialize_population(pop_size, boxes):
     population = []
     for _ in range(pop_size):
-        individual = sorted(boxes, key=lambda b: -(b.weight / b.volume)) #descending
+        individual = sorted(boxes, key=lambda b: -(b.weight / b.volume)) # descending
         population.append(individual)
     return population
 
@@ -166,7 +158,6 @@ def evaluate_fitness(individual, container_dimensions):
     
     return fitness, container, unplaced_boxes
 
-
 best_fitness = float('-inf')
 best_container = None
 best_individual = None
@@ -208,41 +199,39 @@ def mutate(individual, mutation_rate):
 
 def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_generations=300, mutation_rate=0.01):
     boxes_data = [
-    {'id': 1, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100, 'volume': 48000000},
-    {'id': 2, 'width': 200, 'depth': 250, 'height': 480, 'weight': 100, 'volume': 48000000},
-    {'id': 3, 'width': 400, 'depth': 250, 'height': 240, 'weight':85, 'volume': 48000000},
-    {'id': 4, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100, 'volume': 48000000},
-    {'id': 5, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100, 'volume': 48000000},
-    {'id': 6, 'width': 400, 'depth': 250, 'height': 360, 'weight': 100, 'volume': 48000000},
-    {'id': 7, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100, 'volume': 48000000},
-    {'id': 8, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100, 'volume': 48000000},
-    {'id': 9, 'width': 400, 'depth': 250, 'height': 480, 'weight': 65, 'volume': 48000000},
-    {'id': 10, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60, 'volume': 48000000},
-    {'id': 11, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 12, 'width': 800, 'depth': 250, 'height': 480, 'weight': 70, 'volume': 48000000},
-    {'id': 13, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 14, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 15, 'width': 400, 'depth': 250, 'height': 480, 'weight': 50, 'volume': 48000000},
-    {'id': 16, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 17, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40, 'volume': 48000000},
-    {'id': 18, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40, 'volume': 48000000},
-    {'id': 19, 'width': 400, 'depth': 250, 'height': 480, 'weight': 40, 'volume': 48000000},
-    {'id': 20, 'width': 300, 'depth': 250, 'height': 240, 'weight': 40, 'volume': 48000000},
-    {'id': 21, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60, 'volume': 48000000},
-    {'id': 22, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 23, 'width': 800, 'depth': 250, 'height': 240, 'weight': 100, 'volume': 48000000},
-    {'id': 24, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 25, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60, 'volume': 48000000},
-    {'id': 26, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60, 'volume': 48000000},
-    {'id': 27, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60, 'volume': 48000000},
-    {'id': 28, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40, 'volume': 48000000},
-    {'id': 29, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40, 'volume': 48000000},
-    {'id': 29, 'width': 400, 'depth': 250, 'height': 480, 'weight': 40, 'volume': 48000000},
-    {'id': 30, 'width': 100, 'depth': 250, 'height': 240, 'weight':30, 'volume': 48000000},
-]
+        {'id': 1, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 2, 'width': 200, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 3, 'width': 400, 'depth': 250, 'height': 240, 'weight': 85},
+        {'id': 4, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 5, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 6, 'width': 400, 'depth': 250, 'height': 360, 'weight': 100},
+        {'id': 7, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 8, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 9, 'width': 400, 'depth': 250, 'height': 480, 'weight': 65},
+        {'id': 10, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
+        {'id': 11, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 12, 'width': 800, 'depth': 250, 'height': 480, 'weight': 70},
+        {'id': 13, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 14, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 15, 'width': 400, 'depth': 250, 'height': 480, 'weight': 50},
+        {'id': 16, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 17, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40},
+        {'id': 18, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+        {'id': 19, 'width': 400, 'depth': 250, 'height': 480, 'weight': 40},
+        {'id': 20, 'width': 300, 'depth': 250, 'height': 240, 'weight': 40},
+        {'id': 21, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
+        {'id': 22, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 23, 'width': 800, 'depth': 250, 'height': 240, 'weight': 100},
+        {'id': 24, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 25, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
+        {'id': 26, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
+        {'id': 27, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+        {'id': 28, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40},
+        {'id': 29, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+        {'id': 30, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
+    ]
 
-
-    boxes = [Box(box['id'], int(box['width']), int(box['height']), int(box['depth']), int(box['weight'])) for box in boxes_data]
+    boxes = [Box(box['id'], box['width'], box['height'], box['depth'], box['weight']) for box in boxes_data]
     boxes.sort(key=lambda b: b.weight, reverse=True)  # Sort boxes by weight, heaviest first
 
     population = initialize_population(pop_size, boxes)
@@ -293,30 +282,27 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
             print(f"Box {box.id}: {box.width}x{box.height}x{box.length}")
 
         if unplaced_boxes:
-                print("Attempting to place remaining boxes...")
-                for box in unplaced_boxes[:]:  # Iterate over a copy of the list
-                    if best_container.add_box(box):
-                        print(f"Successfully added Box {box.id}")
-                        unplaced_boxes.remove(box)
-                    else:
-                        print(f"Failed to add Box {box.id}")
+            print("Attempting to place remaining boxes...")
+            for box in unplaced_boxes[:]:  # Iterate over a copy of the list
+                if best_container.add_box(box):
+                    print(f"Successfully added Box {box.id}")
+                    unplaced_boxes.remove(box)
+                else:
+                    print(f"Failed to add Box {box.id}")
         if len(unplaced_boxes) < len(current_unplaced_boxes):
             new_fitness, _, _ = evaluate_fitness(best_individual, container_dimensions)
             best_fitness = new_fitness
             print(f"Updated Best Fitness = {best_fitness}")
             emit_solution(sio, best_container, num_generations, best_fitness)
-    
+
         if unplaced_boxes:
             print("Final Unplaced Boxes:")
             for box in unplaced_boxes:
                 print(f"Box {box.id}: {box.width}x{box.height}x{box.length}")
         else:
             print("All boxes placed successfully!")
-    
-    
+
     return best_individual, best_container
-
-
 
 def emit_solution(sio, container, generation, fitness):
     generation_data = {
@@ -336,7 +322,7 @@ def emit_solution(sio, container, generation, fitness):
                         "x": int(x),
                         "y": int(y),
                         "z": int(z),
-                        "weight": int(box.weight),   
+                        "weight": int(box.weight),
                     }
                     for box, x, y, z in container.boxes
                 ],
@@ -345,7 +331,7 @@ def emit_solution(sio, container, generation, fitness):
         ]
     }
     sio.emit('update_generation', generation_data)
-    
+
 def emit_local_solution(sio, container, generation, fitness):
     generation_data = {
         "generation": generation,
