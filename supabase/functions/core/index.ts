@@ -17,8 +17,10 @@ import { getAllPackages } from './Packages/getAllPackages.ts'
 import { getAllShipments } from './Shipments/getAllShipments.ts'
 import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
 
+
 //Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
+import { setFitnessValue } from './Shipments/setFitnessValue.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -91,6 +93,15 @@ Deno.serve(async (req) => {
         return responseBuilder(
           await getShipmentByDeliveryID(
             supabaseUser,
+            requestBody.deliveryID
+          )
+        )
+      }
+      if (requestBody.type == 'setFitnessValue') {
+        return responseBuilder(
+          await setFitnessValue(
+            supabaseUser,
+            requestBody.Fitness_Value,
             requestBody.deliveryID
           )
         )
