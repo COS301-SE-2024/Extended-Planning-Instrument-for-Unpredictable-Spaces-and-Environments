@@ -1,140 +1,3 @@
-<!-- 
-<script setup>
-import { useDark, useToggle } from '@vueuse/core'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { supabase } from '@/supabase'
-import DialogComponent from '@/components/DialogComponent.vue'
-
-const isDark = useDark()
-const toggleDark = useToggle(isDark) // Proper toggle function
-const router = useRouter() // Use the router instance
-
-const isMobileSidebarCollapsed = ref(false)
-
-const userFullName = ref('')
-const userRole = ref('')
-const avatarLabel = computed(() => {
-  return userFullName.value ? userFullName.value.charAt(0).toUpperCase() : 'P'
-})
-const fetchUserDetails = async () => {
-  const session = await supabase.auth.getSession()
-  if (session.data.session) {
-    const { user } = session.data.session
-    const { data, error } = await supabase
-      .from('Users')
-      .select('FullName, Role')
-      .eq('Email', user.email)
-      .single()
-
-    if (error) {
-      console.log('Error fetching user:', error)
-    } else {
-      userFullName.value = data.FullName
-      userRole.value = data.Role
-    }
-  } else {
-    console.log('No session found')
-  }
-}
-
-// Function to check window size and update sidebar state
-const checkWindowSize = () => {
-  isMobileSidebarCollapsed.value = window.innerWidth < 1024
-}
-
-// Add event listener on mounted and remove on unmounted
-onMounted(() => {
-  fetchUserDetails()
-  checkWindowSize()
-  window.addEventListener('resize', checkWindowSize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', checkWindowSize)
-})
-
-async function logout() {
-  const { error } = await supabase.auth.signOut()
-
-  if (error) {
-    console.log(error)
-  } else {
-    router.push({ name: 'login' })
-    console.log('Log out successful')
-  }
-}
-components: {
-  DialogComponent
-}
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
-}
-
-const showShipment = ref(false)
-const toggleShipment = () => {
-  showShipment.value = !showShipment.value
-}
-
-const items = [
-  {
-    label: 'Dashboard',
-    icon: 'pi pi-fw pi-clipboard',
-    route: 'dashboard',
-    active: false
-  },
-  {
-    label: 'Shipments',
-    icon: 'pi pi-fw pi-truck',
-    route: '/shipments',
-    active: false
-  },
-  {
-    label: 'Tracking',
-    icon: 'pi pi-fw pi-map',
-    route: 'tracking',
-    active: false
-  },
-  {
-    label: 'Inventory',
-    icon: 'pi pi-fw pi-box',
-    route: '/inventory',
-    active: false
-  },
-  {
-    label: 'Manage Users',
-    icon: 'pi pi-fw pi-lock',
-    route: 'manage-users',
-    active: false
-  },
-  {
-    label: 'Dark Mode Toggle',
-    icon: 'pi pi-fw pi-moon',
-    command: () => {
-      console.log('Toggling Dark Mode')
-      toggleDark() // Correctly call the toggle function
-    }
-  },
-  {
-    label: 'Log Out',
-    icon: 'pi pi-fw pi-sign-out',
-    command: () => {
-      console.log('Logging Out')
-      logout()
-    }
-  },
-  {
-    label: 'Help',
-    icon: 'pi pi-fw pi-question',
-    command: () => {
-      console.log('Opening Help Menu')
-      toggleDialog()
-    }
-  }
-]
-</script> -->
-
 <template>
   <!-- Sidebar -->
   <div
@@ -312,6 +175,7 @@ import { useDark, useToggle } from '@vueuse/core'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { createClient } from '@supabase/supabase-js'
+import Papa from 'papaparse'
 import DialogComponent from '@/components/DialogComponent.vue'
 
 // Initialize Supabase client
@@ -393,25 +257,166 @@ const onFileChange = (event) => {
 
 const processShipment = async () => {
   if (!selectedFile.value) {
-    alert("Please select a file")
+    alert('Please select a file')
     return
   }
 
   try {
-    const { data, error } = await supabase.storage
+    console.log('Uploading file:', selectedFile.value.name);
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
-      .upload(`Upload-${selectedFile.value.name}`, selectedFile.value)
+      .upload(`uploads/${selectedFile.value.name}`, selectedFile.value)
 
-    if (error) {
-      console.error("Error uploading file:", error)
-      alert("Failed to upload file")
-    } else {
-      alert("File uploaded successfully")
+    if (uploadError) {
+      console.error('Error uploading file:', uploadError)
+      alert('Failed to upload file')
+      return
     }
+
+    console.log('File uploaded successfully:', uploadData);
+
+    const { data: publicURLData, error: urlError } = supabase.storage
+      .from('data_bucket')
+      .getPublicUrl(`uploads/${selectedFile.value.name}`)
+
+    if (urlError) {
+      console.error('Error getting public URL:', urlError)
+      alert('Failed to get public URL')
+      return
+    }
+
+    const publicURL = publicURLData.publicUrl
+    console.log('Generated Public URL:', publicURL)
+
+    // Try to get the file using the Supabase client instead of fetch
+    const { data, error: downloadError } = await supabase.storage
+      .from('data_bucket')
+      .download(`uploads/${selectedFile.value.name}`)
+
+    if (downloadError) {
+      console.error('Error downloading file:', downloadError)
+      alert('Failed to download file')
+      return
+    }
+
+    const csvText = await data.text()
+    console.log('CSV Text (first 100 characters):', csvText.substring(0, 100))
+
+    Papa.parse(csvText, {
+      header: true,
+      complete: async (results) => {
+        const rows = results.data
+
+         // Fetch the highest Delivery_id and increment by one
+         const { data: maxDeliveryData, error: maxDeliveryError } = await supabase
+          .from('Deliveries')
+          .select('id')
+          .order('id', { ascending: false })
+          .limit(1)
+
+        if (maxDeliveryError) {
+          console.error('Error fetching max delivery ID:', maxDeliveryError)
+          alert('Failed to fetch max delivery ID')
+          return
+        }
+
+        const newDeliveryId = maxDeliveryData.length > 0 ? maxDeliveryData[0].id + 1 : 1
+        console.log('New Delivery ID:', newDeliveryId)
+
+
+        // Insert a new delivery into the Deliveries table
+        const { data: deliveryData, error: deliveryError } = await supabase
+          .from('Deliveries')
+          .insert([{id: newDeliveryId, Status: 'Ordered', Driver_id: '55' }])
+          .select('id')
+
+        if (deliveryError) {
+          console.error('Error inserting delivery:', deliveryError)
+          alert('Failed to insert delivery')
+          return
+        }
+
+
+        // Group rows by location and insert into Shipments and Packages tables
+        const groupedByLocation = rows.reduce((acc, row) => {
+          if (!acc[row.Location]) {
+            acc[row.Location] = []
+          }
+          acc[row.Location].push(row)
+          return acc
+        }, {})
+
+        for (const location in groupedByLocation) {
+          const shipmentRows = groupedByLocation[location]
+
+          // Insert a new shipment into the Shipment table
+          const { data: shipmentData, error: shipmentError } = await supabase
+            .from('Shipment')
+            .insert([{ Start_time: null, Destination: location, Status: 'Processing', Delivery_id: newDeliveryId }])
+            .select('id')
+
+          if (shipmentError) {
+            console.error('Error inserting shipment:', shipmentError)
+            alert('Failed to insert shipment')
+            return
+          }
+
+          // Fetch the highest Delivery_id and increment by one
+         const { data: maxShipmentData, error: maxShipmentError } = await supabase
+          .from('Shipment')
+          .select('id')
+          .order('id', { ascending: false })
+          .limit(1)
+
+        if (maxShipmentError) {
+          console.error('Error fetching max delivery ID:', maxShipmentError)
+          alert('Failed to fetch max delivery ID')
+          return
+        }
+
+        const newShipmentId = maxShipmentData.length > 0 ? maxShipmentData[0].id + 1 : 1
+        console.log('New Shipment ID:', newShipmentId)
+
+        //DO THE SAME FOR PACKAGES
+
+
+          // Insert packages into the Packages table
+          const packages = shipmentRows.map(row => ({
+            Shipment_id: newShipmentId,
+            Width: parseFloat(row['Width (mm)']),
+            Length: parseFloat(row.Length),
+            Height: parseFloat(row.Height),
+            Weight: parseFloat(row['Weight (kg)']),
+            Volume: parseFloat(row.Volume),
+          }))
+
+          const { error: packageError } = await supabase
+            .from('Packages')
+            .insert(packages)
+
+          if (packageError) {
+            console.error('Error inserting packages:', packageError)
+            alert('Failed to insert packages')
+            return
+          }
+        }
+
+        alert('File processed and data inserted successfully')
+      },
+      error: (error) => {
+        console.error('Error parsing CSV:', error)
+      },
+    })
   } catch (error) {
-    console.error("Error uploading file:", error)
-    alert("Error uploading file")
+    console.error('Error processing file:', error)
+    alert('Error processing file')
   }
+
+
+
+
+
 }
 
 const items = [
