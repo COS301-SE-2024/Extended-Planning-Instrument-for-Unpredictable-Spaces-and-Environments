@@ -13,5 +13,5 @@ export async function getPublicURL(supabase: any, fileName: any) {
 
     console.log('Public URL obtained successfully:', publicURLData);
 
-    return {publicURL: publicURLData.publicURL };
+    return {data: publicURLData };
 }

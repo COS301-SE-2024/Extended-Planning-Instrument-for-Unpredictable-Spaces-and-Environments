@@ -1,4 +1,5 @@
-import Papa from 'papaparse';
+// Import PapaParse from a CDN
+import Papa from 'https://cdn.skypack.dev/papaparse';
 
 export function parseCSV(csvText: string) {
   return new Promise((resolve, reject) => {

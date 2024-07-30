@@ -12,12 +12,11 @@ import { checkRole } from './Users/checkRole.ts'
 import { insertPackage } from './Packages/insertPackage.ts'
 import { uploadFile } from './Packages/uploadCSV.ts'
 import { getAllPackages } from './Packages/getAllPackages.ts'
-import { insertPackages } from './Packages/insertPackages.ts'
 
 // Shipment
 import { getAllShipments } from './Shipments/getAllShipments.ts'
 import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
-import { getPublicURL } from './Storage/getPublicURL.js'
+import { getPublicURL } from './Storage/getPublicURL.ts'
 
 // Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
@@ -166,7 +165,8 @@ Deno.serve(async (req) => {
         return responseBuilder(
           await insertDelivery(
             supabaseUser,
-            requestBody.newDeliveryId
+            requestBody.newDeliveryId,
+            requestBody.driver_id
           )
         )
       }
@@ -181,20 +181,13 @@ Deno.serve(async (req) => {
         return responseBuilder(
           await insertShipment(
             supabaseUser,
+            requestBody.shipment_id,
             requestBody.location,
             requestBody.newDeliveryId
           )
         )
       }
-      if (requestBody.type == 'insertPackages') {
-        return responseBuilder(
-          await insertPackages(
-            supabaseUser,
-            requestBody.shipmentId,
-            requestBody.rows
-          )
-        )
-      } else {
+      else {
         return defaultResponse()
       }
     }
