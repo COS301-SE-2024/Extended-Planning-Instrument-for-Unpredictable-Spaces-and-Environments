@@ -19,4 +19,3 @@ export async function insertPackage(supabase: any, ship_id: string, width: strin
   
     return { "Insert Package":"Succesfully Inserted Package!" };
   }
-  
