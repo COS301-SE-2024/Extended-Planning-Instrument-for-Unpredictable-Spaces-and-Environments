@@ -88,7 +88,7 @@ const items = [
             v-if="item.badge"
             :class="{ 'ml-auto': !root, 'ml-2': root }"
             :value="item.badge"
-            class="bg-yellow-500 text-black px-2"
+            class="bg-orange-600 text-black px-2"
           />
           <span
             v-if="item.shortcut"
@@ -109,7 +109,7 @@ const items = [
                 isDark
                   ? 'border-neutral-500 bg-neutral-950 text-white'
                   : 'border-gray-500 bg-white text-black',
-                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
+                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-orange-600'
               ]"
             >
               <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>

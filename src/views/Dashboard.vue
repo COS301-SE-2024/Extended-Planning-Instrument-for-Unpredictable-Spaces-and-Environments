@@ -244,7 +244,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="w-full mb-4 gap-4 flex flex-row">
+        <div class="w-full mb-4 gap-4 flex flex-col sm:flex-row">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
@@ -260,7 +260,6 @@ onMounted(() => {
                 :class="[isDark ? 'dark' : 'light']"
                 :max="500"
               />
-
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Total Packages</h2>
                 <p class="font-light">{{ knobValue }}/{{ 500 }}</p>

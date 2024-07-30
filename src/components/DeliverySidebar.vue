@@ -194,7 +194,7 @@ const items = [
 }
 
 .dark .p-menuitem:hover > .p-menuitem-content {
-  background-color: #a16207 !important;
+  background-color: #262626 !important;
 }
 
 .p-calendar {
