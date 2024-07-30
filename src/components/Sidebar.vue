@@ -1,4 +1,4 @@
-
+<!-- 
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
@@ -133,7 +133,7 @@ const items = [
     }
   }
 ]
-</script>
+</script> -->
 
 <template>
   <!-- Sidebar -->
@@ -424,19 +424,19 @@ const items = [
   {
     label: 'Shipments',
     icon: 'pi pi-fw pi-truck',
-    route: '/',
+    route: '/shipments',
     active: false
   },
   {
     label: 'Tracking',
     icon: 'pi pi-fw pi-map',
-    route: 'packer',
+    route: 'tracking',
     active: false
   },
   {
     label: 'Inventory',
     icon: 'pi pi-fw pi-box',
-    route: '/',
+    route: '/inventory',
     active: false
   },
   {
@@ -449,13 +449,15 @@ const items = [
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      toggleDark()
+      console.log('Toggling Dark Mode')
+      toggleDark() // Correctly call the toggle function
     }
   },
   {
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
+      console.log('Logging Out')
       logout()
     }
   },
@@ -463,6 +465,7 @@ const items = [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
+      console.log('Opening Help Menu')
       toggleDialog()
     }
   }
