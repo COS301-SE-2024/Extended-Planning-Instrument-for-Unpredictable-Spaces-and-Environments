@@ -84,12 +84,11 @@ const items = [
     <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
-          width="35"
           height="40"
           viewBox="0 0 35 40"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          :class="[isDark ? 'text-white' : '', 'h-10']"
+          :class="[isDark ? 'text-white' : '', 'h-8']"
         >
           <path d="..." fill="var(--primary-color)" />
           <path d="..." fill="var(--text-color)" />
@@ -118,24 +117,22 @@ const items = [
       </template>
       <template #end>
         <div class="flex items-center gap-2">
-          <div class="w-full md:w-[300px]">
-            <div
+          <div
+            :class="[
+              isDark
+                ? 'border-neutral-500 bg-neutral-950 text-white'
+                : 'border-gray-500 bg-white text-black',
+              'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
+            ]"
+          >
+            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+            <InputText
+              placeholder="Search"
               :class="[
-                isDark
-                  ? 'border-neutral-500 bg-neutral-950 text-white'
-                  : 'border-gray-500 bg-white text-black',
-                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'focus:outline-none focus:ring-0 w-32 sm:w-auto'
               ]"
-            >
-              <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-              <InputText
-                placeholder="Search"
-                :class="[
-                  isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-                  'focus:outline-none focus:ring-0'
-                ]"
-              />
-            </div>
+            />
           </div>
         </div>
       </template>
@@ -193,13 +190,6 @@ const items = [
     > .p-menuitem-content {
       background-color: #262626 !important;
     }
-  }
-}
-
-@media (max-width: 1024px) {
-  .specific-menubar .p-menuitem {
-    width: 100%;
-    border-radius: 0rem;
   }
 }
 

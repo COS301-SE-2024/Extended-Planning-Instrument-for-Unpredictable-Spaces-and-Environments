@@ -120,8 +120,10 @@ export default {
           'card h-[auto] flex flex-col p-4'
         ]"
       >
-        <Map />
-
+        <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
+        <div class="mb-4">
+          <Map />
+        </div>
         <p class="pb-8 text-3xl font-bold">Shipment #345290</p>
         <div class="flex flex-row">
           <Timeline :value="events" class="customized-timeline">
@@ -139,7 +141,7 @@ export default {
                   isDark ? 'dark bg-neutral-950 text-white ' : 'light bg-white-100 text-black',
                   'rounded-md'
                 ]"
-                style="width: 95%"
+                style="width: 100%"
               >
                 <template #title>
                   {{ slotProps.item.status }}

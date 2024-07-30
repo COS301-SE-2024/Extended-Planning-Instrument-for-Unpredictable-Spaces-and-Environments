@@ -4,6 +4,7 @@ import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
@@ -16,6 +17,14 @@ const isDark = useDark()
 
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
+
+// search functionality
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+const onGlobalFilterChange = (e) => {
+  filters.value.global.value = e.target.value
+}
 
 const updateUserInTable = (newUserData) => {
   const index = customers.value.findIndex((user) => user.id === newUserData.id)
@@ -161,7 +170,9 @@ const nameWithYou = (user) => {
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
+            v-model="filters['global'].value"
             placeholder="Search"
+            @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
               'focus:outline-none focus:ring-0'
@@ -180,6 +191,8 @@ const nameWithYou = (user) => {
           :value="customers"
           paginator
           :rows="5"
+          :filters="filters"
+          :globalFilterFields="['FullName', 'Email', 'Role', 'Phone']"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
           <Column field="FullName" header="Full Name" style="width: 25%">
