@@ -1,3 +1,140 @@
+
+<script setup>
+import { useDark, useToggle } from '@vueuse/core'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { supabase } from '@/supabase'
+import DialogComponent from '@/components/DialogComponent.vue'
+
+const isDark = useDark()
+const toggleDark = useToggle(isDark) // Proper toggle function
+const router = useRouter() // Use the router instance
+
+const isMobileSidebarCollapsed = ref(false)
+
+const userFullName = ref('')
+const userRole = ref('')
+const avatarLabel = computed(() => {
+  return userFullName.value ? userFullName.value.charAt(0).toUpperCase() : 'P'
+})
+const fetchUserDetails = async () => {
+  const session = await supabase.auth.getSession()
+  if (session.data.session) {
+    const { user } = session.data.session
+    const { data, error } = await supabase
+      .from('Users')
+      .select('FullName, Role')
+      .eq('Email', user.email)
+      .single()
+
+    if (error) {
+      console.log('Error fetching user:', error)
+    } else {
+      userFullName.value = data.FullName
+      userRole.value = data.Role
+    }
+  } else {
+    console.log('No session found')
+  }
+}
+
+// Function to check window size and update sidebar state
+const checkWindowSize = () => {
+  isMobileSidebarCollapsed.value = window.innerWidth < 1024
+}
+
+// Add event listener on mounted and remove on unmounted
+onMounted(() => {
+  fetchUserDetails()
+  checkWindowSize()
+  window.addEventListener('resize', checkWindowSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkWindowSize)
+})
+
+async function logout() {
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    console.log(error)
+  } else {
+    router.push({ name: 'login' })
+    console.log('Log out successful')
+  }
+}
+components: {
+  DialogComponent
+}
+const showDialog = ref(false)
+const toggleDialog = () => {
+  showDialog.value = !showDialog.value
+}
+
+const showShipment = ref(false)
+const toggleShipment = () => {
+  showShipment.value = !showShipment.value
+}
+
+const items = [
+  {
+    label: 'Dashboard',
+    icon: 'pi pi-fw pi-clipboard',
+    route: 'dashboard',
+    active: false
+  },
+  {
+    label: 'Shipments',
+    icon: 'pi pi-fw pi-truck',
+    route: '/shipments',
+    active: false
+  },
+  {
+    label: 'Tracking',
+    icon: 'pi pi-fw pi-map',
+    route: 'tracking',
+    active: false
+  },
+  {
+    label: 'Inventory',
+    icon: 'pi pi-fw pi-box',
+    route: '/inventory',
+    active: false
+  },
+  {
+    label: 'Manage Users',
+    icon: 'pi pi-fw pi-lock',
+    route: 'manage-users',
+    active: false
+  },
+  {
+    label: 'Dark Mode Toggle',
+    icon: 'pi pi-fw pi-moon',
+    command: () => {
+      console.log('Toggling Dark Mode')
+      toggleDark() // Correctly call the toggle function
+    }
+  },
+  {
+    label: 'Log Out',
+    icon: 'pi pi-fw pi-sign-out',
+    command: () => {
+      console.log('Logging Out')
+      logout()
+    }
+  },
+  {
+    label: 'Help',
+    icon: 'pi pi-fw pi-question',
+    command: () => {
+      console.log('Opening Help Menu')
+      toggleDialog()
+    }
+  }
+]
+</script>
+
 <template>
   <!-- Sidebar -->
   <div
@@ -90,7 +227,6 @@
           <a
             class="h-[45px] flex align-items-center mb-2"
             v-else
-            v-ripple
             :href="item.url"
             :target="item.target"
             v-bind="props.action"

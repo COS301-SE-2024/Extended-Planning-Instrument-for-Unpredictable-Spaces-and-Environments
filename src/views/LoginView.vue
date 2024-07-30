@@ -68,21 +68,22 @@ const signInWithProvider = async (provider) => {
         'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
       ]"
     >
-      <img
-        v-if="isDark"
-        src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
-        alt="Dark Mode Image"
-        class="mb-10"
-        style="width: 10rem; height: auto"
-      />
-      <img
-        v-else
-        src="/Members/Photos/Logos/Wording-Thin-Light.svg"
-        alt="Light Mode Image"
-        class="mb-10"
-        style="width: 10rem; height: auto"
-      />
-
+      <div class="flex items-center justify-center">
+        <img
+          v-if="isDark"
+          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          alt="Dark Mode Image"
+          class="mb-10"
+          style="width: 10rem; height: auto"
+        />
+        <img
+          v-else
+          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          alt="Light Mode Image"
+          class="mb-10"
+          style="width: 10rem; height: auto"
+        />
+      </div>
       <p
         :class="[
           isDark ? 'text-white' : ' text-neutral-800 ',

@@ -4,6 +4,7 @@ import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
@@ -13,43 +14,50 @@ const supabaseKey =
 // SUPA BASE
 const supabase = createClient(supabaseUrl, supabaseKey)
 const isDark = useDark()
-
-const customers = ref([]) // Reactive variable to store customer data
-const dialogVisible = ref(false)
-
-const updateUserInTable = (newUserData) => {
-  const index = customers.value.findIndex((user) => user.id === newUserData.id)
-  if (index !== -1) {
-    customers.value[index] = newUserData
-  } else {
-    customers.value.push(newUserData)
-  }
+const toggleDark = () => {
+  isDark.value = !isDark.value
 }
-const currentUser = ref(null)
-async function fetchCurrentUser() {
-  const session = await supabase.auth.getSession()
-  if (session.data.session) {
-    const { user } = session.data.session
-    // Assuming you have a way to fetch user details, like their name
-    const { data, error } = await supabase
-      .from('Users')
-      .select('FullName')
-      .eq('Email', user.email)
-      .single()
+const dialogVisible = ref(false)
+function formattedDateTime(slotProps) {
+  const options = { dateStyle: 'medium', timeStyle: 'short' }
+  return new Date(slotProps.item.time).toLocaleString('en-US', options)
+}
+
+// search functionality
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+const onGlobalFilterChange = (e) => {
+  filters.value.global.value = e.target.value
+}
+
+const shipments = ref([])
+const getAllShipments = async () => {
+  try {
+    console.log('TRYING')
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllShipments' }),
+      method: 'POST'
+    })
 
     if (error) {
-      console.log('Error fetching user:', error)
+      console.log('API Error:', error)
     } else {
-      currentUser.value = data.FullName
-      console.log('Current user fetched:', currentUser.value)
+      console.log(data.data)
+      shipments.value = data.data
+      const formattedShipments = data.data.map((shipment) => ({
+        ...shipment,
+        Start_time: formattedDateTime({ item: { time: shipment.Start_time } }),
+        End_time: formattedDateTime({ item: { time: shipment.End_time } })
+      }))
+      shipments.value = formattedShipments
     }
-  } else {
-    console.log('No session found')
+  } catch (error) {
+    console.error('Error fetching data:', error)
   }
 }
-
 async function setupSubscription() {
-  await supabase // Await for the subscription to be established
+  await supabase
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
       // console.log(payload.new)
@@ -58,85 +66,12 @@ async function setupSubscription() {
     .subscribe()
 }
 
-const fetchUsers = async () => {
-  try {
-    const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'getAllUsers' }),
-      method: 'POST'
-    })
-
-    if (error) {
-      console.log('API Error:', error)
-    } else {
-      console.log(data.data)
-      customers.value = data.data
-      // console.log(customers.value) // Now it should log an array
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error)
-  }
-}
 onMounted(() => {
-  fetchUsers()
-  fetchCurrentUser() // Fetch current user info on mount
   setupSubscription()
+  getAllShipments()
 })
-
-const selectedUser = ref({
-  FullName: '',
-  Email: '',
-  Role: '',
-  Phone: ''
-})
-const selectedRole = ref(null)
 
 const loading = ref(false)
-
-const onRemoveThing = (user) => {
-  selectedUser.value = { ...user }
-  selectedRole.value = roles.value.find((role) => role.name === user.Role) || null
-  dialogVisible.value = true
-}
-const roles = ref([
-  { name: 'Manager', code: 'Manager' },
-  { name: 'Packer', code: 'Packer' },
-  { name: 'Driver', code: 'Driver' },
-  { name: 'unassigned', code: 'unassigned' }
-])
-
-const saveChanges = async () => {
-  loading.value = true // Start loading animation
-  try {
-    const { error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({
-        type: 'updateUser',
-        fullname: selectedUser.value.FullName,
-        email: selectedUser.value.Email,
-        role: selectedRole.value.name,
-        phone: selectedUser.value.Phone
-      }),
-      method: 'POST'
-    })
-
-    if (error) {
-      console.log('API Error:', error)
-      console.log(error.message)
-    } else {
-      dialogVisible.value = false // Close the dialog if successful
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error)
-  } finally {
-    loading.value = false // Stop loading animation
-  }
-}
-const nameWithYou = (user) => {
-  console.log('nameWithYou function called with:', user)
-  if (currentUser.value && user.FullName === currentUser.value) {
-    return `${user.FullName} (You)`
-  }
-  return user.FullName
-}
 </script>
 
 <template>
@@ -161,7 +96,9 @@ const nameWithYou = (user) => {
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
+            v-model="filters['global'].value"
             placeholder="Search"
+            @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
               'focus:outline-none focus:ring-0'
@@ -170,36 +107,33 @@ const nameWithYou = (user) => {
         </div>
       </div>
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Manage User's</span>
+        <span class="font-bold">All Shipments</span>
       </h2>
 
       <!-- Users Table -->
       <div>
         <DataTable
           :class="[isDark ? 'dark' : '']"
-          :value="customers"
+          :value="shipments"
+          :filters="filters"
+          :globalFilterFields="[
+            'id',
+            'Start_time',
+            'Destination',
+            'Status',
+            'End_time',
+            'Delivery_id'
+          ]"
           paginator
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="FullName" header="Full Name" style="width: 25%">
-            <template #body="slotProps">
-              {{ nameWithYou(slotProps.data) }}
-            </template>
-          </Column>
-          <Column field="Email" header="Email" style="width: 25%"></Column>
-          <Column field="Role" header="Role" style="width: 25%"></Column>
-          <Column field="Phone" header="Phone Number" style="width: 25%"></Column>
-
-          <Column header="Edit" style="width: 25%">
-            <template #body="slotProps">
-              <Button
-                class="bg-orange-500 text-gray-100 rounded-xl p-2"
-                label="Edit"
-                @click="onRemoveThing(slotProps.data)"
-              />
-            </template>
-          </Column>
+          <Column field="id" header="Shipment ID"> </Column>
+          <Column field="Start_time" header="Start Time"></Column>
+          <Column field="Destination" header="Destination"></Column>
+          <Column field="Status" header="Status"></Column>
+          <Column field="End_time" header="End Time"></Column>
+          <Column field="Delivery_id" header="Delivery ID"></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">
