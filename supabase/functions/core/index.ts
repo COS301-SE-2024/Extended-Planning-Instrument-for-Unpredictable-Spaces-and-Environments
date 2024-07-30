@@ -1,26 +1,35 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.7'
-//import { corsHeaders } from '../cors.ts'; // Adjusted relative path
+// import { corsHeaders } from '../cors.ts'; // Adjusted relative path
 
-//Users
+// Users
 import { getAllUsers } from './Users/getAllUsers.ts'
 import { insertUser } from './Users/insertUser.ts'
 import { updateUser } from './Users/updateUser.ts'
 import { checkRole } from './Users/checkRole.ts'
 
-//Package
+// Package
 import { insertPackage } from './Packages/insertPackage.ts'
 import { uploadFile } from './Packages/uploadCSV.ts'
 import { getAllPackages } from './Packages/getAllPackages.ts'
+import { insertPackages } from './Packages/insertPackages.ts'
 
-//Shipment
+// Shipment
 import { getAllShipments } from './Shipments/getAllShipments.ts'
 import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
+import { getPublicURL } from './Storage/getPublicURL.js'
 
-
-//Deliveries
+// Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
 import { setFitnessValue } from './Shipments/setFitnessValue.ts'
+
+// New Endpoints
+import { downloadFile } from './Storage/downloadFile.ts'
+import { parseCSV } from './Storage/parseCSV.ts'
+import { getMaxDeliveryID } from './Deliveries/getMaxDeliveryID.ts'
+import { insertDelivery } from './Deliveries/insertDelivery.ts'
+import { getMaxShipmentID } from './Shipments/getMaxShipmentID.ts'
+import { insertShipment } from './Shipments/insertShipment.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -47,16 +56,6 @@ function responseBuilder(data: any) {
     headers: { 'Content-Type': 'application/json', ...corsHeaders }
   })
 }
-
-// const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-// fileInput.addEventListener('change', async (event: Event) => {
-//   const target = event.target as HTMLInputElement;
-//   const file = target.files?.[0];
-//   if (file) {
-//     const result = await uploadFile(supabaseUser, file);
-//     console.log(result);
-//   }
-// });
 
 Deno.serve(async (req) => {
   try {
@@ -97,6 +96,14 @@ Deno.serve(async (req) => {
           )
         )
       }
+      if (requestBody.type == 'getPublicURL') {
+        return responseBuilder(
+          await getPublicURL(
+            supabaseUser,
+            requestBody.fileName
+          )
+        )
+      }
       if (requestBody.type == 'setFitnessValue') {
         return responseBuilder(
           await setFitnessValue(
@@ -129,6 +136,62 @@ Deno.serve(async (req) => {
             requestBody.role,
             requestBody.fullname,
             requestBody.phone
+          )
+        )
+      }
+      // New endpoints
+      if (requestBody.type == 'downloadFile') {
+        return responseBuilder(
+          await downloadFile(
+            supabaseUser,
+            requestBody.fileName
+          )
+        )
+      }
+      if (requestBody.type == 'parseCSV') {
+        return responseBuilder(
+          await parseCSV(
+            requestBody.csvText
+          )
+        )
+      }
+      if (requestBody.type == 'getMaxDeliveryID') {
+        return responseBuilder(
+          await getMaxDeliveryID(
+            supabaseUser
+          )
+        )
+      }
+      if (requestBody.type == 'insertDelivery') {
+        return responseBuilder(
+          await insertDelivery(
+            supabaseUser,
+            requestBody.newDeliveryId
+          )
+        )
+      }
+      if (requestBody.type == 'getMaxShipmentID') {
+        return responseBuilder(
+          await getMaxShipmentID(
+            supabaseUser
+          )
+        )
+      }
+      if (requestBody.type == 'insertShipment') {
+        return responseBuilder(
+          await insertShipment(
+            supabaseUser,
+            requestBody.location,
+            requestBody.newDeliveryId
+          )
+        )
+      }
+      if (requestBody.type == 'insertPackages') {
+        return responseBuilder(
+          await insertPackages(
+            supabaseUser,
+            requestBody.shipmentId,
+            requestBody.rows
           )
         )
       } else {

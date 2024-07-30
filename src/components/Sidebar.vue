@@ -262,8 +262,8 @@ const processShipment = async () => {
   }
 
   try {
+    //KEEP HERE FOR NOW 
     console.log('Uploading file:', selectedFile.value.name);
-    
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
       .upload(`uploads/${selectedFile.value.name}`, selectedFile.value)
@@ -273,9 +273,10 @@ const processShipment = async () => {
       alert('Failed to upload file')
       return
     }
-
     console.log('File uploaded successfully:', uploadData);
 
+
+    //DONE
     const { data: publicURLData, error: urlError } = supabase.storage
       .from('data_bucket')
       .getPublicUrl(`uploads/${selectedFile.value.name}`)
