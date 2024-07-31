@@ -33,6 +33,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <div
+      id="configPanel"
+      style="
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+        border-radius: 5px;
+      "
+    >
+      <h3 style="cursor: pointer" onclick="toggleConfigPanel()">Configuration ▼</h3>
+      <div id="configContent" style="display: none">
+        <label for="weightDistributionTolerance">Weight Distribution Tolerance:</label>
+        <input
+          type="number"
+          id="weightDistributionTolerance"
+          value="1.1"
+          step="0.1"
+          min="1"
+        /><br />
+        <label for="supportAreaRatio">Support Area Ratio:</label>
+        <input type="number" id="supportAreaRatio" value="0.65" step="0.05" min="0" max="1" /><br />
+        <label for="sortMethod">Sort Method:</label>
+        <select id="sortMethod">
+          <option value="weight_volume_ratio">Weight/Volume Ratio</option>
+          <option value="weight">Weight</option></select
+        ><br />
+        <button onclick="runAlgorithm()">Run Algorithm</button>
+      </div>
+    </div>
     <script>
       let scene, camera, renderer, controls
       const socket = io()
@@ -51,6 +82,29 @@
 
       let currentSection = 0
       let isShowingInstructions = false
+
+      function toggleConfigPanel() {
+        const content = document.getElementById('configContent')
+        content.style.display = content.style.display === 'none' ? 'block' : 'none'
+      }
+
+      function runAlgorithm() {
+        const weightDistributionTolerance = parseFloat(
+          document.getElementById('weightDistributionTolerance').value
+        )
+        const supportAreaRatio = parseFloat(document.getElementById('supportAreaRatio').value)
+        const sortMethod = document.getElementById('sortMethod').value
+
+        socket.emit('run_algorithm', {
+          weightDistributionTolerance,
+          supportAreaRatio,
+          sortMethod
+        })
+      }
+
+      socket.on('algorithm_started', (data) => {
+        console.log(data.message)
+      })
 
       function init() {
         scene = new THREE.Scene()

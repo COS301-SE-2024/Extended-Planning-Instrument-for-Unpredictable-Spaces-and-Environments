@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit, join_room
 import math
+from packing import genetic_algorithm  # Import your genetic algorithm function
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -8,7 +9,12 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Store the container and boxes data in memory
 data = {
     "containers": [],  # Now handles multiple containers
-    "generations": []
+    "generations": [],
+    "config": {
+        "weightDistributionTolerance": 1.1,
+        "supportAreaRatio": 0.65,
+        "sortMethod": "weight_volume_ratio"
+    }
 }
 
 @app.route('/')
@@ -90,8 +96,10 @@ def handle_add_box(box_data):
 def handle_update_generation(generation_data):
     for container in generation_data['containers']:
         container['layers'] = organize_boxes_into_layers(container)
-        del container['boxes']  # Remove the flat list of boxes
+        if 'boxes' in container:
+            del container['boxes']  # Remove the flat list of boxes if it exists
     data["generations"] = [generation_data]  # Store only the latest generation data
+    data["generations"][0]["config"] = data["config"]  # Add the current configuration to the generation data
     emit('update_data', data, room='main_room', broadcast=True)
 
 @socketio.on('remaining_volume')
@@ -101,6 +109,54 @@ def handle_remaining_volume(volume_data):
             container["total_remaining_volume"] = volume_data["total_remaining_volume"]
             break
     emit('update_data', data, room='main_room', broadcast=True)
+
+@socketio.on('run_algorithm')
+def handle_run_algorithm(config):
+    # Update the configuration
+    data["config"] = config
+    
+    emit('algorithm_started', {"message": "Algorithm started with new configuration"}, room='main_room')
+    
+    # Run the genetic algorithm with the new configuration
+    container_dimensions = (1200, 1930, 1000)  # Adjust these values as needed
+    best_individual, best_container = genetic_algorithm(
+        container_dimensions,
+        socketio,
+        weight_distribution_tolerance=config['weightDistributionTolerance'],
+        support_area_ratio=config['supportAreaRatio'],
+        sort_method=config['sortMethod']
+    )
+    
+    # Prepare the result data
+    result_data = prepare_result_data(best_individual, best_container)
+    
+    # Update the generation data and emit to clients
+    handle_update_generation(result_data)
+
+def prepare_result_data(best_individual, best_container):
+    # Convert the best solution to a format suitable for the client
+    result_data = {
+        "fitness": best_container.total_volume - best_container.total_remaining_volume,
+        "containers": [{
+            "width": best_container.width,
+            "height": best_container.height,
+            "length": best_container.length,
+            "boxes": [
+                {
+                    "id": box.id,
+                    "width": box.width,
+                    "height": box.height,
+                    "length": box.length,
+                    "x": x,
+                    "y": y,
+                    "z": z,
+                    "weight": box.weight
+                }
+                for box, x, y, z in best_container.boxes
+            ]
+        }]
+    }
+    return result_data
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

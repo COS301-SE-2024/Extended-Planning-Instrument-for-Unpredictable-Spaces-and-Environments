@@ -18,7 +18,7 @@ class Box:
         return Box(self.id, new_width, new_height, new_length, self.weight)
 
 class Container:
-    def __init__(self, width, height, length):
+    def __init__(self, width, height, length, weight_distribution_tolerance, support_area_ratio):
         self.width = width
         self.height = height
         self.length = length
@@ -26,6 +26,8 @@ class Container:
         self.remaining_space = [(0, 0, 0, width, height, length)]
         self.total_volume = width * height * length
         self.total_remaining_volume = self.total_volume
+        self.weight_distribution_tolerance = weight_distribution_tolerance
+        self.support_area_ratio = support_area_ratio
 
     def can_fit(self, box, space):
         _, _, _, w, h, l = space
@@ -48,7 +50,7 @@ class Container:
     def check_weight_distribution(self, new_box, x, y, z):
         for box, bx, by, bz in self.boxes:
             if bx < x + new_box.width and bx + box.width > x and bz < z + new_box.length and bz + box.length > z:
-                if by > y and new_box.density > box.density * 1.1:  # Allowing some tolerance
+                if by > y and new_box.density > box.density * self.weight_distribution_tolerance:  # Allowing some tolerance
                     return False
         return True
 
@@ -82,7 +84,7 @@ class Container:
         if y == 0:
             return True  # The box is on the container floor
         support_area = 0
-        required_area = 0.65 * box.width * box.length  # At least 65% of the bottom face should be supported
+        required_area = self.support_area_ratio * box.width * box.length  # At least 65% of the bottom face should be supported
 
         for other_box, ox, oy, oz in self.boxes:
             if oy + other_box.height == y:  # Check if other box is directly below
@@ -125,9 +127,10 @@ def calculate_above_weight(box, x, y, z, placed_boxes):
             above_weight += other_box.weight
     return above_weight
 
-def evaluate_fitness(individual, container_dimensions):
+def evaluate_fitness(individual, container_dimensions,weight_tolerance,supported_area):
     container_width, container_height, container_length = container_dimensions
-    container = Container(container_width, container_height, container_length)
+    container = Container(container_width, container_height, container_length, weight_tolerance, supported_area)
+
     unplaced_boxes = []
     weight_penalty = 0
 
@@ -163,7 +166,7 @@ best_container = None
 best_individual = None
 
 def clone_container(container):
-    new_container = Container(container.width, container.height, container.length)
+    new_container = Container(container.width, container.height, container.length, container.weight_distribution_tolerance, container.support_area_ratio)
     new_container.boxes = [(box.rotate(box.width, box.height, box.length), x, y, z) for box, x, y, z in container.boxes]
     new_container.remaining_space = list(container.remaining_space)
     new_container.total_remaining_volume = container.total_remaining_volume
@@ -197,7 +200,7 @@ def mutate(individual, mutation_rate):
             j = random.randint(0, len(individual) - 1)
             individual[i], individual[j] = individual[j], individual[i]
 
-def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_generations=300, mutation_rate=0.01):
+def genetic_algorithm(container_dimensions, sio, pop_size=150, num_generations=300, mutation_rate=0.01, weight_distribution_tolerance=1.1, support_area_ratio=0.65, sort_method='weight_volume_ratio'):
     boxes_data = [
         {'id': 1, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
         {'id': 2, 'width': 200, 'depth': 250, 'height': 480, 'weight': 100},
@@ -265,14 +268,17 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
     # ]
 
     boxes = [Box(box['id'], box['width'], box['height'], box['depth'], box['weight']) for box in boxes_data]
-    boxes.sort(key=lambda b: b.weight, reverse=True)  # Sort boxes by weight, heaviest first
+    if sort_method == 'weight_volume_ratio':
+        boxes.sort(key=lambda b: -(b.weight / b.volume), reverse=True)
+    elif sort_method == 'weight':
+        boxes.sort(key=lambda b: b.weight, reverse=True)  # Sort boxes by weight, heaviest first
 
     population = initialize_population(pop_size, boxes)
 
     global best_fitness, best_container, best_individual
 
     for generation in range(num_generations):
-        fitness_results = [evaluate_fitness(individual, container_dimensions) for individual in population]
+        fitness_results = [evaluate_fitness(individual, container_dimensions,weight_distribution_tolerance,support_area_ratio) for individual in population]
         fitness = [result[0] for result in fitness_results]
         containers = [result[1] for result in fitness_results]
         unplaced_boxes_list = [result[2] for result in fitness_results]
@@ -413,7 +419,7 @@ def main():
 
     container_dimensions = (container_width, container_height, container_depth)
 
-    best_individual, best_container = genetic_algorithm('products.csv', container_dimensions, sio)
+    # best_individual, best_container = genetic_algorithm(container_dimensions, sio)
 
     print(f"Final Best Container:")
     if best_container:
