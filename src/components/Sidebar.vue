@@ -140,12 +140,7 @@
     <div class="flex flex-col items-center justify-center m-4">
       <p class="mb-4 text-3xl">New Shipment</p>
 
-      <input
-        type="file"
-        accept=".csv"
-        @change="onFileChange"
-        class="mb-4"
-      />
+      <input type="file" accept=".csv" @change="onFileChange" class="mb-4" />
       <Button @click="processShipment" class="mt-4 py-2 px-6 bg-green-800">Process Shipment</Button>
       <Button @click="toggleShipment" class="mt-4 py-2 px-6 bg-red-800">Cancel</Button>
     </div>
@@ -177,6 +172,7 @@ import { useRouter } from 'vue-router'
 import { createClient } from '@supabase/supabase-js'
 import Papa from 'papaparse'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { Result } from 'postcss'
 
 // Initialize Supabase client
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
@@ -255,6 +251,42 @@ const onFileChange = (event) => {
   selectedFile.value = event.target.files[0]
 }
 
+let maxShipmentID, maxDeliveryID, openDriverID, JSONText
+async function processData(jsonData) {
+  const { data: ShipID, error } = await supabase.functions.invoke('core', {
+    body: JSON.stringify({ type: 'getMaxShipmentID' }),
+    method: 'POST'
+  })
+  maxShipmentID = ShipID.id + 1
+
+  if (error) {
+    console.log('API Error gettingMaxShipmentID:', error)
+  } else {
+    // Object to store locations and their IDs
+    const locationMap = {}
+    let locationId = maxShipmentID
+
+    // Process each item in the JSON data
+    const processedData = jsonData.map((item) => {
+      const location = item.Location
+      // If the location is not in the map, add it with a new ID
+      if (!locationMap[location]) {
+        locationMap[location] = locationId++
+      }
+      // Return a new object with the location ID
+      return {
+        ...item,
+        ShipmentID: locationMap[location]
+      }
+    })
+
+    return {
+      locationMap: Object.fromEntries(Object.entries(locationMap).map(([k, v]) => [v, k])),
+      processedData
+    }
+  }
+}
+
 const processShipment = async () => {
   if (!selectedFile.value) {
     alert('Please select a file')
@@ -262,8 +294,8 @@ const processShipment = async () => {
   }
 
   try {
-    //KEEP HERE FOR NOW 
-    console.log('Uploading file:', selectedFile.value.name);
+    //KEEP HERE FOR NOW
+    console.log('Uploading file:', selectedFile.value.name)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
       .upload(`uploads/${selectedFile.value.name}`, selectedFile.value)
@@ -273,151 +305,132 @@ const processShipment = async () => {
       alert('Failed to upload file')
       return
     }
-    console.log('File uploaded successfully:', uploadData);
+    console.log('File uploaded successfully:', uploadData)
 
-
-    //DONE
-    const { data: publicURLData, error: urlError } = supabase.storage
-      .from('data_bucket')
-      .getPublicUrl(`uploads/${selectedFile.value.name}`)
-
-    if (urlError) {
-      console.error('Error getting public URL:', urlError)
-      alert('Failed to get public URL')
-      return
-    }
-
-    const publicURL = publicURLData.publicUrl
-    console.log('Generated Public URL:', publicURL)
-
-    // Try to get the file using the Supabase client instead of fetch
-    const { data, error: downloadError } = await supabase.storage
-      .from('data_bucket')
-      .download(`uploads/${selectedFile.value.name}`)
-
-    if (downloadError) {
-      console.error('Error downloading file:', downloadError)
-      alert('Failed to download file')
-      return
-    }
-
-    const csvText = await data.text()
-    console.log('CSV Text (first 100 characters):', csvText.substring(0, 100))
-
-    Papa.parse(csvText, {
-      header: true,
-      complete: async (results) => {
-        const rows = results.data
-
-         // Fetch the highest Delivery_id and increment by one
-         const { data: maxDeliveryData, error: maxDeliveryError } = await supabase
-          .from('Deliveries')
-          .select('id')
-          .order('id', { ascending: false })
-          .limit(1)
-
-        if (maxDeliveryError) {
-          console.error('Error fetching max delivery ID:', maxDeliveryError)
-          alert('Failed to fetch max delivery ID')
-          return
-        }
-
-        const newDeliveryId = maxDeliveryData.length > 0 ? maxDeliveryData[0].id + 1 : 1
-        console.log('New Delivery ID:', newDeliveryId)
-
-
-        // Insert a new delivery into the Deliveries table
-        const { data: deliveryData, error: deliveryError } = await supabase
-          .from('Deliveries')
-          .insert([{id: newDeliveryId, Status: 'Ordered', Driver_id: '55' }])
-          .select('id')
-
-        if (deliveryError) {
-          console.error('Error inserting delivery:', deliveryError)
-          alert('Failed to insert delivery')
-          return
-        }
-
-
-        // Group rows by location and insert into Shipments and Packages tables
-        const groupedByLocation = rows.reduce((acc, row) => {
-          if (!acc[row.Location]) {
-            acc[row.Location] = []
-          }
-          acc[row.Location].push(row)
-          return acc
-        }, {})
-
-        for (const location in groupedByLocation) {
-          const shipmentRows = groupedByLocation[location]
-
-          // Insert a new shipment into the Shipment table
-          const { data: shipmentData, error: shipmentError } = await supabase
-            .from('Shipment')
-            .insert([{ Start_time: null, Destination: location, Status: 'Processing', Delivery_id: newDeliveryId }])
-            .select('id')
-
-          if (shipmentError) {
-            console.error('Error inserting shipment:', shipmentError)
-            alert('Failed to insert shipment')
-            return
-          }
-
-          // Fetch the highest Delivery_id and increment by one
-         const { data: maxShipmentData, error: maxShipmentError } = await supabase
-          .from('Shipment')
-          .select('id')
-          .order('id', { ascending: false })
-          .limit(1)
-
-        if (maxShipmentError) {
-          console.error('Error fetching max delivery ID:', maxShipmentError)
-          alert('Failed to fetch max delivery ID')
-          return
-        }
-
-        const newShipmentId = maxShipmentData.length > 0 ? maxShipmentData[0].id + 1 : 1
-        console.log('New Shipment ID:', newShipmentId)
-
-        //DO THE SAME FOR PACKAGES
-
-
-          // Insert packages into the Packages table
-          const packages = shipmentRows.map(row => ({
-            Shipment_id: newShipmentId,
-            Width: parseFloat(row['Width (mm)']),
-            Length: parseFloat(row.Length),
-            Height: parseFloat(row.Height),
-            Weight: parseFloat(row['Weight (kg)']),
-            Volume: parseFloat(row.Volume),
-          }))
-
-          const { error: packageError } = await supabase
-            .from('Packages')
-            .insert(packages)
-
-          if (packageError) {
-            console.error('Error inserting packages:', packageError)
-            alert('Failed to insert packages')
-            return
-          }
-        }
-
-        alert('File processed and data inserted successfully')
-      },
-      error: (error) => {
-        console.error('Error parsing CSV:', error)
-      },
+    const { data: CSVText, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'downloadFile', fileName: selectedFile.value.name }),
+      method: 'POST'
     })
+
+    if (error) {
+      console.log('API Error downloadingFile:', error)
+    } else {
+      // const encodedCSVText = CSVText.data.replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+
+      const { data: JsonText, error } = await supabase.functions.invoke('core', {
+        body: JSON.stringify({ type: 'parseCSV', csvText: CSVText.data }),
+        method: 'POST'
+      })
+
+      console.log(JSON.stringify(JsonText))
+      JSONText = JsonText
+
+      if (error) {
+        console.log('API Error parsingCSV:', error)
+      } else {
+        const { data: DeliveryID, error } = await supabase.functions.invoke('core', {
+          body: JSON.stringify({ type: 'getMaxDeliveryID' }),
+          method: 'POST'
+        })
+
+        maxDeliveryID = DeliveryID.id
+
+        if (error) {
+          console.log('API Error getMaxDeliveryID:', error)
+        } else {
+          const { data: openDriver, error } = await supabase.functions.invoke('core', {
+            body: JSON.stringify({ type: 'getOpenDriver' }),
+            method: 'POST'
+          })
+          openDriverID = openDriver.data[0].Driver_id
+
+          if (error) {
+            console.log('API Error gettingOpenDriver:', error)
+          } else {
+            const { data, error } = await supabase.functions.invoke('core', {
+              body: JSON.stringify({
+                type: 'insertDelivery',
+                newDeliveryId: maxDeliveryID++,
+                driver_id: openDriverID
+              }),
+              method: 'POST'
+            })
+
+            if (error) {
+              console.log('API Error insertingDelivery:', error)
+            } else {
+              console.log(JSONText)
+              const result = await processData(JSONText)
+
+              console.log('result : ', result)
+
+              for (let [id, location] of Object.entries(result['locationMap'])) {
+                const { data, error } = await supabase.functions.invoke('core', {
+                  body: JSON.stringify({
+                    type: 'insertShipment',
+                    shipmentId: maxShipmentID++,
+                    location: location,
+                    newDeliveryId: maxDeliveryID
+                  }),
+                  method: 'POST'
+                })
+
+                console.log(
+                  JSON.stringify({
+                    type: 'insertShipment',
+                    shipmentId: maxShipmentID++,
+                    location: location,
+                    newDeliveryId: maxDeliveryID
+                  })
+                )
+
+                if (error) {
+                  console.log('API Error insertingShipment:', error)
+                  throw new Error('Failed to insert shipment')
+                }
+              }
+
+              for (let row of result['processedData']) {
+                const { data, error } = await supabase.functions.invoke('core', {
+                  body: JSON.stringify({
+                    type: 'insertPackage',
+                    shipmentId: row['ShipmentID'],
+                    width: row['Width'],
+                    length: row['Length'],
+                    height: row['Height'],
+                    weight: row['Weight'],
+                    volume: row['Volume']
+                  }),
+                  method: 'POST'
+                })
+
+                console.log(
+                  JSON.stringify({
+                    type: 'insertPackage',
+                    shipmentId: row['ShipmentID'],
+                    width: row['Width'],
+                    length: row['Length'],
+                    height: row['Height'],
+                    weight: row['Weight'],
+                    volume: row['Volume']
+                  })
+                )
+
+                if (error) {
+                  console.log('API Error insertingPackages:', error)
+                  throw new Error('Failed to insert package')
+                }
+              }
+              console.log('All shipments and packages inserted successfully')
+            }
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error('Error processing file:', error)
-    alert('Error processing file')
+    alert('Error processing file: ' + error.message)
   }
-
-
-
-
-
 }
 
 const items = [
