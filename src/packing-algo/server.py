@@ -1,22 +1,14 @@
 from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
-import os
 import math
+import os
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Mock initialization of containers and boxes data
+# Store the container and boxes data in memory
 data = {
-    "containers": [
-        {
-            "id": 1,
-            "width": 100,
-            "height": 100,
-            "length": 100,
-            "boxes": []
-        }
-    ],
+    "containers": [],  # Now handles multiple containers
     "generations": []
 }
 
@@ -26,14 +18,11 @@ def index():
 
 @app.route('/truck/<path:filename>')
 def truck_files(filename):
-    print("Request for truck file:", filename)  # Debug statement
-    print("Directory contents:", os.listdir(os.path.join('templates', 'truck')))  # Debug statement
-    return send_from_directory(os.path.join('templates', 'truck'), filename)
+    return send_from_directory(os.path.join(app.root_path, 'templates', 'truck'), filename)
 
 @socketio.on('connect')
 def handle_connect():
     join_room('main_room')  # Join the default room
-    print("Client connected. Sending initial data:", data)  # Debug statement
     emit('update_data', data, room='main_room')
 
 def fits(container, box, x, y, z):
@@ -100,7 +89,6 @@ def handle_add_box(box_data):
     for container in data['containers']:
         if add_box_to_container(container, box_data):
             break
-    print("Data after adding box:", data)  # Debug statement
     emit('update_data', data, room='main_room', broadcast=True)
 
 @socketio.on('update_generation')
@@ -109,7 +97,6 @@ def handle_update_generation(generation_data):
         container['layers'] = organize_boxes_into_layers(container)
         del container['boxes']  # Remove the flat list of boxes
     data["generations"] = [generation_data]  # Store only the latest generation data
-    print("Data after updating generation:", data)  # Debug statement
     emit('update_data', data, room='main_room', broadcast=True)
 
 @socketio.on('remaining_volume')
