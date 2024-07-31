@@ -148,23 +148,31 @@
 
     // Load the truck model
     const loader = new THREE.GLTFLoader();
-    loader.load('/truck/truckpackingView1.glb', function(gltf) {
+loader.load('/truck/truckpackingView1.glb', function(gltf) {
+    console.log('GLB model loaded:', gltf);
     truck = gltf.scene;
     scene.add(truck);
 
     truck.traverse(function(child) {
         if (child.isMesh) {
-            console.log('Material properties:', child.material);
+            console.log('Material properties for:', child.name, child.material);
+            if (!child.material.color) {
+                console.log('No color assigned, setting default color');
+                child.material.color = new THREE.Color(0x00ff00); // default to green for example
+            }
             if (child.material.map) {
-                console.log('Texture map:', child.material.map);
+                console.log('Texture map assigned for:', child.name);
             } else {
-                console.log('No texture map assigned.');
+                console.log('No texture map assigned for', child.name);
+                // Assuming a default color if no texture map is assigned
+                child.material.color = new THREE.Color(0xff0000); // default to red for example
             }
         }
     });
 
     truck.scale.set(20, 20, 20);
     truck.position.set(-50, -100, -47);
+    console.log('Truck added to scene');
     displayFullSolution();
 }, undefined, function(error) {
     console.error('An error occurred while loading the truck model:', error);
