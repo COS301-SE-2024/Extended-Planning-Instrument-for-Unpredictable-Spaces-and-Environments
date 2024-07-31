@@ -7,6 +7,7 @@ import { getAllUsers } from './Users/getAllUsers.ts'
 import { insertUser } from './Users/insertUser.ts'
 import { updateUser } from './Users/updateUser.ts'
 import { checkRole } from './Users/checkRole.ts'
+import { getOpenDriver } from './Users/getOpenDriver.ts'
 
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
@@ -29,6 +30,7 @@ import { getMaxDeliveryID } from './Deliveries/getMaxDeliveryID.ts'
 import { insertDelivery } from './Deliveries/insertDelivery.ts'
 import { getMaxShipmentID } from './Shipments/getMaxShipmentID.ts'
 import { insertShipment } from './Shipments/insertShipment.ts'
+
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -100,6 +102,13 @@ Deno.serve(async (req) => {
           await getPublicURL(
             supabaseUser,
             requestBody.fileName
+          )
+        )
+      }
+      if (requestBody.type == 'getOpenDriver') {
+        return responseBuilder(
+          await getOpenDriver(
+            supabaseUser
           )
         )
       }
