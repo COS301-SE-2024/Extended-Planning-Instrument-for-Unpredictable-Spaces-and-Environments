@@ -55,173 +55,160 @@
     let isShowingInstructions = false;
 
     function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-  camera.position.set(0, 5, 60);
-  camera.lookAt(10, 0, 0);
+      camera.position.set(0, 5, 60);
+      camera.lookAt(10, 0, 0);
 
-  // Change the background color to gray for better visibility
-  scene.background = new THREE.Color(0x808080);
+      // Change the background color to gray for better visibility
+      scene.background = new THREE.Color(0x808080);
 
-  // Add Ambient Light
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // Increased intensity for better visibility
-  scene.add(ambientLight);
-  console.log('Ambient Light added:', ambientLight);
+      // Add Ambient Light
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // Increased intensity for better visibility
+      scene.add(ambientLight);
+      console.log('Ambient Light added:', ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity for better visibility
-  directionalLight.position.set(50, 50, 50);
-  directionalLight.castShadow = true; // Enable shadows
-  scene.add(directionalLight);
-  console.log('Directional Light added:', directionalLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity for better visibility
+      directionalLight.position.set(50, 50, 50);
+      directionalLight.castShadow = true; // Enable shadows
+      scene.add(directionalLight);
+      console.log('Directional Light added:', directionalLight);
 
-  // Initialize Renderer
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+      // Initialize Renderer
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
 
-  // Initialize Controls
-  controls = new THREE.PointerLockControls(camera, document.body);
+      // Initialize Controls
+      controls = new THREE.PointerLockControls(camera, document.body);
 
-  const instructions = document.getElementById('instructions');
-  instructions.addEventListener('click', () => {
-    controls.lock();
-  });
-
-  controls.addEventListener('lock', () => {
-    instructions.style.display = 'none';
-  });
-
-  controls.addEventListener('unlock', () => {
-    instructions.style.display = '';
-  });
-
-  scene.add(controls.getObject());
-
-  // Event Listeners
-  window.addEventListener('resize', onWindowResize);
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
-  onWindowResize();
-
-  createAxesHelper();
-  socket.emit('get_data'); // Request initial data
-  socket.on('update_data', updateData);
-  animate();
-
-  // Add UI Buttons
-  const showInstructionsButton = document.createElement('button');
-  showInstructionsButton.id = 'showInstructionsButton';
-  showInstructionsButton.textContent = 'Show Instructions';
-  showInstructionsButton.style.position = 'absolute';
-  showInstructionsButton.style.right = '10px';
-  showInstructionsButton.style.bottom = '10px';
-  showInstructionsButton.addEventListener('click', toggleInstructions);
-  document.body.appendChild(showInstructionsButton);
-
-  const prevButton = document.createElement('button');
-  prevButton.id = 'prevButton';
-  prevButton.textContent = 'Previous Layer';
-  prevButton.style.position = 'absolute';
-  prevButton.style.left = '10px';
-  prevButton.style.top = '10px';
-  prevButton.addEventListener('click', () => changeLayer(-1));
-  document.body.appendChild(prevButton);
-
-  const nextButton = document.createElement('button');
-  nextButton.id = 'nextButton';
-  nextButton.textContent = 'Next Layer';
-  nextButton.style.position = 'absolute';
-  nextButton.style.right = '10px';
-  nextButton.style.top = '10px';
-  nextButton.addEventListener('click', () => changeLayer(1));
-  document.body.appendChild(nextButton);
-
-  const layerInfo = document.createElement('div');
-  layerInfo.id = 'layerInfo';
-  layerInfo.style.position = 'absolute';
-  layerInfo.style.left = '50%';
-  layerInfo.style.top = '10px';
-  layerInfo.style.transform = 'translateX(-50%)';
-  document.body.appendChild(layerInfo);
-
-  document.getElementById('prevButton').style.display = 'none';
-  document.getElementById('nextButton').style.display = 'none';
-  document.getElementById('layerInfo').style.display = 'none';
-
-  // Add a grid helper for better scene visualization
-  const gridHelper = new THREE.GridHelper(200, 50);
-  scene.add(gridHelper);
-  console.log('Grid Helper added:', gridHelper);
-
-  // Load the environment map
-  const textureLoader = new THREE.TextureLoader();
-  const envMap = textureLoader.load('path_to_your_environment_texture.jpg', function(texture) {
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = texture;
-    scene.background = texture;
-  });
-
-  // Load the truck model
-  const loader = new THREE.GLTFLoader();
-loader.load('/truck/truckpackingView1.glb', function(gltf) {
-  console.log('GLB model loaded:', gltf);
-  truck = gltf.scene;
-  scene.add(truck);
-  console.log('Truck added to scene', truck);
-
-  truck.traverse(function(child) {
-    if (child.isMesh) {
-      console.log('Original material properties for:', child.name, child.material);
-      
-      // Temporarily use MeshBasicMaterial to ensure visibility without lighting
-      const basicMaterial = new THREE.MeshBasicMaterial({
-        color: child.material.color || new THREE.Color(0xff0000) // Default to red for visibility
+      const instructions = document.getElementById('instructions');
+      instructions.addEventListener('click', () => {
+        controls.lock();
       });
 
-      child.material = basicMaterial;
-      child.material.needsUpdate = true;
-      
-      console.log('New material properties for:', child.name, child.material);
+      controls.addEventListener('lock', () => {
+        instructions.style.display = 'none';
+      });
+
+      controls.addEventListener('unlock', () => {
+        instructions.style.display = '';
+      });
+
+      scene.add(controls.getObject());
+
+      // Event Listeners
+      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      onWindowResize();
+
+      createAxesHelper();
+      socket.emit('get_data'); // Request initial data
+      socket.on('update_data', updateData);
+      animate();
+
+      // Add UI Buttons
+      const showInstructionsButton = document.createElement('button');
+      showInstructionsButton.id = 'showInstructionsButton';
+      showInstructionsButton.textContent = 'Show Instructions';
+      showInstructionsButton.style.position = 'absolute';
+      showInstructionsButton.style.right = '10px';
+      showInstructionsButton.style.bottom = '10px';
+      showInstructionsButton.addEventListener('click', toggleInstructions);
+      document.body.appendChild(showInstructionsButton);
+
+      const prevButton = document.createElement('button');
+      prevButton.id = 'prevButton';
+      prevButton.textContent = 'Previous Layer';
+      prevButton.style.position = 'absolute';
+      prevButton.style.left = '10px';
+      prevButton.style.top = '10px';
+      prevButton.addEventListener('click', () => changeLayer(-1));
+      document.body.appendChild(prevButton);
+
+      const nextButton = document.createElement('button');
+      nextButton.id = 'nextButton';
+      nextButton.textContent = 'Next Layer';
+      nextButton.style.position = 'absolute';
+      nextButton.style.right = '10px';
+      nextButton.style.top = '10px';
+      nextButton.addEventListener('click', () => changeLayer(1));
+      document.body.appendChild(nextButton);
+
+      const layerInfo = document.createElement('div');
+      layerInfo.id = 'layerInfo';
+      layerInfo.style.position = 'absolute';
+      layerInfo.style.left = '50%';
+      layerInfo.style.top = '10px';
+      layerInfo.style.transform = 'translateX(-50%)';
+      document.body.appendChild(layerInfo);
+
+      document.getElementById('prevButton').style.display = 'none';
+      document.getElementById('nextButton').style.display = 'none';
+      document.getElementById('layerInfo').style.display = 'none';
+
+      // Add a grid helper for better scene visualization
+      const gridHelper = new THREE.GridHelper(200, 50);
+      scene.add(gridHelper);
+      console.log('Grid Helper added:', gridHelper);
+
+      // Load the truck model
+      const loader = new THREE.GLTFLoader();
+      loader.load('/truck/truckpackingView1.glb', function(gltf) {
+        console.log('GLB model loaded:', gltf);
+        truck = gltf.scene;
+        scene.add(truck);
+        console.log('Truck added to scene', truck);
+
+        truck.traverse(function(child) {
+          if (child.isMesh) {
+            console.log('Original material properties for:', child.name, child.material);
+            
+            // Use MeshBasicMaterial to ensure visibility without lighting
+            const basicMaterial = new THREE.MeshBasicMaterial({
+              color: child.material.color || new THREE.Color(0xff0000) // Default to red for visibility
+            });
+
+            child.material = basicMaterial;
+            child.material.needsUpdate = true;
+            
+            console.log('New material properties for:', child.name, child.material);
+          }
+        });
+
+        truck.scale.set(20, 20, 20);
+        truck.position.set(-60, -100, -47);
+        console.log('Truck position set');
+        displayFullSolution();
+      }, undefined, function(error) {
+        console.error('An error occurred while loading the truck model:', error);
+      });
     }
-  });
-
-  truck.scale.set(20, 20, 20);
-  truck.position.set(-50, -100, -47);
-  console.log('Truck position set');
-  displayFullSolution();
-}, undefined, function(error) {
-  console.error('An error occurred while loading the truck model:', error);
-});
-
-}
-
-
-
 
     function displayFullSolution() {
-    if (truck) {
+      if (truck) {
         scene.children = scene.children.filter(child => child === controls.getObject() || child === truck || child.name === "axesHelper");
         if (layerBoxes && layerBoxes.length > 0) {
-            layerBoxes.flat().forEach((box) => {
-                addBoxToScene(
-                    box,
-                    box.container,
-                    0,
-                    box.minWeight,
-                    box.maxWeight,
-                    true
-                );
-            });
+          layerBoxes.flat().forEach((box) => {
+            addBoxToScene(
+              box,
+              box.container,
+              0,
+              box.minWeight,
+              box.maxWeight,
+              true
+            );
+          });
         }
         document.getElementById('prevButton').style.display = 'none';
         document.getElementById('nextButton').style.display = 'none';
         document.getElementById('layerInfo').style.display = 'none';
-    } else {
+      } else {
         console.error("Truck model is not loaded yet");
+      }
     }
-}
-
 
     function toggleInstructions() {
       isShowingInstructions = !isShowingInstructions;
@@ -259,6 +246,22 @@ loader.load('/truck/truckpackingView1.glb', function(gltf) {
 
     function displayLayer(sectionIndex) {
       scene.children = scene.children.filter((child) => child === controls.getObject() || child === truck);
+
+      // Add container visualization
+      const containerGeometry = new THREE.BoxGeometry(
+        layerBoxes[0][0].container.width * scale,
+        layerBoxes[0][0].container.height * scale,
+        layerBoxes[0][0].container.length * scale
+      )
+      const containerMaterial = new THREE.MeshBasicMaterial({
+        color: 0x808080,
+        wireframe: true,
+        opacity: 0.6,
+        transparent: true
+      })
+      const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial)
+      containerMesh.position.set(0, 0, 0)
+      scene.add(containerMesh)
 
       layerBoxes.forEach((section, index) => {
         section.forEach((box) => {
@@ -342,8 +345,8 @@ loader.load('/truck/truckpackingView1.glb', function(gltf) {
     }
 
     function updateData(data) {
-    generations = data.generations;
-    if (generations.length > 0) {
+      generations = data.generations;
+      if (generations.length > 0) {
         const lastGeneration = generations[generations.length - 1];
         const container = lastGeneration.containers[0];
         layerBoxes = container.layers;
@@ -354,22 +357,21 @@ loader.load('/truck/truckpackingView1.glb', function(gltf) {
         const maxWeight = Math.max(...weights);
 
         layerBoxes = layerBoxes.map((layer) =>
-            layer.map((box) => ({ ...box, container, minWeight, maxWeight }))
+          layer.map((box) => ({ ...box, container, minWeight, maxWeight }))
         );
 
         if (isShowingInstructions) {
-            displayLayer(currentSection);
-            updateLayerInfo();
+          displayLayer(currentSection);
+          updateLayerInfo();
         } else {
-            displayFullSolution();
+          displayFullSolution();
         }
-    } else if (data.containers && data.containers.length > 0) {
+      } else if (data.containers && data.containers.length > 0) {
         displayEmptyContainers(data.containers);
-    } else {
+      } else {
         console.error('No container data available.');
+      }
     }
-}
-
 
     function createTextSprite(message, parameters = {}) {
       const fontface = parameters.fontface || 'Arial';
@@ -502,57 +504,57 @@ loader.load('/truck/truckpackingView1.glb', function(gltf) {
     }
 
     function addBoxToScene(box, container, containerIndex, minWeight, maxWeight, isCurrentSection) {
-    const boxScale = 0.1; // Adjust this value to change the box sizes
+  const boxScale = 0.1; // Adjust this value to change the box sizes
 
-    const boxGeometry = new THREE.BoxGeometry(
-        box.width * boxScale,
-        box.height * boxScale,
-        box.length * boxScale
-    );
+  const boxGeometry = new THREE.BoxGeometry(
+    box.width * boxScale,
+    box.height * boxScale,
+    box.length * boxScale
+  );
 
-    let boxColor, boxOpacity, lineOpacity;
-    if (isCurrentSection) {
-        boxColor = new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight));
-        boxOpacity = 0.6;
-        lineOpacity = 1;
-    } else {
-        boxColor = new THREE.Color(0xd5d5d5);
-        boxOpacity = 0.2;
-        lineOpacity = 0.2;
-    }
+  let boxColor, boxOpacity, lineOpacity;
+  if (isCurrentSection) {
+    boxColor = new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight));
+    boxOpacity = 0.6;
+    lineOpacity = 1;
+  } else {
+    boxColor = new THREE.Color(0xd5d5d5);
+    boxOpacity = 0.2;
+    lineOpacity = 0.2;
+  }
 
-    const boxMaterial = new THREE.MeshBasicMaterial({
-        color: boxColor,
-        transparent: true,
-        opacity: boxOpacity
-    });
+  const boxMaterial = new THREE.MeshBasicMaterial({
+    color: boxColor,
+    transparent: true,
+    opacity: boxOpacity
+  });
 
-    const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
+  const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
 
-    const edges = new THREE.EdgesGeometry(boxGeometry);
-    const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0x000000,
-        opacity: lineOpacity,
-        transparent: true
-    });
-    const line = new THREE.LineSegments(edges, lineMaterial);
+  const edges = new THREE.EdgesGeometry(boxGeometry);
+  const lineMaterial = new THREE.LineBasicMaterial({
+    color: 0x000000,
+    opacity: lineOpacity,
+    transparent: true
+  });
+  const line = new THREE.LineSegments(edges, lineMaterial);
 
-    mesh.position.set(
-        (box.x - container.width / 2 + box.width / 2) * boxScale,
-        (box.y - container.height / 2 + box.height / 2) * boxScale,
-        (box.z - container.length / 2 + box.length / 2) * boxScale
-    );
+  mesh.position.set(
+    (box.x - container.width / 2 + box.width / 2) * boxScale,
+    (box.y - container.height / 2 + box.height / 2) * boxScale,
+    (box.z - container.length / 2 + box.length / 2) * boxScale
+  );
 
-    line.position.copy(mesh.position);
+  line.position.copy(mesh.position);
 
-    const textSprite = createTextSprite(box.id.toString());
-    textSprite.position.copy(mesh.position);
+  const textSprite = createTextSprite(box.id.toString());
+  textSprite.position.copy(mesh.position);
 
-    scene.add(mesh);
-    scene.add(line);
-    scene.add(textSprite);
+  scene.add(mesh);
+  scene.add(line);
+  scene.add(textSprite);
 
-    lastBox = mesh;
+  lastBox = mesh;
 }
 
 
