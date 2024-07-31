@@ -30,7 +30,7 @@ import { getMaxDeliveryID } from './Deliveries/getMaxDeliveryID.ts'
 import { insertDelivery } from './Deliveries/insertDelivery.ts'
 import { getMaxShipmentID } from './Shipments/getMaxShipmentID.ts'
 import { insertShipment } from './Shipments/insertShipment.ts'
-
+import { deleteCSV } from './Storage/deleteCSV.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -109,6 +109,14 @@ Deno.serve(async (req) => {
         return responseBuilder(
           await getOpenDriver(
             supabaseUser
+          )
+        )
+      }
+      if (requestBody.type == 'deleteCSV') {
+        return responseBuilder(
+          await deleteCSV(
+            supabaseUser,
+            requestBody.fileName
           )
         )
       }
