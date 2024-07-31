@@ -1,7 +1,7 @@
 export async function getOpenDriver(supabase: any) {
     const { data, error } = await supabase
       .from("Drivers")
-      .select('id')
+      .select('Driver_id')
       .eq('Status', 'Open');
   
     if (error) {
