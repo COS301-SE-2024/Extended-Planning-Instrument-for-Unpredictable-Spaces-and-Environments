@@ -82,7 +82,7 @@ class Container:
         if y == 0:
             return True  # The box is on the container floor
         support_area = 0
-        required_area = 0.6 * box.width * box.length  # At least 60% of the bottom face should be supported
+        required_area = 0.65 * box.width * box.length  # At least 65% of the bottom face should be supported
 
         for other_box, ox, oy, oz in self.boxes:
             if oy + other_box.height == y:  # Check if other box is directly below
@@ -230,6 +230,39 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
         {'id': 29, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
         {'id': 30, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
     ]
+    
+    # boxes_data = [
+    #     {'id': 1, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 2, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 3, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 4, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 5, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 6, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 7, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 8, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 9, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 10, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 11, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 12, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 13, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 14, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 15, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 16, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 17, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 18, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 19, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 20, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 21, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 22, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 23, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 24, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 25, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 26, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 27, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 28, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 29, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 30, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    # ]
 
     boxes = [Box(box['id'], box['width'], box['height'], box['depth'], box['weight']) for box in boxes_data]
     boxes.sort(key=lambda b: b.weight, reverse=True)  # Sort boxes by weight, heaviest first
@@ -376,7 +409,7 @@ def main():
 
     container_width = 1200
     container_depth = 1000
-    container_height = 2000
+    container_height = 1930
 
     container_dimensions = (container_width, container_height, container_depth)
 
