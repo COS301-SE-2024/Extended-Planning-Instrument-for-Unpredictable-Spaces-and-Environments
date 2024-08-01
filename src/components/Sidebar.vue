@@ -247,12 +247,11 @@ const processShipment = async () => {
   }
 
   try {
-    console.log('Uploading file:', selectedFile.value.name);
-    
+    console.log('Uploading file:', selectedFile.value.name)
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
       .upload(`uploads/${selectedFile.value.name}`, selectedFile.value)
-
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError)
@@ -260,7 +259,7 @@ const processShipment = async () => {
       return
     }
 
-    console.log('File uploaded successfully:', uploadData);
+    console.log('File uploaded successfully:', uploadData)
 
     const { data: publicURLData, error: urlError } = supabase.storage
       .from('data_bucket')
@@ -294,8 +293,8 @@ const processShipment = async () => {
       complete: async (results) => {
         const rows = results.data
 
-         // Fetch the highest Delivery_id and increment by one
-         const { data: maxDeliveryData, error: maxDeliveryError } = await supabase
+        // Fetch the highest Delivery_id and increment by one
+        const { data: maxDeliveryData, error: maxDeliveryError } = await supabase
           .from('Deliveries')
           .select('id')
           .order('id', { ascending: false })
@@ -310,11 +309,10 @@ const processShipment = async () => {
         const newDeliveryId = maxDeliveryData.length > 0 ? maxDeliveryData[0].id + 1 : 1
         console.log('New Delivery ID:', newDeliveryId)
 
-
         // Insert a new delivery into the Deliveries table
         const { data: deliveryData, error: deliveryError } = await supabase
           .from('Deliveries')
-          .insert([{id: newDeliveryId, Status: 'Ordered', Driver_id: '55' }])
+          .insert([{ id: newDeliveryId, Status: 'Ordered', Driver_id: '55' }])
           .select('id')
 
         if (deliveryError) {
@@ -322,7 +320,6 @@ const processShipment = async () => {
           alert('Failed to insert delivery')
           return
         }
-
 
         // Group rows by location and insert into Shipments and Packages tables
         const groupedByLocation = rows.reduce((acc, row) => {
@@ -339,7 +336,14 @@ const processShipment = async () => {
           // Insert a new shipment into the Shipment table
           const { data: shipmentData, error: shipmentError } = await supabase
             .from('Shipment')
-            .insert([{ Start_time: null, Destination: location, Status: 'Processing', Delivery_id: newDeliveryId }])
+            .insert([
+              {
+                Start_time: null,
+                Destination: location,
+                Status: 'Processing',
+                Delivery_id: newDeliveryId
+              }
+            ])
             .select('id')
 
           if (shipmentError) {
@@ -349,37 +353,34 @@ const processShipment = async () => {
           }
 
           // Fetch the highest Delivery_id and increment by one
-         const { data: maxShipmentData, error: maxShipmentError } = await supabase
-          .from('Shipment')
-          .select('id')
-          .order('id', { ascending: false })
-          .limit(1)
+          const { data: maxShipmentData, error: maxShipmentError } = await supabase
+            .from('Shipment')
+            .select('id')
+            .order('id', { ascending: false })
+            .limit(1)
 
-        if (maxShipmentError) {
-          console.error('Error fetching max delivery ID:', maxShipmentError)
-          alert('Failed to fetch max delivery ID')
-          return
-        }
+          if (maxShipmentError) {
+            console.error('Error fetching max delivery ID:', maxShipmentError)
+            alert('Failed to fetch max delivery ID')
+            return
+          }
 
-        const newShipmentId = maxShipmentData.length > 0 ? maxShipmentData[0].id + 1 : 1
-        console.log('New Shipment ID:', newShipmentId)
+          const newShipmentId = maxShipmentData.length > 0 ? maxShipmentData[0].id + 1 : 1
+          console.log('New Shipment ID:', newShipmentId)
 
-        //DO THE SAME FOR PACKAGES
-
+          //DO THE SAME FOR PACKAGES
 
           // Insert packages into the Packages table
-          const packages = shipmentRows.map(row => ({
+          const packages = shipmentRows.map((row) => ({
             Shipment_id: newShipmentId,
             Width: parseFloat(row['Width (mm)']),
             Length: parseFloat(row.Length),
             Height: parseFloat(row.Height),
             Weight: parseFloat(row['Weight (kg)']),
-            Volume: parseFloat(row.Volume),
+            Volume: parseFloat(row.Volume)
           }))
 
-          const { error: packageError } = await supabase
-            .from('Packages')
-            .insert(packages)
+          const { error: packageError } = await supabase.from('Packages').insert(packages)
 
           if (packageError) {
             console.error('Error inserting packages:', packageError)
@@ -392,17 +393,12 @@ const processShipment = async () => {
       },
       error: (error) => {
         console.error('Error parsing CSV:', error)
-      },
+      }
     })
   } catch (error) {
     console.error('Error processing file:', error)
     alert('Error processing file')
   }
-
-
-
-
-
 }
 
 const activeRoute = ref(router.currentRoute.value.name)
@@ -417,7 +413,7 @@ const navigate = (route) => {
   router.push(route)
   activeRoute.value = route.name || route.split('/')[1]
 }
-const items = [
+const items = computed(() => [
   {
     label: 'Dashboard',
     icon: 'pi pi-fw pi-clipboard',
@@ -449,11 +445,11 @@ const items = [
     active: activeRoute.value === 'manage-users'
   },
   {
-    label: 'Dark Mode Toggle',
-    icon: 'pi pi-fw pi-moon',
+    label: isDark.value ? 'Light Mode' : 'Dark Mode',
+    icon: isDark.value ? 'pi pi-fw pi-sun' : 'pi pi-fw pi-moon',
     command: () => {
       console.log('Toggling Dark Mode')
-      toggleDark() // Correctly call the toggle function
+      toggleDark()
     }
   },
   {
@@ -472,7 +468,7 @@ const items = [
       toggleDialog()
     }
   }
-]
+])
 </script>
 
 <style>
