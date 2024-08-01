@@ -222,6 +222,73 @@ onMounted(() => {
   window.addEventListener('resize', checkWindowSize)
 })
 
+const validateCSV = (file) => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      complete: (results) => {
+        console.log('Parsed results:', results)
+
+        if (results.data.length < 2) {
+          reject('CSV file is empty or contains only headers')
+          return
+        }
+
+        const headers = results.data[0]
+        const expectedHeaders = [
+          'ID',
+          'Width (mm)',
+          'Length',
+          'Height',
+          'Weight (kg)',
+          'Volume (mm^2)',
+          'Location'
+        ]
+
+        // Check headers
+        if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+          reject(`Invalid CSV format: Headers do not match the expected format. 
+            Expected: ${expectedHeaders.join(', ')}
+            Actual: ${headers.join(', ')}`)
+          return
+        }
+
+        // Check number of columns and data types
+        for (let i = 1; i < results.data.length; i++) {
+          const row = results.data[i]
+          if (row.length !== 7) {
+            reject(`Invalid CSV format: Row ${i + 1} has ${row.length} columns instead of 7`)
+            return
+          }
+
+          // Check data types
+          if (
+            isNaN(Number(row[0])) || // ID
+            isNaN(Number(row[1])) || // Width
+            isNaN(Number(row[2])) || // Length
+            isNaN(Number(row[3])) || // Height
+            isNaN(Number(row[4])) || // Weight
+            isNaN(Number(row[5])) || // Volume
+            !row[6] ||
+            typeof row[6] !== 'string' // Location
+          ) {
+            reject(
+              `Invalid data in row ${i + 1}: All columns except Location must be numbers, and Location must be a non-empty string`
+            )
+            return
+          }
+        }
+
+        resolve(true)
+      },
+      error: (error) => {
+        reject(`Error parsing CSV: ${error}`)
+      },
+      header: false,
+      skipEmptyLines: true
+    })
+  })
+}
+
 onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
@@ -287,6 +354,31 @@ async function processData(jsonData) {
   }
 }
 
+function convertCSVToJSON(csvText) {
+  // Split the CSV text into lines
+  const lines = csvText.trim().split('\n')
+
+  // Extract headers from the first line
+  const headers = lines[0].split(',')
+
+  // Process each data row
+  const jsonData = lines.slice(1).map((line) => {
+    const values = line.split(',')
+    const row = {}
+    headers.forEach((header, index) => {
+      // Convert numeric values to numbers, keep Location as string
+      if (header !== 'Location') {
+        row[header] = isNaN(values[index]) ? values[index] : Number(values[index])
+      } else {
+        row[header] = values.slice(index).join(',').trim() // Rejoin Location if it contains commas
+      }
+    })
+    return row
+  })
+
+  return jsonData
+}
+
 const processShipment = async () => {
   if (!selectedFile.value) {
     alert('Please select a file')
@@ -294,8 +386,12 @@ const processShipment = async () => {
   }
 
   try {
+    // console.log('Selected file:', selectedFile.value)
+    await validateCSV(selectedFile.value)
+
     //KEEP HERE FOR NOW
     console.log('Uploading file:', selectedFile.value.name)
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
       .upload(`uploads/${selectedFile.value.name}`, selectedFile.value)
@@ -316,14 +412,16 @@ const processShipment = async () => {
       console.log('API Error downloadingFile:', error)
     } else {
       // const encodedCSVText = CSVText.data.replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+      console.log('CSVTEXT : ' + CSVText.data)
 
-      const { data: JsonText, error } = await supabase.functions.invoke('core', {
-        body: JSON.stringify({ type: 'parseCSV', csvText: CSVText.data }),
-        method: 'POST'
-      })
+      // const { data: JsonText, error } = await supabase.functions.invoke('core', {
+      //   body: JSON.stringify({ type: 'parseCSV', csvText: CSVText.data }),
+      //   method: 'POST'
+      // })
+      const jsonData = convertCSVToJSON(CSVText.data)
+      console.log(JSON.stringify(jsonData))
 
-      console.log(JSON.stringify(JsonText))
-      JSONText = JsonText
+      JSONText = jsonData
 
       if (error) {
         console.log('API Error parsingCSV:', error)
@@ -375,14 +473,14 @@ const processShipment = async () => {
                   method: 'POST'
                 })
 
-                console.log(
-                  JSON.stringify({
-                    type: 'insertShipment',
-                    shipmentId: maxShipmentID++,
-                    location: location,
-                    newDeliveryId: maxDeliveryID
-                  })
-                )
+                // console.log(
+                //   JSON.stringify({
+                //     type: 'insertShipment',
+                //     shipmentId: maxShipmentID++,
+                //     location: location,
+                //     newDeliveryId: maxDeliveryID
+                //   })
+                // )
 
                 if (error) {
                   console.log('API Error insertingShipment:', error)
@@ -404,17 +502,17 @@ const processShipment = async () => {
                   method: 'POST'
                 })
 
-                console.log(
-                  JSON.stringify({
-                    type: 'insertPackage',
-                    shipmentId: row['ShipmentID'],
-                    width: row['Width'],
-                    length: row['Length'],
-                    height: row['Height'],
-                    weight: row['Weight'],
-                    volume: row['Volume']
-                  })
-                )
+                // console.log(
+                //   JSON.stringify({
+                //     type: 'insertPackage',
+                //     shipmentId: row['ShipmentID'],
+                //     width: row['Width'],
+                //     length: row['Length'],
+                //     height: row['Height'],
+                //     weight: row['Weight'],
+                //     volume: row['Volume']
+                //   })
+                // )
 
                 if (error) {
                   console.log('API Error insertingPackages:', error)
@@ -430,6 +528,9 @@ const processShipment = async () => {
   } catch (error) {
     console.error('Error processing file:', error)
     alert('Error processing file: ' + error.message)
+
+    selectedFile.value = null
+    return
   }
 }
 
