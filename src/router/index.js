@@ -195,7 +195,7 @@ router.beforeEach(async (to, from, next) => {
       }
     }
   }
-  w
+
   // console.log('Proceeding to route')
   next()
 })

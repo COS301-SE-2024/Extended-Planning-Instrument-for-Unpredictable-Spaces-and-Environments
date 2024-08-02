@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useDark } from '@vueuse/core'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
@@ -18,8 +18,19 @@ const number = ref('')
 const email = ref('')
 const password = ref('')
 
+// New computed property for phone number validation
+const isValidPhoneNumber = computed(() => {
+  const phoneRegex = /^0\d{9}$/
+  return phoneRegex.test(number.value)
+})
+
 const signUp = async () => {
   try {
+    if (!isValidPhoneNumber.value) {
+      alert('Please enter a valid 10-digit phone number starting with 0.')
+      return
+    }
+
     console.log(email.value)
     console.log(password.value)
     const { user, error } = await supabase.auth.signUp({
@@ -97,7 +108,7 @@ const signUp = async () => {
       <form @submit.prevent="signUp" class="sign-up-form">
         <div class="form-group">
           <label for="name" :class="[isDark ? 'text-white' : 'text-neutral-900', 'block font-bold']"
-            >First Name</label
+            >Full Name</label
           >
           <input
             :class="[
@@ -110,7 +121,7 @@ const signUp = async () => {
             id="name"
             v-model="name"
             required
-            placeholder="eg. John"
+            placeholder="eg. John Doe"
             class="form-control"
           />
         </div>
@@ -125,13 +136,14 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
+              'mt-2 mb-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+              { 'border-red-500': number.value && !isValidPhoneNumber }
             ]"
-            type="text"
+            type="tel"
             id="number"
             v-model="number"
             required
-            placeholder="eg. 27826180677"
+            placeholder="e.g. 012 345 6789"
             class="form-control"
           />
         </div>
@@ -171,6 +183,9 @@ const signUp = async () => {
             class="w-full p-password"
             :class="[!isDark ? 'text-black bg-white' : '', 'focus:ring-0 hover:ring-0 mb-8 mt-2']"
           >
+            <p v-if="number.value && !isValidPhoneNumber" class="text-red-500 text-sm mb-4">
+              Please enter a valid 10-digit phone number starting with 0.
+            </p>
             <template #header>
               <h6>Pick a password</h6>
             </template>

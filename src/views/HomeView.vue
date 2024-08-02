@@ -72,16 +72,20 @@ const logout = async () => {
       class="text-container flex items-center justify-center w-full lg:w-1/2 h-1/2 lg:h-full p-8"
     >
       <div>
-        <h1 class="text-4xl font-bold mb-4">Welcome to Janeeb Solutions</h1>
+        <p class="text-4xl font-bold mb-4">Welcome to Janeeb Solutions</p>
         <p class="text-lg">
           We're excited to have you on board! Your account is being set up and you'll receive an
           activation confirmation soon. Once activated, you'll have access to all the relevant
           features. Thank you for your patience!
         </p>
+        <div class="flex justify-left mt-10">
+          <button @click="logout" class="w-full bg-orange-600 px-10 py-2 rounded-md ter">
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   </div>
-  <button @click="logout">Logout</button>
 </template>
 
 <style scoped></style>
