@@ -87,12 +87,12 @@ const signInWithProvider = async (provider) => {
       <p
         :class="[
           isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center  font-bold mb-6 '
+          'text-3xl flex items-center  font-bold mb-2 '
         ]"
       >
-        Sign in
+        Forgot Password?
       </p>
-
+      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address</h2>
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
           <label
@@ -113,78 +113,19 @@ const signInWithProvider = async (provider) => {
             ]"
           />
         </div>
-
-        <label
-          for="password"
-          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
-          >Password</label
-        >
-        <Password
-          id="password"
-          v-model="password"
-          toggleMask
-          :invalid="value === null"
-          required
-          :feedback="false"
-          :class="[
-            !isDark ? 'text-white' : 'text-neutral-800',
-            'focus:ring-0 hover:ring-0 mb-6 mt-2'
-          ]"
-        />
-        <router-link to="/forgot-password" class="text-center text-md text-orange-500">
-          Forgot Password ?</router-link
-        >
         <button
           type="submit"
-          class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          class="mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
         >
-          Sign In
+          Recover Password
         </button>
-        <div class="flex items-center justify-center mb-6">
-          <div :class="[isDark ? 'bg-neutral-500' : ' bg-neutral-800', '  h-0.5 w-[45%]']"></div>
-          <p :class="[isDark ? 'text-white' : ' text-neutral-800 mx-2', 'mr-4 ml-4']">or</p>
-          <div :class="[isDark ? 'bg-neutral-500' : ' bg-neutral-800', '  h-0.5 w-[45%]']"></div>
-        </div>
-
-        <div class="flex justify-center mb-8">
-          <button
-            data-provider="google"
-            @click.prevent="signInWithProvider('google')"
-            :class="[
-              isDark
-                ? ' bg-neutral-900'
-                : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-              'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
-            ]"
-          >
-            <div class="flex items-center justify-center">
-              <i class="pi pi-google"></i>
-            </div>
-          </button>
-          <button
-            data-provider="github"
-            @click.prevent="signInWithProvider('github')"
-            :class="[
-              isDark
-                ? ' bg-neutral-900'
-                : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-              'flex-grow w-[30%]  dark: h-14 rounded-lg mr-2 hover:transform hover:-translate-y-1 transition duration-300'
-            ]"
-          >
-            <div class="flex items-center justify-center">
-              <i class="pi pi-github"></i>
-            </div>
-          </button>
-        </div>
-
         <p
           :class="[
             isDark ? 'text-white' : ' text-neutral-800 mx-2',
             'flex items-center justify-center mr-4 ml-4'
           ]"
         >
-          Don't have an account ?
-          <router-link to="/SignUp" class="ml-2 text-orange-500"> Sign up</router-link>
+          <router-link to="/" class="ml-2 text-orange-500"> Back to login</router-link>
         </p>
       </form>
     </div>

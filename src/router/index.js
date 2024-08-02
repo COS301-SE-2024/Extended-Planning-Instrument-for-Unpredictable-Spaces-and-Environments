@@ -11,6 +11,8 @@ import Loading from '../views/Loading.vue'
 import Inventory from '../views/Inventory.vue'
 import Tracking from '../views/Tracking.vue'
 import Shipments from '../views/Shipments.vue'
+import ForgotPassword from '../views/ForgotPassword.vue'
+
 import { supabase } from '../supabase'
 
 const routes = [
@@ -77,6 +79,11 @@ const routes = [
     path: '/shipments',
     name: 'shipments',
     component: Shipments
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPassword
   }
 ]
 

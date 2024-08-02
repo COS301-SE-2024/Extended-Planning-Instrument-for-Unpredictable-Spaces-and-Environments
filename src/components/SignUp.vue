@@ -203,15 +203,15 @@ const signUp = async () => {
       @click="toggleDark"
       :class="[
         isDark ? 'text-white bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm',
-        'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
+        'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
       ]"
     >
-      <p :class="[isDark ? 'text-white text-left mr-4' : 'text-neutral-800 mr-4']">
-        Dark Mode Toggle
+      <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
+        <span v-if="isDark">Light Mode</span>
+        <span v-else>Dark Mode</span>
       </p>
-
       <button class="focus:outline-none">
-        <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
+        <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
       </button>
     </div>
     <p
