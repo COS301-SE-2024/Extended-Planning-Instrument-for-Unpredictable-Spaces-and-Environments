@@ -19,6 +19,7 @@ const email = ref('')
 const password = ref('')
 const phoneNumberError = ref(false)
 const passwordError = ref(false)
+const emailDuplicate = ref(false)
 
 // Cell Number validation
 const isValidPhoneNumber = computed(() => {
@@ -53,6 +54,11 @@ const signUp = async () => {
     })
     if (error) {
       alert(error.message)
+      console.log(error.message)
+      if (error.message == 'User already registered') {
+        emailDuplicate.value = true
+        return
+      }
     } else {
       console.log('User signed up:', user)
       alert('Sign up successful!')
@@ -176,7 +182,8 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500',
+              { 'border-red-500 border-2': emailDuplicate }
             ]"
             type="email"
             id="email"
@@ -184,8 +191,12 @@ const signUp = async () => {
             required
             placeholder="example@example.com"
             class="form-control"
+            @input="emailDuplicate = false"
           />
         </div>
+        <p v-if="emailDuplicate" class="text-red-500 text-sm mb-4">
+          This email has already been registered.
+        </p>
         <div class="form-group w-full">
           <label
             for="password"
