@@ -17,19 +17,33 @@ const name = ref('')
 const number = ref('')
 const email = ref('')
 const password = ref('')
+const phoneNumberError = ref(false)
+const passwordError = ref(false)
 
-// New computed property for phone number validation
+// Cell Number validation
 const isValidPhoneNumber = computed(() => {
   const phoneRegex = /^0\d{9}$/
   return phoneRegex.test(number.value)
+})
+// Password validation
+const isValidPassword = computed(() => {
+  // Adjust the regex to fit your password criteria
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/
+  return passwordRegex.test(password.value)
 })
 
 const signUp = async () => {
   try {
     if (!isValidPhoneNumber.value) {
-      alert('Please enter a valid 10-digit phone number starting with 0.')
+      phoneNumberError.value = true
       return
     }
+    if (!isValidPassword.value) {
+      passwordError.value = true
+      return
+    }
+    phoneNumberError.value = false
+    passwordError.value = false
 
     console.log(email.value)
     console.log(password.value)
@@ -136,8 +150,8 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2 mb-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
-              { 'border-red-500': number.value && !isValidPhoneNumber }
+              'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+              { 'border-red-500 border-2': phoneNumberError }
             ]"
             type="tel"
             id="number"
@@ -145,8 +159,12 @@ const signUp = async () => {
             required
             placeholder="e.g. 012 345 6789"
             class="form-control"
+            @input="phoneNumberError = false"
           />
         </div>
+        <p v-if="phoneNumberError" class="text-red-500 text-sm mb-4">
+          Please enter a valid 10-digit phone number starting with 0.
+        </p>
         <div class="form-group">
           <label
             for="email"
@@ -180,8 +198,10 @@ const signUp = async () => {
             id="password"
             toggleMask
             required
-            class="w-full p-password"
-            :class="[!isDark ? 'text-black bg-white' : '', 'focus:ring-0 hover:ring-0 mb-8 mt-2']"
+            class="mt-2 w-full p-password"
+            :class="{ 'password-error': passwordError }"
+            @input="passwordError = false"
+            @blur="validatePassword"
           >
             <p v-if="number.value && !isValidPhoneNumber" class="text-red-500 text-sm mb-4">
               Please enter a valid 10-digit phone number starting with 0.
@@ -200,10 +220,13 @@ const signUp = async () => {
               </ul>
             </template>
           </Password>
-
+          <p v-if="passwordError" class="text-red-500 text-sm mt-2">
+            Password must be at least 8 characters long and include one lowercase, one uppercase,
+            and one numeric character.
+          </p>
           <button
             type="submit"
-            class="mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+            class="mb-6 mt-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
           >
             Create new account
           </button>
@@ -282,12 +305,27 @@ const toggleDialog = () => {
   margin-top: 2px;
   padding-left: 10px;
   padding-right: 10px;
-  padding-top: 0.5rem;
   padding-bottom: 0.5rem;
   width: 90%;
   border-radius: 0.5rem;
   color: #000000;
-  border: 1px solid #262626;
+  border: 1px solid #171717 !important;
+  background-color: white;
+}
+
+.p-password.password-error input {
+  border: 2px solid #ff0000 !important;
+}
+
+.dark .p-password input {
+  background-color: #262626;
+  margin-top: 2px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 0.5rem;
+  width: 90%;
+  border-radius: 0.5rem;
+  color: #000000;
   background-color: white;
 }
 .p-password input:focus {
@@ -314,6 +352,7 @@ const toggleDialog = () => {
 .dark .p-password .p-password-toggle-icon {
   color: gray;
 }
+
 /* Light mode InputSwitch styles */
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
   background-color: orange; /* Change this to your desired orange color */
