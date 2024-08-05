@@ -31,6 +31,9 @@ import { store } from './store'
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
 import Carousel from 'primevue/carousel'
+import FileUpload from 'primevue/fileupload'
+import VueSignaturePad from 'vue-signature-pad'
+// import VueGeolocation from 'vue-browser-geolocation'
 
 import 'primeicons/primeicons.css'
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
@@ -41,12 +44,15 @@ import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
 const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
 
+// app.use(VueGeolocation)
+app.use(VueSignaturePad)
 app.use(router)
 app.use(PrimeVue)
 app.use(ConfirmationService)
 app.use(store)
 app.use(ToastService)
 app.component('Carousel', Carousel)
+app.component('FileUpload', FileUpload)
 app.component('Toast', Toast)
 app.component('InputText', InputText)
 app.component('FloatLabel', FloatLabel)

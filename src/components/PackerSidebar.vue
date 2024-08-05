@@ -7,7 +7,11 @@ import { supabase } from '@/supabase'
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
-
+const dialogVisible = ref(false)
+const toggleDialog = () => {
+  console.log('Toggling dialog')
+  dialogVisible.value = !dialogVisible.value
+}
 async function logout() {
   const { error } = await supabase.auth.signOut()
   if (error) {
@@ -24,7 +28,7 @@ const items = [
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
       console.log('Navigating to Dashboard')
-      router.push({ name: 'dashboard' }) // Navigate to the login page after logout
+      toggleDialog()
     }
   },
   {
@@ -88,7 +92,7 @@ const items = [
             v-if="item.badge"
             :class="{ 'ml-auto': !root, 'ml-2': root }"
             :value="item.badge"
-            class="bg-yellow-500 text-black px-2"
+            class="bg-orange-600 text-black px-2"
           />
           <span
             v-if="item.shortcut"
@@ -109,7 +113,7 @@ const items = [
                 isDark
                   ? 'border-neutral-500 bg-neutral-950 text-white'
                   : 'border-gray-500 bg-white text-black',
-                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
+                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-orange-600'
               ]"
             >
               <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
@@ -125,6 +129,38 @@ const items = [
         </div>
       </template>
     </Menubar>
+    <Dialog
+      header="Edit User Profile"
+      v-model:visible="dialogVisible"
+      :modal="true"
+      :closable="false"
+    >
+      <div
+        :class="[
+          isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
+          'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+        ]"
+        class="flex flex-col"
+      >
+        <div>
+          <Button class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4" @click="save"
+            >Save</Button
+          >
+          <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
+            >Undo</Button
+          >
+        </div>
+      </div>
+      <div class="flex flex-col items-center align-center">
+        <Button
+          icon="pi pi-arrow-left"
+          iconPos="left"
+          label="Back"
+          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          @click="dialogVisible = false"
+        />
+      </div>
+    </Dialog>
   </div>
 </template>
 

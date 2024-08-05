@@ -1,27 +1,34 @@
 <script setup>
-import { useDark /*, useToggle */ } from '@vueuse/core'
-// import Toolbar from 'primevue/toolbar'
+import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { supabase } from '../supabase'
-// import { useRouter } from 'vue-router'
+import { format, parseISO } from 'date-fns'
+
 const isDark = useDark()
+const chartData = ref({
+  labels: [],
+  datasets: []
+})
+const chartDataDeliveries = ref({
+  labels: [],
+  datasets: []
+})
+const knobValue = ref(0)
+const packages = ref([])
+const deliveries = ref([])
+const maxDeliveries = ref([])
+const knobValueDelivered = ref([])
+
 // const router = useRouter()
 
-// const toggleDark = () => {
-//   isDark.value = !isDark.value
-//   console.log('Dark mode:', isDark.value ? 'on' : 'off')
-// }
 let userName
 async function getUsername() {
   const { data } = await supabase.auth.getSession()
   userName = data.session.user.identities[0].identity_data.name
-  console.log(userName)
 }
-onMounted(() => {
-  getUsername()
-})
+
 // async function checkAuth() {
 //   try {
 //     // Get the user session
@@ -41,38 +48,133 @@ onMounted(() => {
 // onMounted(() => {
 //   // checkAuth();
 // })
-const chartData = ref({
-  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-  datasets: [
-    {
-      label: 'Algorithm 1',
-      data: [1, 2, 1, 3, 3, 2, 1],
-      borderColor: '#f5a142',
-      backgroundColor: '#000000'
-    },
-    {
-      label: 'Algorithm 2',
-      data: [2, 3, 1, 2, 2, 1, 1],
-      borderColor: '#4300a1',
-      backgroundColor: '#000000'
-    }
-  ],
-  options: {
-    scales: {
-      x: {
-        grid: {
-          color: 'red' // Change the color of the x-axis grid lines
+// const chartData = ref({
+//   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+//   datasets: [
+//     {
+//       label: 'Algorithm 1',
+//       data: [1, 2, 1, 3, 3, 2, 1],
+//       borderColor: '#f5a142',
+//       backgroundColor: '#000000'
+//     },
+//     {
+//       label: 'Algorithm 2',
+//       data: [2, 3, 1, 2, 2, 1, 1],
+//       borderColor: '#4300a1',
+//       backgroundColor: '#000000'
+//     }
+//   ],
+//   options: {
+//     scales: {
+//       x: {
+//         grid: {
+//           color: 'red' // Change the color of the x-axis grid lines
+//         }
+//       },
+//       y: {
+//         grid: {
+//           color: 'blue' // Change the color of the y-axis grid lines
+//         }
+//       }
+//     }
+//   }
+// })
+const getAllShipments = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllShipments' }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      const statusCounts = {
+        Processing: 0,
+        Shipped: 0,
+        Delivered: 0
+      }
+
+      data.data.forEach((shipment) => {
+        const status = shipment.Status.trim()
+        if (statusCounts[status] !== undefined) {
+          statusCounts[status]++
         }
-      },
-      y: {
-        grid: {
-          color: 'blue' // Change the color of the y-axis grid lines
-        }
+      })
+
+      chartData.value = {
+        labels: ['Processing', 'Shipped', 'Delivered'],
+        datasets: [
+          {
+            label: 'Shipments Status',
+            data: [statusCounts.Processing, statusCounts.Shipped, statusCounts.Delivered],
+            backgroundColor: ['#ffffff', '#f97316', '#5b21b6']
+          }
+        ]
       }
     }
+  } catch (error) {
+    console.error('Error fetching data:', error)
   }
-})
+}
+const getAllPackages = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllPackages' }),
+      method: 'POST'
+    })
 
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      const count = data.data.length
+      packages.value = data.data
+      knobValue.value = count // Update the knob value
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+const getAllDeliveries = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllDeliveries' }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      deliveries.value = data.data
+      maxDeliveries.value = deliveries.value.length
+      knobValueDelivered.value = deliveries.value.filter(
+        (delivery) => delivery.Status === 'Delivered'
+      ).length
+      updateChartData()
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+
+const updateChartData = () => {
+  const monthCounts = {}
+
+  deliveries.value.forEach((delivery) => {
+    const month = format(parseISO(delivery.Start_time), 'MMMM yyyy')
+    monthCounts[month] = (monthCounts[month] || 0) + 1
+  })
+
+  chartDataDeliveries.value = {
+    labels: Object.keys(monthCounts),
+    datasets: [
+      {
+        label: 'Deliveries per Month',
+        data: Object.values(monthCounts),
+        backgroundColor: '#f97316'
+      }
+    ]
+  }
+}
 const events = [
   { status: 'Ordered', date: '15/10/2020 10:30', icon: 'pi pi-shopping-cart', color: '#9C27B0' },
   { status: 'Processing', date: '15/10/2020 14:00', icon: 'pi pi-cog', color: '#673AB7' },
@@ -80,20 +182,14 @@ const events = [
   { status: 'Delivered', date: '16/10/2020 10:00', icon: 'pi pi-check', color: '#607D8B' }
 ]
 
-const chartOptions = ref({
-  scales: {
-    x: {
-      grid: {
-        color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
-      }
-    },
-    y: {
-      grid: {
-        color: isDark.value ? '#474647' : 'rgba(0, 0, 0, 0.1)' // Dynamic color based on theme
-      },
-      beginAtZero: true
-    }
-  }
+const chartOptions = {
+  responsive: true
+}
+onMounted(() => {
+  getUsername()
+  getAllShipments()
+  getAllPackages()
+  getAllDeliveries()
 })
 </script>
 
@@ -108,63 +204,57 @@ const chartOptions = ref({
     <!-- Main Content -->
     <div class="flex flex-col p-4 ml-2 w-full">
       <!-- Search Input -->
-      <div class="w-full md:w-[300px] mb-4">
-        <div
-          :class="[
-            isDark
-              ? 'border-neutral-500 bg-neutral-900 text-white'
-              : 'border-gray-500 bg-white text-black',
-            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-yellow-600'
-          ]"
-        >
-          <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-          <InputText
-            placeholder="Search"
-            :class="[
-              isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
-              'focus:outline-none focus:ring-0'
-            ]"
-          />
-        </div>
-      </div>
+
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
         <span class="font-bold">Welcome back</span>
       </h2>
       <div class="flex flex-wrap mb-4">
-        <div class="w-full md:w-[55%] mb-4">
+        <div class="w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'p-4 rounded-xl h-full flex flex-col'
+              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
             ]"
           >
             <h2 class="mb-6 font-bold">Shipment Overview</h2>
-            <div class="w-full flex-grow">
-              <Chart type="line" :data="chartData" :options="chartOptions" class="h-full w-full" />
+            <div class="flex-grow">
+              <Chart type="bar" :data="chartData" class="h-full w-full" />
+            </div>
+          </div>
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
+            ]"
+          >
+            <h2 class="mb-6 font-bold">Monthly Deliveries</h2>
+            <div class="flex-grow">
+              <Chart type="bar" :data="chartDataDeliveries" class="h-full w-full" />
             </div>
           </div>
         </div>
 
-        <div class="w-full ml-2 md:w-[43%] mb-4 flex flex-col">
+        <div class="w-full mb-4 gap-4 flex flex-col sm:flex-row">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex-grow p-4 rounded-xl flex flex-col mb-4'
+              'flex-grow p-4 rounded-xl flex flex-col '
             ]"
           >
-            <h2 class="mb-1 text-xl font-bold">Current Shipments</h2>
+            <h2 class="mb-1 text-xl font-bold">Packages</h2>
             <div class="flex flex-row flex-grow items-center">
               <Knob
-                v-model="value"
-                valueColor="Orange"
-                rangeColor="Black"
+                v-model="knobValue"
+                valueColor="#f97316"
+                :rangeColor="isDark ? 'White' : 'Black'"
                 :class="[isDark ? 'dark' : 'light']"
+                :max="500"
               />
               <div class="ml-4 flex flex-col">
-                <h2 class="mb-1 font-bold">Completed</h2>
-                <p class="font-light">223/300</p>
-                <h2 class="mb-1 font-bold">In Progress</h2>
-                <p class="mb-1 font-light">73</p>
+                <h2 class="mb-1 font-bold">Total Packages</h2>
+                <p class="font-light">{{ knobValue }}/{{ 500 }}</p>
+                <h2 class="mb-1 font-bold">Rem. Space</h2>
+                <p class="mb-1 font-light">{{ 500 - knobValue }}</p>
               </div>
             </div>
           </div>
@@ -172,79 +262,37 @@ const chartOptions = ref({
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex-grow p-4 rounded-xl flex flex-col'
+              'flex-grow p-4 rounded-xl flex flex-col '
             ]"
           >
-            <h2 class="mb-1 text-xl font-bold">Current Shipments</h2>
+            <h2 class="mb-1 text-xl font-bold">Deliveries</h2>
             <div class="flex flex-row flex-grow items-center">
               <Knob
-                v-model="value"
-                valueColor="Orange"
-                rangeColor="Black"
-                class="flex-grow-0"
+                v-model="knobValueDelivered"
+                valueColor="#f97316"
+                :rangeColor="isDark ? 'White' : 'Black'"
                 :class="[isDark ? 'dark' : 'light']"
+                :max="maxDeliveries"
               />
-              <div class="ml-2 flex flex-col">
-                <h2 class="mb-1 font-bold">Completed</h2>
-                <p class="font-light">223/300</p>
+              <div class="ml-4 flex flex-col">
+                <h2 class="mb-1 font-bold">Delivered</h2>
+                <p class="font-light">{{ knobValueDelivered }}/{{ maxDeliveries }}</p>
                 <h2 class="mb-1 font-bold">In Progress</h2>
-                <p class="mb-1 font-light">73</p>
+                <p class="mb-1 font-light">{{ maxDeliveries - knobValueDelivered }}</p>
               </div>
             </div>
           </div>
         </div>
         <div class="w-full flex flex-wrap mb-4">
-          <!-- Latest Shipment -->
-          <div class="w-full md:w-[49%] mb-4 mr-2 flex flex-col">
-            <div
-              :class="[
-                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-                'p-4 rounded-xl'
-              ]"
-            >
-              <h2 class="mb-6 font-bold">Latest Shipment</h2>
-              <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
-                <Accordion :activeIndex="0" class="custom-accordion w-full">
-                  <AccordionTab
-                    v-for="item in [1, 2, 3]"
-                    :key="item"
-                    :header="`Shipment #344${item}`"
-                    :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
-                  >
-                    <Timeline
-                      :value="events"
-                      :class="isDark ? 'dark-mode-timeline' : 'light-mode-timeline'"
-                    >
-                      <template #opposite="slotProps">
-                        <small class="p-text-secondary">{{ slotProps.item.date }}</small>
-                      </template>
-                      <template #content="slotProps">
-                        {{ slotProps.item.status }}
-                      </template>
-                    </Timeline>
-                  </AccordionTab>
-                </Accordion>
-              </div>
-            </div>
-          </div>
-          <!-- Calendar -->
-          <div class="w-full md:w-[49%] mb-4 flex flex-col">
-            <div
-              :class="[
-                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-                'p-4 rounded-xl'
-              ]"
-            >
-              <h2 class="font-bold mb-6">Calendar</h2>
-              <div class="flex-grow">
-                <Calendar
-                  id="calendar"
-                  v-model="date"
-                  inline
-                  showWeek
-                  :class="[isDark ? 'dark-calendar' : 'light-calendar']"
-                />
-              </div>
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
+            ]"
+          >
+            <h2 class="mb-6 font-bold">Monthly Deliveries</h2>
+            <div class="flex-grow">
+              <Chart type="scatter" :data="chartData" class="h-full w-full" />
             </div>
           </div>
         </div>
@@ -285,6 +333,13 @@ const chartOptions = ref({
   stroke: white;
   color: white;
   fill: white;
+  background-color: red;
+}
+.dark .p-knob {
+  stroke: white;
+  color: white;
+  fill: white;
+  background-color: #0a0a0a;
 }
 .light .p-knob-text {
   stroke: #171717;
@@ -456,6 +511,7 @@ const chartOptions = ref({
 </style>
 <script>
 import '../assets/tailwind.css'
+import { ConstantColorFactor } from 'three'
 
 export default {
   data() {

@@ -1,3 +1,166 @@
+<script setup>
+import { useDark } from '@vueuse/core'
+import 'primeicons/primeicons.css'
+import 'primevue/resources/themes/saga-blue/theme.css'
+import 'primevue/resources/primevue.min.css'
+import DeliverySidebar from '@/components/DeliverySidebar.vue'
+import Map from '@/components/Map.vue'
+
+import { ref, computed, onMounted } from 'vue'
+import Timeline from 'primevue/timeline'
+import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
+import FileUpload from 'primevue/fileupload'
+// import Map from '@/components/Map.vue';
+const isDark = useDark()
+const toggleDark = () => {
+  isDark.value = !isDark.value
+  console.log('Dark mode:', isDark.value ? 'on' : 'off')
+}
+
+const showDialog = ref(false)
+const dialogVisible = ref(false)
+
+const toggleDialog = () => {
+  console.log('Toggling dialog')
+  dialogVisible.value = !dialogVisible.value
+}
+
+const submitImage = () => {
+  console.log('Image submitted')
+  showDialog.value = false
+}
+
+const deliveriesByDriverID = ref([])
+const deliveries = ref([])
+const visible = ref(true)
+const getAllDeliveries = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllDeliveries' }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      deliveries.value = data.data
+      await getDeliveriesByDriverID()
+      visible.value = false
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+
+const getDeliveriesByDriverID = async () => {
+  deliveriesByDriverID.value = {}
+
+  for (const delivery of deliveries.value) {
+    try {
+      const { data, error } = await supabase.functions.invoke('core', {
+        body: JSON.stringify({
+          type: 'getDeliveriesByDriverID',
+          deliveryID: delivery.id
+        }),
+        method: 'POST'
+      })
+
+      if (error) {
+        console.log(`API Error for delivery ${delivery.id}:`, error)
+      } else {
+        if (!shipmentsByDelivery.value[delivery.id]) {
+          shipmentsByDelivery.value[delivery.id] = []
+        }
+        shipmentsByDelivery.value[delivery.id].push(...data.data)
+        // console.log(shipmentsByDelivery.value[delivery.id])
+      }
+    } catch (error) {
+      console.error(`Error fetching shipments for delivery ${delivery.id}:`, error)
+    }
+  }
+}
+
+const getStatusColor = (status) => {
+  const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
+  switch (cleanStatus) {
+    case 'shipped':
+      return '#d97706'
+    case 'processing':
+      return '#6b7280'
+    case 'delivered':
+      return '#14532d'
+    default:
+      console.log('Error fetching status: ' + status)
+      return '#6b7280'
+  }
+}
+
+const groupedDeliveries = computed(() => {
+  const groupedByDeliveryId = {}
+
+  Object.entries(shipmentsByDelivery.value).forEach(([deliveryId, shipments]) => {
+    const delivery = deliveries.value.find((d) => d.id.toString() === deliveryId)
+    if (delivery) {
+      groupedByDeliveryId[deliveryId] = {
+        delivery_id: deliveryId,
+        driver_id: delivery.Driver_id || 0,
+        shipments: shipments.map((shipment, index) => {
+          const status = shipment.Status || 'Unknown'
+          return {
+            status: status,
+            time: shipment.Created_at || delivery.Start_time || 0,
+            shipment_id: shipment.id,
+            destination: shipment.Destination,
+            icon: 'pi pi-box',
+            color: getStatusColor(status),
+            line_colour: index === shipments.length - 1 ? '#6b7280' : getStatusColor(status),
+            past: index < shipments.length - 1
+          }
+        })
+      }
+    }
+  })
+  return Object.values(groupedByDeliveryId).filter((group) => group.shipments.length > 0)
+})
+function formattedDateTime(slotProps) {
+  const options = { dateStyle: 'medium', timeStyle: 'short' }
+  return new Date(slotProps.item.time).toLocaleString('en-US', options)
+}
+
+onMounted(() => {
+  setupSubscription()
+  getAllDeliveries()
+})
+</script>
+<script>
+export default {
+  name: 'MySignaturePad',
+  data() {
+    return {
+      option1: {
+        penColor: 'rgb(255, 255, 255)',
+        backgroundColor: 'rgb(23,23,23)'
+      },
+      option2: {
+        penColor: 'rgb(0,0,0)',
+        backgroundColor: 'rgb(255, 255, 255)'
+      },
+      disabled: false,
+      dataUrl: 'https://avatars2.githubusercontent.com/u/17644818?s=460&v=4'
+    }
+  },
+  methods: {
+    undo() {
+      this.$refs.signaturePad.undoSignature()
+    },
+    save() {
+      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
+      console.log(isEmpty)
+      console.log(data)
+    }
+  }
+}
+</script>
 <template>
   <div
     :class="[
@@ -15,165 +178,148 @@
       <div
         :class="[
           isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
-          'flex w-[auto] content-center p-4'
-        ]"
-      >
-        <img src="@/assets/image.png" alt="Image" style="object-fit: cover; border-radius: 5px" />
-      </div>
-      <div
-        :class="[
-          isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
           'card h-[auto] flex flex-col p-4'
         ]"
       >
-        <h1 class="pb-8 text-3xl font-bold">Shipment #345290</h1>
-        <div class="flex flex-row">
-          <Timeline :value="events" class="customized-timeline">
-            <template #marker="slotProps">
-              <span
-                class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
-                :style="{ backgroundColor: slotProps.item.color }"
+        <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
+        <div class="mb-4">
+          <Map />
+        </div>
+        <div v-if="!visible">
+          <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+            <span class="font-bold">Track deliveries</span>
+          </h2>
+          <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+            <Accordion :activeIndex="0" class="custom-accordion w-full">
+              <AccordionTab
+                v-for="group in filteredGroupedDeliveries"
+                :key="group.delivery_id"
+                :header="`Delivery ID: ${group.delivery_id}`"
+                :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
               >
-                <i :class="slotProps.item.icon"></i>
-              </span>
-            </template>
-            <template #content="slotProps">
-              <Card
-                :class="[
-                  isDark ? 'dark bg-neutral-950 text-white ' : 'light bg-white-100 text-black',
-                  'rounded-md'
-                ]"
-                style="width: 95%"
-              >
-                <template #title>
-                  {{ slotProps.item.status }}
-                </template>
-                <template #content>
-                  {{ slotProps.item.date }} {{ slotProps.item.time }}
-                  {{ slotProps.item.location }}
-                  {{ slotProps.item.coordinates }}
-                  <div
-                    v-if="slotProps.item.status === 'Delivered'"
-                    class="flex flex-row w-full justify-center items-end content-end mt-10"
+                <div class="flex flex-row">
+                  <Timeline
+                    :value="group.shipments"
+                    layout="horizontal"
+                    class="customized-timeline w-full"
                   >
-                    <button
-                      :class="[
-                        slotProps.item.past ? '  bg-amber-600' : ' bg-gray-500',
-                        'text-white'
-                      ]"
-                      :disabled="!slotProps.item.past"
-                      class="p-2 rounded-md w-full"
-                      @click="showDialog = true"
-                    >
-                      Confirm Delivery
-                    </button>
-                  </div>
-                </template>
-              </Card>
-            </template>
-            <template #connector="slotProps">
-              <span
-                class="p-timeline-event-connector"
-                :style="{ backgroundColor: slotProps.item.line_colour }"
-              ></span>
-            </template>
-          </Timeline>
+                    <template #marker="slotProps">
+                      <span
+                        class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
+                        :style="{ backgroundColor: slotProps.item.color }"
+                      >
+                        <i :class="slotProps.item.icon"></i>
+                      </span>
+                    </template>
+                    <template #content="slotProps">
+                      <div class="timeline-card-wrapper">
+                        <Card
+                          :class="[
+                            isDark
+                              ? 'dark bg-neutral-950 text-white'
+                              : 'light bg-white-100 text-black',
+                            'rounded-xl border border-neutral-500 h-full'
+                          ]"
+                        >
+                          <template #title>
+                            <div class="card-title">{{ slotProps.item.status }}</div>
+                          </template>
+                          <template #content>
+                            <div class="card-content">
+                              <div class="flex flex-col gap-2">
+                                <div>
+                                  <p class="text-neutral-500">Destination:</p>
+                                  {{ slotProps.item.destination }}
+                                </div>
+                                <div>
+                                  <p class="text-neutral-500">Time:</p>
+                                  <span>{{ formattedDateTime(slotProps) }}</span>
+                                </div>
+                                <div>
+                                  <p class="text-neutral-500">Delivery ID:</p>
+                                  {{ group.delivery_id }}
+                                </div>
+                                <div>
+                                  <p class="text-neutral-500">Driver ID:</p>
+                                  {{ group.driver_id }}
+                                </div>
+                                <div>
+                                  <p class="text-neutral-500">Shipment ID:</p>
+                                  {{ slotProps.item.shipment_id }}
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+                        </Card>
+                      </div>
+                    </template>
+                    <template #connector="slotProps">
+                      <span
+                        class="p-timeline-event-connector"
+                        :style="{ backgroundColor: slotProps.item.line_colour }"
+                      ></span>
+                    </template>
+                  </Timeline>
+                </div>
+              </AccordionTab>
+            </Accordion>
+          </div>
         </div>
       </div>
     </div>
     <Dialog
-      header="Confirmation"
-      v-model:visible="showDialog"
+      header="Edit User Profile"
+      v-model:visible="dialogVisible"
       :modal="true"
       :closable="false"
-      :draggable="false"
     >
-      <div class="dialog-content">
-        <div class="picture-section">
-          <h3>Picture</h3>
-          <FileUpload name="demo[]" url="./upload" accept="image/*" :auto="true" />
-        </div>
-        <div class="signature-section">
-          <h3>Signature</h3>
-          <!-- Signature component or area can be added here -->
+      <div
+        :class="[
+          isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
+          'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+        ]"
+        class="flex flex-col"
+      >
+        <div id="app" class="text-white">
+          <VueSignaturePad
+            width="100%"
+            height="500px"
+            ref="signaturePad"
+            :options="option1"
+            v-if="isDark"
+          />
+          <VueSignaturePad
+            width="100%"
+            height="500px"
+            ref="signaturePad"
+            :options="option2"
+            v-else
+          />
+
+          <div>
+            <Button
+              class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
+              @click="save"
+              >Save</Button
+            >
+            <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
+              >Undo</Button
+            >
+          </div>
         </div>
       </div>
-      <div class="p-dialog-footer">
-        <button @click="showDialog = false" class="p-button p-component p-button-text">
-          Cancel
-        </button>
-        <button @click="submitImage" class="p-button p-component p-button-primary">Submit</button>
+      <div class="flex flex-col items-center align-center">
+        <Button
+          icon="pi pi-arrow-left"
+          iconPos="left"
+          label="Back"
+          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          @click="dialogVisible = false"
+        />
       </div>
     </Dialog>
   </div>
 </template>
-
-<script setup>
-import { useDark } from '@vueuse/core'
-import 'primeicons/primeicons.css'
-import 'primevue/resources/themes/saga-blue/theme.css'
-import 'primevue/resources/primevue.min.css'
-import DeliverySidebar from '@/components/DeliverySidebar.vue'
-import { ref } from 'vue'
-import Timeline from 'primevue/timeline'
-import Card from 'primevue/card'
-import Dialog from 'primevue/dialog'
-import FileUpload from 'primevue/fileupload'
-// import Map from '@/components/Map.vue';
-const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
-const events = ref([
-  {
-    status: 'On Route',
-    location: '1268 Burnett Street Hatfield Pretoria 0012',
-    icon: 'pi pi-map-marker',
-    color: '#d97706',
-    line_colour: '#d97706',
-    past: true
-  },
-  {
-    status: 'Delivered',
-    location: 'Cape Town',
-    coordinates: '-33.9249, 18.4241',
-    date: '15/10/2020',
-    time: '10:30',
-    icon: 'pi pi-box',
-    color: '#d97706', //orange
-    line_colour: '#d97706',
-    past: true
-  },
-  {
-    status: 'On Route',
-    location: '413 The Meridian Solheim Johannesburg 0014',
-    icon: 'pi pi-map-marker',
-    color: '#d97706',
-    line_colour: '#6b7280', //grey
-    past: false
-  },
-  {
-    status: 'Delivered',
-    location: 'Johannesburg',
-    coordinates: '-26.2041, 28.0473',
-    date: '15/10/2020',
-    time: '10:30',
-    icon: 'pi pi-box',
-    color: '#6b7280',
-    line_colour: '#6b7280', //grey
-    past: false
-  },
-  { status: 'Complete', icon: 'pi pi-flag', color: '#6b7280', past: false, line_colour: '#6b7280' }
-])
-
-const showDialog = ref(false)
-
-const submitImage = () => {
-  console.log('Image submitted')
-  showDialog.value = false
-}
-</script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
