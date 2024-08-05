@@ -122,20 +122,30 @@
 
   <Dialog
     v-model:visible="showShipment"
-    :class="[isDark ? 'dark' : '', 'w-[90%] rounded-lg']"
-    header="Add shipments"
+    :class="[isDark ? 'dark' : '', 'w-[50%] rounded-lg']"
     :modal="true"
     @close-dialog="toggleShipment"
   >
     <div class="flex flex-col items-center justify-center m-4">
       <p class="mb-4 text-3xl">New Shipment</p>
-
+      <FileUpload
+        name="demo[]"
+        url="/api/upload"
+        @upload="onAdvancedUpload($event)"
+        :multiple="true"
+        accept="image/*"
+        :maxFileSize="1000000"
+      >
+        <template #empty>
+          <span>Drag and drop files to here to upload.</span>
+        </template>
+      </FileUpload>
       <input type="file" accept=".csv" @change="onFileChange" class="mb-4" />
       <Button @click="processShipment" class="mt-4 py-2 px-6 bg-green-800">Process Shipment</Button>
       <Button @click="toggleShipment" class="mt-4 py-2 px-6 bg-red-800">Cancel</Button>
     </div>
   </Dialog>
-
+  <Toast />
   <DialogComponent
     v-if="showDialog"
     :images="[
@@ -163,6 +173,10 @@ import { createClient } from '@supabase/supabase-js'
 import Papa from 'papaparse'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { Result } from 'postcss'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 // Initialize Supabase client
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
@@ -228,7 +242,7 @@ const validateCSV = (file) => {
 
         // Check headers
         if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
-          reject(`Invalid CSV format: Headers do not match the expected format. 
+          reject(`Invalid CSV format: Headers do not match the expected format.
             Expected: ${expectedHeaders.join(', ')}
             Actual: ${headers.join(', ')}`)
           return
@@ -288,6 +302,7 @@ const logout = async () => {
 const showDialog = ref(false)
 const toggleDialog = () => {
   showDialog.value = !showDialog.value
+  console.log('closing')
 }
 
 const showShipment = ref(false)
@@ -466,6 +481,8 @@ const processShipment = async () => {
               }
             }
             console.log('All shipments and packages inserted successfully')
+            show()
+            toggleDialog()
           }
         }
       }
@@ -477,7 +494,7 @@ const processShipment = async () => {
     selectedFile.value = null
     return
   }
-
+}
 const activeRoute = ref(router.currentRoute.value.name)
 watch(
   () => router.currentRoute.value,
