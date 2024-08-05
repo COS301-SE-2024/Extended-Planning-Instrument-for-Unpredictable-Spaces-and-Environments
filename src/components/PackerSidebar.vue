@@ -9,7 +9,6 @@ const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 const dialogVisible = ref(false)
 const toggleDialog = () => {
-  console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
 async function logout() {
@@ -18,7 +17,25 @@ async function logout() {
     console.log(error)
   } else {
     router.push({ name: 'login' })
-    console.log('Log out successful')
+  }
+}
+//API CALLS FOR SHIPMENTS
+const shipmentsByProcessing = ref([])
+const getAllProcessing = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllProcessing' }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      console.log('Data', data.data)
+      shipmentsByProcessing.value = data.data
+      console.log('SHIPS', shipmentsByProcessing)
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
   }
 }
 
@@ -66,6 +83,10 @@ const items = [
     }
   }
 ]
+
+onMounted(() => {
+  getAllProcessing()
+})
 </script>
 
 <template>
@@ -134,18 +155,22 @@ const items = [
       v-model:visible="dialogVisible"
       :modal="true"
       :closable="false"
+      class="w-[50%]"
     >
       <div
         :class="[
-          isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
-          'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+          isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
+          'mt-2  mb-6 form-control w-[90%]  rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
         ]"
         class="flex flex-col"
       >
-        <div>
-          <Button class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4" @click="save"
-            >Save</Button
+        <div class="flex flex-row">
+          <div class="bg-red-500 w-[300px] h-[100px]">{{ shipmentsByProcessing.value.id }}</div>
+          <Button class="mb-2 rounded-md bg-green-900 justify-center py-2 px-4" @click="save"
+            >Select Shipment</Button
           >
+        </div>
+        <div>
           <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
             >Undo</Button
           >
