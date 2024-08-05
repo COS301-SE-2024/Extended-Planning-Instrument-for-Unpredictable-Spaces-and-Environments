@@ -375,8 +375,8 @@ def main():
     sio.emit('get_data')
 
     container_width = 1200
-    container_depth = 1000
-    container_height = 2000
+    container_depth = 2800
+    container_height = 1380
 
     container_dimensions = (container_width, container_height, container_depth)
 
