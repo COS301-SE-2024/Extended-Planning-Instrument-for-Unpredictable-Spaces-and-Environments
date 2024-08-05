@@ -155,35 +155,43 @@ onMounted(() => {
       v-model:visible="dialogVisible"
       :modal="true"
       :closable="false"
-      class="w-[50%]"
+      class="z-100000 w-[auto] p-4 relative"
     >
       <div
-        :class="[
-          isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
-          'mt-2  mb-6 form-control w-[90%]  rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
-        ]"
-        class="flex flex-col"
+        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+        class="mb-4"
       >
-        <div class="flex flex-row">
-          <div class="bg-red-500 w-[300px] h-[100px]">{{ shipmentsByProcessing.value.id }}</div>
-          <Button class="mb-2 rounded-md bg-green-900 justify-center py-2 px-4" @click="save"
+        <p class="text-3xl mb-2">Current Shipments:</p>
+      </div>
+      <div v-if="isLoading">Loading shipments...</div>
+      <div v-else-if="errorMessage">{{ errorMessage }}</div>
+      <div v-else class="pb-12">
+        <!-- Adjust padding to avoid overlap -->
+        <div v-for="shipment in shipmentsByProcessing" :key="shipment.id" class="mb-8">
+          <p class="text-neutral-400 text-lg">Shipment Status:</p>
+          <p class="text-lg">{{ shipment.Status }}</p>
+          <p class="text-neutral-500 text-lg">Shipment ID:</p>
+          <p class="text-lg">{{ shipment.id }}</p>
+          <p class="text-neutral-400 text-lg">Destination:</p>
+          <p class="text-lg mb-2">{{ shipment.Destination }}</p>
+          <Button
+            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
             >Select Shipment</Button
           >
         </div>
-        <div>
-          <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
-            >Undo</Button
-          >
-        </div>
+        <div v-if="shipmentsByProcessing.length === 0">No shipments found.</div>
       </div>
-      <div class="flex flex-col items-center align-center">
-        <Button
-          icon="pi pi-arrow-left"
-          iconPos="left"
-          label="Back"
-          class="font-semibold w-auto p-button-text text-orange-500 p-2"
-          @click="dialogVisible = false"
-        />
+      <div
+        :class="[
+          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+          'focus:outline-none focus:ring-0'
+        ]"
+        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+      >
+        <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+          >Close</Button
+        >
       </div>
     </Dialog>
   </div>
