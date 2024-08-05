@@ -262,7 +262,11 @@ const loading = ref(false)
           />
         </div>
       </div>
-      <div class="loading-new" v-if="visible">
+      <div
+        class="loading-new"
+        v-if="visible"
+        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black']"
+      >
         <ProgressSpinner
           style="width: 150px; height: 150px"
           strokeWidth="4"
@@ -655,7 +659,6 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #171717; /* Dim background */
   position: relative;
   overflow: hidden;
 }

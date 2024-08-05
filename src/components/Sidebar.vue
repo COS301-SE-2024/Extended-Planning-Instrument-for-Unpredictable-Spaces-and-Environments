@@ -44,7 +44,7 @@
 
       <button
         @click="toggleShipment"
-        class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-yellow-700 text-white mb-4 flex items-center"
+        class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-orange-600 text-white mb-4 flex items-center"
         :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
       >
         <i
@@ -64,51 +64,41 @@
         :class="[isDark ? 'dark' : 'light', 'specific-container']"
         :model="items"
         :router="router"
-        class="w-full md:w-15rem p-menu-custom specific-container"
+        class="w-full md:w-[15rem] p-menu-custom specific-container"
         :exact="false"
       >
         <template #item="{ item, props }">
           <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
             <a
-              class="h-[45px] flex align-items-center mb-2"
+              :class="[
+                'h-[45px] flex align-items-center mb-2',
+                item.active ? 'active-menu-item' : ''
+              ]"
               v-bind="props.action"
-              @click="navigate"
+              @click="navigate(item.route)"
             >
-              <span :class="item.icon"></span>
-              <span
-                class="ml-2 transition-opacity duration-300 ease-in-out"
-                :class="{
-                  '': !isMobileSidebarCollapsed,
-                  'opacity-0 w-[48px]': isMobileSidebarCollapsed
-                }"
-              >
-                {{ item.label }}
-              </span>
+              <i class="mr-2" :class="item.icon"></i>
+              <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
               <Badge severity="contrast" v-if="item.badge" class="ml-auto" :value="item.badge" />
             </a>
           </router-link>
           <a
-            class="h-[45px] flex align-items-center mb-2"
             v-else
-            :href="item.url"
-            :target="item.target"
+            :class="[
+              'h-[45px] flex align-items-center mb-2 ',
+              item.active ? 'active-menu-item' : ''
+            ]"
             v-bind="props.action"
+            :target="item.target"
+            :href="item.url"
+            @click="item.command"
           >
-            <span :class="item.icon"></span>
-            <span
-              class="ml-2 transition-opacity duration-300 ease-in-out"
-              :class="{
-                '': !isMobileSidebarCollapsed,
-                'opacity-0 w-[48px]': isMobileSidebarCollapsed
-              }"
-            >
-              {{ item.label }}
-            </span>
+            <span class="mr-2" :class="item.icon"></span>
+            <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
           </a>
         </template>
       </Menu>
     </div>
-
     <button
       class="relative overflow-hidden w-full p-link flex align-items-center text-color hover:surface-200 border-noround"
     >
@@ -167,7 +157,7 @@
 
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { createClient } from '@supabase/supabase-js'
 import Papa from 'papaparse'
@@ -181,7 +171,7 @@ const supabaseKey =
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter()
 
 const isMobileSidebarCollapsed = ref(false)
@@ -487,45 +477,57 @@ const processShipment = async () => {
     selectedFile.value = null
     return
   }
-}
 
-const items = [
+const activeRoute = ref(router.currentRoute.value.name)
+watch(
+  () => router.currentRoute.value,
+  (newRoute) => {
+    activeRoute.value = newRoute.name || newRoute.path.split('/')[1]
+  }
+)
+
+const navigate = (route) => {
+  router.push(route)
+  activeRoute.value = route.name || route.split('/')[1]
+}
+const items = computed(() => [
   {
     label: 'Dashboard',
     icon: 'pi pi-fw pi-clipboard',
     route: 'dashboard',
-    active: false
+    active: activeRoute.value === 'dashboard'
   },
   {
     label: 'Shipments',
     icon: 'pi pi-fw pi-truck',
     route: '/shipments',
-    active: false
-  },
-  {
-    label: 'Tracking',
-    icon: 'pi pi-fw pi-map',
-    route: 'tracking',
-    active: false
+    active: activeRoute.value === 'shipments'
   },
   {
     label: 'Inventory',
     icon: 'pi pi-fw pi-box',
     route: '/inventory',
-    active: false
+    active: activeRoute.value === 'inventory'
   },
+  {
+    label: 'Tracking',
+    icon: 'pi pi-fw pi-map',
+    route: 'tracking',
+    active: activeRoute.value === 'tracking'
+  },
+
   {
     label: 'Manage Users',
     icon: 'pi pi-fw pi-lock',
     route: 'manage-users',
-    active: false
+    active: activeRoute.value === 'manage-users'
   },
   {
-    label: 'Dark Mode Toggle',
-    icon: 'pi pi-fw pi-moon',
+    label: isDark.value ? 'Light Mode' : 'Dark Mode',
+    icon: isDark.value ? 'pi pi-fw pi-sun' : 'pi pi-fw pi-moon',
     command: () => {
       console.log('Toggling Dark Mode')
-      toggleDark() // Correctly call the toggle function
+      toggleDark()
     }
   },
   {
@@ -544,7 +546,7 @@ const items = [
       toggleDialog()
     }
   }
-]
+])
 </script>
 
 <style>
@@ -563,13 +565,9 @@ const items = [
   background-color: #0a0a0a;
 }
 
-.dark .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #262626 !important;
-      border-radius: 1rem;
-    }
-  }
+.dark .p-menuitem.p-focus > .p-menuitem-content {
+  background-color: #262626 !important;
+  border-radius: 1rem;
 }
 
 .dark .p-menuitem:hover > .p-menuitem-content {
@@ -605,7 +603,25 @@ const items = [
     border-radius: 1rem;
   }
 }
+.light .active-menu-item {
+  background-color: #e1e1e1 !important;
+  border-radius: 1rem;
+}
+.dark .active-menu-item {
+  background-color: #262626 !important;
+  border-radius: 1rem;
+}
 
+.light .active-menu-item:hover,
+.dark .active-menu-item:hover {
+  background-color: #8b5cf6 !important;
+}
+.light .p-menuitem.p-focus > .p-menuitem-content:not(:hover) {
+  background: #e1e1e1 !important;
+}
+.dark .p-menuitem.p-focus > .p-menuitem-content:not(:hover) {
+  background: #262626 !important;
+}
 .specific-container .p-menuitem {
   border-radius: 1rem;
 }
@@ -614,15 +630,9 @@ const items = [
   background-color: transparent !important;
 }
 
-.dark .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content {
-  background-color: #262626 !important;
-  border-radius: 1rem;
-}
-
 .light .p-menu {
   color: black;
   background-color: #0a0a0a;
-  background: #0a0a0a;
 }
 
 .light .p-menuitem {
@@ -634,7 +644,6 @@ const items = [
   stroke: black !important;
   fill: black !important;
   background-color: white;
-  background: transparent;
 }
 
 .light a {
@@ -643,32 +652,14 @@ const items = [
 
 .p-menu {
   padding: 0.5rem 0;
-  background: transparent;
   color: rgba(255, 255, 255, 0.87);
   border-radius: 4px;
   min-width: 12.5rem;
 }
 
-.light .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #f3f4f6 !important;
-      border-radius: 1rem;
-
-      span {
-        color: black !important;
-      }
-    }
-  }
-}
-
 .light .p-menuitem:hover > .p-menuitem-content {
   background-color: #262626 !important;
   border-radius: 1rem;
-
-  span {
-    color: white !important;
-  }
 }
 
 .p-dialog-mask {
@@ -682,7 +673,7 @@ const items = [
 }
 
 .light .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content {
-  background-color: #f3f4f6 !important;
+  background-color: #e4e4e4 !important;
   border-radius: 1rem;
 }
 

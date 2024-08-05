@@ -4,6 +4,7 @@ import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 // SUPA BASE
 import { createClient } from '@supabase/supabase-js'
@@ -16,6 +17,14 @@ const isDark = useDark()
 
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
+
+// search functionality
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+const onGlobalFilterChange = (e) => {
+  filters.value.global.value = e.target.value
+}
 
 const updateUserInTable = (newUserData) => {
   const index = customers.value.findIndex((user) => user.id === newUserData.id)
@@ -161,7 +170,9 @@ const nameWithYou = (user) => {
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
+            v-model="filters['global'].value"
             placeholder="Search"
+            @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
               'focus:outline-none focus:ring-0'
@@ -180,6 +191,8 @@ const nameWithYou = (user) => {
           :value="customers"
           paginator
           :rows="5"
+          :filters="filters"
+          :globalFilterFields="['FullName', 'Email', 'Role', 'Phone']"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
           <Column field="FullName" header="Full Name" style="width: 25%">
@@ -194,7 +207,7 @@ const nameWithYou = (user) => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-orange-500 text-gray-100 rounded-xl p-2"
+                class="bg-orange-500 text-gray-100 rounded-lg p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -222,8 +235,8 @@ const nameWithYou = (user) => {
   >
     <div
       :class="[
-        isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
-        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+        isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
+        'mt-2  form-control w-full px-3  pt-6 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
       ]"
       class="flex flex-col"
     >
@@ -278,28 +291,33 @@ const nameWithYou = (user) => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+            'mt-2   form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.Phone"
           id="Phone"
         />
       </div>
-    </div>
-    <div class="flex flex-col items-center align-center">
-      <Button
-        label="Save"
-        class="w-full font-semibold p-button-text text-white bg-green-800 rounded-xl p-2 mb-3"
-        :loading="loading"
-        @click="saveChanges"
-      />
-
-      <Button
-        icon="pi pi-arrow-left"
-        iconPos="left"
-        label="Back"
-        class="font-semibold w-auto p-button-text text-orange-500 p-2"
-        @click="dialogVisible = false"
-      />
+      <div class="mt-6 flex flex-col items-center align-center">
+        <Button
+          label="Save"
+          class="w-full font-semibold p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
+          :loading="loading"
+          @click="saveChanges"
+        />
+        <Button
+          label="Delete User"
+          class="w-full font-semibold p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
+          :loading="loading"
+          @click=""
+        />
+        <Button
+          icon="pi pi-arrow-left"
+          iconPos="left"
+          label="Back"
+          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          @click="dialogVisible = false"
+        />
+      </div>
     </div>
   </Dialog>
   <div>
@@ -506,11 +524,13 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 .dark .p-dialog {
   background-color: #262626;
   color: white;
+  border-radius: 0.375rem;
 }
 
 .dark .p-dialog .p-dialog-content {
   background-color: #171717;
   color: white;
+  border-radius: 0.375rem;
 }
 .dark .p-dialog-titlebar {
   background-color: #171717;
