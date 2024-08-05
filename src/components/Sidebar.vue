@@ -162,6 +162,7 @@ import { useRouter } from 'vue-router'
 import { createClient } from '@supabase/supabase-js'
 import Papa from 'papaparse'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { Result } from 'postcss'
 
 // Initialize Supabase client
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
@@ -211,6 +212,65 @@ onMounted(() => {
   window.addEventListener('resize', checkWindowSize)
 })
 
+const validateCSV = (file) => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      complete: (results) => {
+        console.log('Parsed results:', results)
+
+        if (results.data.length < 2) {
+          reject('CSV file is empty or contains only headers')
+          return
+        }
+
+        const headers = results.data[0]
+        const expectedHeaders = ['ID', 'Width', 'Length', 'Height', 'Weight', 'Volume', 'Location']
+
+        // Check headers
+        if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+          reject(`Invalid CSV format: Headers do not match the expected format. 
+            Expected: ${expectedHeaders.join(', ')}
+            Actual: ${headers.join(', ')}`)
+          return
+        }
+
+        // Check number of columns and data types
+        for (let i = 1; i < results.data.length; i++) {
+          const row = results.data[i]
+          if (row.length !== 7) {
+            reject(`Invalid CSV format: Row ${i + 1} has ${row.length} columns instead of 7`)
+            return
+          }
+
+          // Check data types
+          if (
+            isNaN(Number(row[0])) || // ID
+            isNaN(Number(row[1])) || // Width
+            isNaN(Number(row[2])) || // Length
+            isNaN(Number(row[3])) || // Height
+            isNaN(Number(row[4])) || // Weight
+            isNaN(Number(row[5])) || // Volume
+            !row[6] ||
+            typeof row[6] !== 'string' // Location
+          ) {
+            reject(
+              `Invalid data in row ${i + 1}: All columns except Location must be numbers, and Location must be a non-empty string`
+            )
+            return
+          }
+        }
+
+        resolve(true)
+      },
+      error: (error) => {
+        reject(`Error parsing CSV: ${error}`)
+      },
+      header: false,
+      skipEmptyLines: true
+    })
+  })
+}
+
 onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
@@ -240,6 +300,78 @@ const onFileChange = (event) => {
   selectedFile.value = event.target.files[0]
 }
 
+let maxShipmentID, maxDeliveryID, JSONText
+async function processData(jsonData) {
+  const { data: ShipID, error } = await supabase.functions.invoke('core', {
+    body: JSON.stringify({ type: 'getMaxShipmentID' }),
+    method: 'POST'
+  })
+  let maxShipmentID = ShipID.id + 1
+
+  if (error) {
+    console.log('API Error gettingMaxShipmentID:', error)
+    return null
+  } else {
+    // Object to store unique locations
+    const uniqueLocations = new Set()
+
+    // First pass: collect unique locations
+    jsonData.forEach((item) => {
+      const location = item['Location\r'].trim() // Trim to remove any trailing \r
+      uniqueLocations.add(location)
+    })
+
+    // Create locationMap with separate ID and location fields
+    const locationMap = Array.from(uniqueLocations).map((location, index) => ({
+      ID: maxShipmentID + index,
+      location: location
+    }))
+
+    // Create a quick lookup object for efficiency
+    const locationLookup = Object.fromEntries(locationMap.map((item) => [item.location, item.ID]))
+
+    // Second pass: process the data and assign ShipmentIDs
+    const processedData = jsonData.map((item) => {
+      const location = item['Location\r'].trim()
+      return {
+        ...item,
+        Location: location, // Replace 'Location\r' with 'Location'
+        ShipmentID: locationLookup[location]
+      }
+    })
+
+    return {
+      locationMap,
+      processedData
+    }
+  }
+}
+
+function convertCSVToJSON(csvText) {
+  // Split the CSV text into lines
+  const lines = csvText.trim().split('\n')
+
+  // Extract headers from the first line
+  const headers = lines[0].split(',')
+
+  // Process each data row
+  const jsonData = lines.slice(1).map((line) => {
+    const values = line.split(',')
+    const row = {}
+    headers.forEach((header, index) => {
+      // Convert numeric values to numbers, keep Location as string
+      if (header !== 'Location') {
+        row[header] = isNaN(values[index]) ? values[index] : Number(values[index])
+      } else {
+        row[header] = values.slice(index).join(',').trim() // Rejoin Location if it contains commas
+      }
+    })
+    return row
+  })
+
+  return jsonData
+}
+
 const processShipment = async () => {
   if (!selectedFile.value) {
     alert('Please select a file')
@@ -247,7 +379,7 @@ const processShipment = async () => {
   }
 
   try {
-    console.log('Uploading file:', selectedFile.value.name)
+    await validateCSV(selectedFile.value)
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
@@ -259,147 +391,92 @@ const processShipment = async () => {
       return
     }
 
-    console.log('File uploaded successfully:', uploadData)
-
-    const { data: publicURLData, error: urlError } = supabase.storage
-      .from('data_bucket')
-      .getPublicUrl(`uploads/${selectedFile.value.name}`)
-
-    if (urlError) {
-      console.error('Error getting public URL:', urlError)
-      alert('Failed to get public URL')
-      return
-    }
-
-    const publicURL = publicURLData.publicUrl
-    console.log('Generated Public URL:', publicURL)
-
-    // Try to get the file using the Supabase client instead of fetch
-    const { data, error: downloadError } = await supabase.storage
-      .from('data_bucket')
-      .download(`uploads/${selectedFile.value.name}`)
-
-    if (downloadError) {
-      console.error('Error downloading file:', downloadError)
-      alert('Failed to download file')
-      return
-    }
-
-    const csvText = await data.text()
-    console.log('CSV Text (first 100 characters):', csvText.substring(0, 100))
-
-    Papa.parse(csvText, {
-      header: true,
-      complete: async (results) => {
-        const rows = results.data
-
-        // Fetch the highest Delivery_id and increment by one
-        const { data: maxDeliveryData, error: maxDeliveryError } = await supabase
-          .from('Deliveries')
-          .select('id')
-          .order('id', { ascending: false })
-          .limit(1)
-
-        if (maxDeliveryError) {
-          console.error('Error fetching max delivery ID:', maxDeliveryError)
-          alert('Failed to fetch max delivery ID')
-          return
-        }
-
-        const newDeliveryId = maxDeliveryData.length > 0 ? maxDeliveryData[0].id + 1 : 1
-        console.log('New Delivery ID:', newDeliveryId)
-
-        // Insert a new delivery into the Deliveries table
-        const { data: deliveryData, error: deliveryError } = await supabase
-          .from('Deliveries')
-          .insert([{ id: newDeliveryId, Status: 'Ordered', Driver_id: '55' }])
-          .select('id')
-
-        if (deliveryError) {
-          console.error('Error inserting delivery:', deliveryError)
-          alert('Failed to insert delivery')
-          return
-        }
-
-        // Group rows by location and insert into Shipments and Packages tables
-        const groupedByLocation = rows.reduce((acc, row) => {
-          if (!acc[row.Location]) {
-            acc[row.Location] = []
-          }
-          acc[row.Location].push(row)
-          return acc
-        }, {})
-
-        for (const location in groupedByLocation) {
-          const shipmentRows = groupedByLocation[location]
-
-          // Insert a new shipment into the Shipment table
-          const { data: shipmentData, error: shipmentError } = await supabase
-            .from('Shipment')
-            .insert([
-              {
-                Start_time: null,
-                Destination: location,
-                Status: 'Processing',
-                Delivery_id: newDeliveryId
-              }
-            ])
-            .select('id')
-
-          if (shipmentError) {
-            console.error('Error inserting shipment:', shipmentError)
-            alert('Failed to insert shipment')
-            return
-          }
-
-          // Fetch the highest Delivery_id and increment by one
-          const { data: maxShipmentData, error: maxShipmentError } = await supabase
-            .from('Shipment')
-            .select('id')
-            .order('id', { ascending: false })
-            .limit(1)
-
-          if (maxShipmentError) {
-            console.error('Error fetching max delivery ID:', maxShipmentError)
-            alert('Failed to fetch max delivery ID')
-            return
-          }
-
-          const newShipmentId = maxShipmentData.length > 0 ? maxShipmentData[0].id + 1 : 1
-          console.log('New Shipment ID:', newShipmentId)
-
-          //DO THE SAME FOR PACKAGES
-
-          // Insert packages into the Packages table
-          const packages = shipmentRows.map((row) => ({
-            Shipment_id: newShipmentId,
-            Width: parseFloat(row['Width (mm)']),
-            Length: parseFloat(row.Length),
-            Height: parseFloat(row.Height),
-            Weight: parseFloat(row['Weight (kg)']),
-            Volume: parseFloat(row.Volume)
-          }))
-
-          const { error: packageError } = await supabase.from('Packages').insert(packages)
-
-          if (packageError) {
-            console.error('Error inserting packages:', packageError)
-            alert('Failed to insert packages')
-            return
-          }
-        }
-
-        alert('File processed and data inserted successfully')
-      },
-      error: (error) => {
-        console.error('Error parsing CSV:', error)
-      }
+    const { data: CSVText, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'downloadFile', fileName: selectedFile.value.name }),
+      method: 'POST'
     })
+
+    if (error) {
+      console.log('API Error downloadingFile:', error)
+    } else {
+      const jsonData = convertCSVToJSON(CSVText.data)
+
+      JSONText = jsonData
+
+      if (error) {
+        console.log('API Error parsingCSV:', error)
+      } else {
+        const { data: DeliveryID, error } = await supabase.functions.invoke('core', {
+          body: JSON.stringify({ type: 'getMaxDeliveryID' }),
+          method: 'POST'
+        })
+
+        maxDeliveryID = DeliveryID.id
+
+        if (error) {
+          console.log('API Error getMaxDeliveryID:', error)
+        } else {
+          const { data, error } = await supabase.functions.invoke('core', {
+            body: JSON.stringify({
+              type: 'insertDelivery',
+              newDeliveryId: maxDeliveryID
+            }),
+            method: 'POST'
+          })
+
+          if (error) {
+            console.log('API Error insertingDelivery:', error)
+          } else {
+            const result = await processData(JSONText)
+
+            for (let row of result['locationMap']) {
+              const { data, error } = await supabase.functions.invoke('core', {
+                body: JSON.stringify({
+                  type: 'insertShipment',
+                  shipment_id: row['ID'],
+                  location: row['location'],
+                  newDeliveryId: maxDeliveryID
+                }),
+                method: 'POST'
+              })
+
+              if (error) {
+                console.log('API Error insertingShipment:', error)
+                throw new Error('Failed to insert shipment')
+              }
+            }
+
+            for (let row of result['processedData']) {
+              const { data, error } = await supabase.functions.invoke('core', {
+                body: JSON.stringify({
+                  type: 'insertPackage',
+                  Shipment_id: row['ShipmentID'],
+                  Width: row['Width'],
+                  Length: row['Length'],
+                  Height: row['Height'],
+                  Weight: row['Weight'],
+                  Volume: row['Volume']
+                }),
+                method: 'POST'
+              })
+
+              if (error) {
+                console.log('API Error insertingPackages:', error)
+                throw new Error('Failed to insert package')
+              }
+            }
+            console.log('All shipments and packages inserted successfully')
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error('Error processing file:', error)
-    alert('Error processing file')
+    alert('Error processing file: ' + error.message)
+
+    selectedFile.value = null
+    return
   }
-}
 
 const activeRoute = ref(router.currentRoute.value.name)
 watch(

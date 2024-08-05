@@ -119,7 +119,6 @@ const getAllShipments = async () => {
 }
 const getAllPackages = async () => {
   try {
-    console.log('TRYING')
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'getAllPackages' }),
       method: 'POST'
@@ -129,7 +128,6 @@ const getAllPackages = async () => {
       console.log('API Error:', error)
     } else {
       const count = data.data.length
-      console.log('Number of packages:', count)
       packages.value = data.data
       knobValue.value = count // Update the knob value
     }
@@ -147,14 +145,10 @@ const getAllDeliveries = async () => {
       console.log('API Error:', error)
     } else {
       deliveries.value = data.data
-      console.log(deliveries.value)
-      console.log()
       maxDeliveries.value = deliveries.value.length
-      console.log('MAX : ', maxDeliveries.value)
       knobValueDelivered.value = deliveries.value.filter(
         (delivery) => delivery.Status === 'Delivered'
       ).length
-      console.log('Delivered : ', knobValueDelivered.value)
       updateChartData()
     }
   } catch (error) {
@@ -163,13 +157,11 @@ const getAllDeliveries = async () => {
 }
 
 const updateChartData = () => {
-  console.log('Starting')
   const monthCounts = {}
 
   deliveries.value.forEach((delivery) => {
     const month = format(parseISO(delivery.Start_time), 'MMMM yyyy')
     monthCounts[month] = (monthCounts[month] || 0) + 1
-    console.log(monthCounts[month])
   })
 
   chartDataDeliveries.value = {
@@ -182,8 +174,6 @@ const updateChartData = () => {
       }
     ]
   }
-  console.log(chartDataDeliveries.value)
-  console.log(chartDataDeliveries.label)
 }
 const events = [
   { status: 'Ordered', date: '15/10/2020 10:30', icon: 'pi pi-shopping-cart', color: '#9C27B0' },

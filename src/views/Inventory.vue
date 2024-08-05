@@ -34,7 +34,7 @@ const onGlobalFilterChange = (e) => {
 const packages = ref([])
 const getAllPackages = async () => {
   try {
-    console.log('TRYING')
+    // console.log('TRYING')
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'getAllPackages' }),
       method: 'POST'
