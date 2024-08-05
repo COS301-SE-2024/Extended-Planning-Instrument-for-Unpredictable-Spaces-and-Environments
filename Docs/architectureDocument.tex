@@ -1,198 +1,59 @@
 \documentclass{article}
-\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage{hyperref}
 
-\title{Architectural Design Strategy}
-\author{}
-\date{}
+\title{System Architecture Document}
+\date{\today}
 
 \begin{document}
 
 \maketitle
 
-\section{Background}
-For our logistics optimization system, we aimed to develop a comprehensive solution
-that addresses the unique needs of managing and optimizing the placement of goods in
-logistics trucks. Our system leverages dynamic algorithms and machine learning
-models to enhance efficiency and space management. This application will assist
-logistics managers in predicting office capacities and managing desk allocations to
-prevent overbooking. Given the diverse and demanding requirements of such a system,
-we have focused on ensuring high performance, scalability, security, reliability, and
-usability.
+\section{Architectural design strategy}
 
-\section{Architectural Decisions}
-The architectural decisions have been based on the quality requirements of the system.
-We have used the quality requirements (listed in our System Requirements
-Specification: SRS) to identify our quality requirements which were used to identify our
-architectural patterns.
+\subsection{Background}
+For our logistics optimization system, we aimed to develop a comprehensive solution that addresses the unique needs of managing and optimizing the placement of goods in logistics trucks. Our system leverages dynamic algorithms and machine learning models to enhance efficiency and space management. This application will assist logistics managers in predicting office capacities and managing desk allocations to prevent overbooking. Given the diverse and demanding requirements of such a system, we have focused on ensuring high performance, scalability, security, reliability, and usability.
+
+\subsection{Architectural Decisions}
+The architectural decisions have been based on the quality requirements of the system. We have used the quality requirements (listed in our System Requirements Specification: SRS) to identify our quality requirements which were used to identify our architectural patterns.
+
+\section{Architectural quality requirements}
+
+\textbf{Performance:}
+\begin{itemize}
+    \item The application shall have fast response times for user interactions.
+    \item The application's database operations, implemented with Supabase, should have efficient query execution times to ensure quick retrieval and storage of data.
+    \item The system should return the optimal packing route within 2-5 minutes of the provided configuration/input parameters.
+    \item The real-time 3D render should reflect optimizations in real time without any delay or buffering.
+\end{itemize}
+
+\textbf{Scalability:}
+\begin{itemize}
+    \item The backend infrastructure, particularly the database layer hosted on Supabase, should be capable of handling increasing loads as the user base expands.
+    \item The system should be scalable in the sense the algorithm could potentially be used for packing cargo trains, or shipping containers.
+\end{itemize}
+
+\textbf{Security:}
+\begin{itemize}
+    \item All user authentication and authorization processes, including registration, login, and password reset, must follow the best practices for safe transfer and storage of sensitive user information.
+    \item Data stored in the Supabase database must be encrypted to protect user privacy and comply with relevant data protection regulations.
+\end{itemize}
+
+\textbf{Reliability:}
+\begin{itemize}
+    \item Error handling mechanisms shall be implemented to handle erroneous input and provide helpful feedback to users in case of unexpected errors.
+    \item Continuous integration and deployment pipelines (CI/CD) shall be set up using GitHub Actions to ensure reliable software releases.
+\end{itemize}
+
+\textbf{Usability:}
+\begin{itemize}
+    \item The application shall have an intuitive and user-friendly interface to ensure ease of use for all user types, including logistics managers, truck drivers, and warehouse staff.
+    \item The interface should be accessible and provide a consistent user experience across various devices and screen sizes.
+    \item The system shall provide clear instructions and feedback to users, guiding them through the process and informing them of any errors or required actions.
+    \item The system shall provide real-time updates to users, ensuring they are always informed of the current status and any changes in the packing process.
+\end{itemize}
 
 \section{Architectural Strategies}
-For the logistics optimization system described in the project, a Microservices
-Architecture is a suitable architectural pattern. This pattern breaks down the application
-into smaller, independently deployable services that communicate over a network. Each
-service is responsible for a specific piece of functionality and can be developed,
-deployed, and scaled independently.
+The Extended Planning Instrument for Unpredictable Spaces and Environment is coupled with the following architectural patterns; layered, API gateway, and service-oriented architecture of the software. The different architectural patterns are shown in the following diagram:
 
-\begin{enumerate}
-    \item \textbf{Authentication/Authorization Service}
-    \begin{itemize}
-        \item Manages user registration, login, and password reset functionalities to ensure secure access.
-    \end{itemize}
-    \item \textbf{Dynamic Packing Algorithm Service}
-    \begin{itemize}
-        \item Adjusts and optimizes the placement of goods in real-time, considering constraints and preferences.
-    \end{itemize}
-    \item \textbf{Machine Learning Model Service}
-    \begin{itemize}
-        \item Learns from data and continuously improves the packing algorithm.
-    \end{itemize}
-    \item \textbf{Manager Dashboard Interface Service}
-    \begin{itemize}
-        \item Provides an interface for inputting constraints, monitoring algorithm performance, and displaying real-time data.
-    \end{itemize}
-    \item \textbf{Packer Instructions Service}
-    \begin{itemize}
-        \item Displays real-time packing solutions and integrates package QR scanning for verification.
-    \end{itemize}
-    \item \textbf{Delivery Instructions Service}
-    \begin{itemize}
-        \item Organizes delivery destinations and provides offloading instructions to ensure efficient delivery processes.
-    \end{itemize}
-\end{enumerate}
-
-In the microservices architecture, services communicate with each other through
-well-defined APIs. This approach ensures loose coupling, allowing each service to be
-developed, deployed, and maintained independently. For real-time data updates and
-event-driven communication, supabase’s built-in real-time functionality is used to
-facilitate efficient and reliable data exchange between services.
-
-The microservices architecture offers several significant benefits. Enhanced flexibility
-allows teams to develop, deploy, and scale services independently, making it easier to
-manage and evolve the system. Improved maintainability is achieved through smaller,
-modular services that are easier to understand, test, and maintain. Greater resilience is
-another advantage, as the failure of one service does not necessarily impact others,
-thus improving the system's overall robustness. Additionally, technology agility allows
-different services to leverage the most suitable technologies for their specific
-requirements, optimizing performance and development efficiency.
-
-\section{Architectural Quality Requirements}
-\begin{itemize}
-    \item \textbf{NF1. Performance:}
-    \begin{enumerate}[label=1.\arabic*.]
-        \item The application shall have fast response times for user interactions.
-        \item The application's database operations, implemented with Supabase, should have efficient query execution times to ensure quick retrieval and storage of data.
-        \item The system should return the optimal packing route within 2-5 minutes of the provided configuration/input parameters.
-        \item The real time 3D render should reflect optimizations in real time without any delay or buffering.
-    \end{enumerate}
-    \item \textbf{NF2. Scalability:}
-    \begin{enumerate}[label=2.\arabic*.]
-        \item The backend infrastructure, particularly the database layer hosted on Supabase, should be capable of handling increasing loads as the user base expands.
-        \item The system should be scalable in the sense the algorithm could potentially be used for packing cargo trains, or shipping containers.
-    \end{enumerate}
-    \item \textbf{NF3. Security:}
-    \begin{enumerate}[label=3.\arabic*.]
-        \item All user authentication and authorization processes, including registration, login, and password reset, must follow the best practices for safe transfer and storage of sensitive user information.
-        \item Data stored in the Supabase database must be encrypted to protect user privacy and comply with relevant data protection regulations.
-    \end{enumerate}
-    \item \textbf{NF4. Reliability:}
-    \begin{enumerate}[label=4.\arabic*.]
-        \item Error handling mechanisms shall be implemented to handle erroneous input and provide helpful feedback to users in case of unexpected errors.
-        \item Continuous integration and deployment pipelines (CI/CD) shall be set up using GitHub Actions to ensure reliable software releases.
-    \end{enumerate}
-    \item \textbf{NF5. Usability:}
-    \begin{enumerate}[label=5.\arabic*.]
-        \item The application shall have an intuitive and user-friendly interface to ensure ease of use for all user types, including logistics managers, truck drivers, and warehouse staff.
-        \item The interface should be accessible and provide a consistent user experience across various devices and screen sizes.
-        \item The system shall provide clear instructions and feedback to users, guiding them through the process and informing them of any errors or required actions.
-        \item The system shall provide real-time updates to users, ensuring they are always informed of the current status and any changes in the packing process.
-    \end{enumerate}
-\end{itemize}
-
-\section{Architectural Design \& Pattern}
-\subsection{Design Patterns Used}
-\textbf{Facade}
-
-The Manager Dashboard Interface will act as the facade, providing a simplified and
-unified interface for the logistics manager to interact with the underlying subsystems like
-the Dynamic Packing Algorithm Service, Machine Learning Model Service, Packer
-Instructions Service, and Delivery Instructions Service.
-
-The facade will expose methods for the manager to input constraints, preferences, and
-priorities for the packing algorithm. It will communicate with the Dynamic Packing
-Algorithm Service, translating the user input and retrieving the generated packing
-solution for presentation.
-
-The facade will also provide an interface for the manager to review and provide
-feedback on the packing solutions. It will collect this feedback and pass it to the
-Machine Learning Model Service to improve the algorithm over time. Additionally, it will
-retrieve and display insights or recommendations from the Machine Learning Model
-Service.
-
-Furthermore, the facade will allow the manager to access packing instructions for
-warehouse staff and delivery instructions for truck drivers by communicating with the
-respective services and presenting the information in a user-friendly format.
-
-By acting as the facade, the Manager Dashboard Interface will handle the complexities
-of communicating with the subsystems, promoting better code organization, readability,
-and separation of concerns. It also facilitates easier maintenance and extensibility, as
-changes to the subsystems won't affect the facade's interface as long as the contracts
-remain unchanged.
-
-\textbf{Singleton}
-
-The Singleton Pattern ensures that a class has only one instance and provides a global
-point of access to that instance. This is particularly useful for managing shared
-resources and maintaining consistent state across the system.
-
-A singleton database connection can efficiently manage database connections,
-optimizing resource utilization and maintaining connection limits for improved
-performance and stability.
-
-Security services managing authentication and authorization also benefit from the
-Singleton Pattern by providing a consistent and universally accessible point of control,
-enhancing overall security.
-
-\section{Architectural Constraints}
-\subsection{Data Constraints}
-The system must utilize specific datasets provided in the linked documents for
-developing and training the machine learning models. These datasets form the
-foundation for the algorithm's learning and optimization processes. All data must be
-handled in compliance with relevant data protection regulations. Sensitive information
-must be encrypted, and access must be restricted to authorized personnel only.
-
-\section{Technology Choices}
-\subsection{Backend}
-\begin{itemize}
-    \item Languages \& Frameworks: Python
-    \item Database: PostgreSQL on Supabase
-    \item Machine Learning: TensorFlow
-    \item APIs: RESTful APIs
-\end{itemize}
-
-\subsection{Frontend}
-\begin{itemize}
-    \item Languages \& Frameworks: JavaScript, Vue, PrimeVue, Tailwind CSS
-    \item Visualization: Three.js
-\end{itemize}
-
-\subsection{DevOps}
-\begin{itemize}
-    \item Version Control: Git, GitHub
-    \item CI/CD: GitHub Actions
-    \item Containerization: Docker
-    \item Cloud Platforms: Vercel
-\end{itemize}
-
-\subsection{Security}
-\begin{itemize}
-    \item Auth/Access Control: OAuth 2.0, JWT
-    \item Encryption: SSL/TLS
-\end{itemize}
-
-\subsection{Collaboration}
-\begin{itemize}
-    \item Communication: Discord, WhatsApp, Google Drive
-    \item Project Management: GitHub Project Board
-    \item Documentation: Google Docs
-\end{itemize}
-
-\
+\end{document}
