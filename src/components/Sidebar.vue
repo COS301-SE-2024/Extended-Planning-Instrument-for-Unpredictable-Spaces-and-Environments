@@ -427,17 +427,18 @@ const items = computed(() => [
     active: activeRoute.value === 'shipments'
   },
   {
-    label: 'Tracking',
-    icon: 'pi pi-fw pi-map',
-    route: 'tracking',
-    active: activeRoute.value === 'tracking'
-  },
-  {
     label: 'Inventory',
     icon: 'pi pi-fw pi-box',
     route: '/inventory',
     active: activeRoute.value === 'inventory'
   },
+  {
+    label: 'Tracking',
+    icon: 'pi pi-fw pi-map',
+    route: 'tracking',
+    active: activeRoute.value === 'tracking'
+  },
+
   {
     label: 'Manage Users',
     icon: 'pi pi-fw pi-lock',

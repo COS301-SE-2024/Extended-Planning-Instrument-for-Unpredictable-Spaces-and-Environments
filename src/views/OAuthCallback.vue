@@ -1,6 +1,17 @@
 <template>
-  <div class="loading">
-    <img src="/Members/Photos/Logos/Logo-Dark.svg" class="logo" alt="Logo" />
+  <div
+    class="loading"
+    :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black']"
+  >
+    <img
+      :src="
+        isDark
+          ? '/Members/Photos/Logos/Logo-Light-Transparent.svg'
+          : '/Members/Photos/Logos/Logo-Dark-Transparent.svg'
+      "
+      class="logo"
+      alt="Logo"
+    />
     <ProgressSpinner
       style="width: 150px; height: 150px"
       strokeWidth="4"
@@ -15,6 +26,8 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
+import { useDark } from '@vueuse/core'
+const isDark = useDark()
 
 const router = useRouter()
 
@@ -80,7 +93,6 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 1); /* Dim background */
   position: relative;
   overflow: hidden;
 }

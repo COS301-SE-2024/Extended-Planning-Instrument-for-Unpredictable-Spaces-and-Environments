@@ -207,7 +207,7 @@ const nameWithYou = (user) => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-orange-500 text-gray-100 rounded-xl p-2"
+                class="bg-orange-500 text-gray-100 rounded-lg p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -235,8 +235,8 @@ const nameWithYou = (user) => {
   >
     <div
       :class="[
-        isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
-        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+        isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
+        'mt-2  form-control w-full px-3  pt-6 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
       ]"
       class="flex flex-col"
     >
@@ -291,28 +291,33 @@ const nameWithYou = (user) => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+            'mt-2   form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.Phone"
           id="Phone"
         />
       </div>
-    </div>
-    <div class="flex flex-col items-center align-center">
-      <Button
-        label="Save"
-        class="w-full font-semibold p-button-text text-white bg-green-800 rounded-xl p-2 mb-3"
-        :loading="loading"
-        @click="saveChanges"
-      />
-
-      <Button
-        icon="pi pi-arrow-left"
-        iconPos="left"
-        label="Back"
-        class="font-semibold w-auto p-button-text text-orange-500 p-2"
-        @click="dialogVisible = false"
-      />
+      <div class="mt-6 flex flex-col items-center align-center">
+        <Button
+          label="Save"
+          class="w-full font-semibold p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
+          :loading="loading"
+          @click="saveChanges"
+        />
+        <Button
+          label="Delete User"
+          class="w-full font-semibold p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
+          :loading="loading"
+          @click=""
+        />
+        <Button
+          icon="pi pi-arrow-left"
+          iconPos="left"
+          label="Back"
+          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          @click="dialogVisible = false"
+        />
+      </div>
     </div>
   </Dialog>
   <div>
@@ -519,11 +524,13 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 .dark .p-dialog {
   background-color: #262626;
   color: white;
+  border-radius: 0.375rem;
 }
 
 .dark .p-dialog .p-dialog-content {
   background-color: #171717;
   color: white;
+  border-radius: 0.375rem;
 }
 .dark .p-dialog-titlebar {
   background-color: #171717;
