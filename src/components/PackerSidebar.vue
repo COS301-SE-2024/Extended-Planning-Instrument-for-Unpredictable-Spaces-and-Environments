@@ -84,6 +84,29 @@ const items = [
   }
 ]
 
+const packages = ref([])
+const getPackagesById = async (shipmentId) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getPackagesById', ShipmentID: shipmentId }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      console.log(data.data)
+      packages.value = data.data
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+
+const handleSelectShipment = (shipmentId) => {
+  getPackagesById(shipmentId)
+}
+
 onMounted(() => {
   getAllProcessing()
 })
@@ -175,6 +198,7 @@ onMounted(() => {
           <p class="text-neutral-400 text-lg">Destination:</p>
           <p class="text-lg mb-2">{{ shipment.Destination }}</p>
           <Button
+            @click="handleSelectShipment(shipment.id)"
             :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
             class="text-lg justify-center px-4 py-2 w-full bg-green-800"
             >Select Shipment</Button

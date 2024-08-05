@@ -29,56 +29,6 @@ async function getUsername() {
   userName = data.session.user.identities[0].identity_data.name
 }
 
-// async function checkAuth() {
-//   try {
-//     // Get the user session
-//     const { data: { session } } = await supabase.auth.getSession();
-//     if (session) {
-//       router.push("/loading")
-//     } else {
-//       // No session found, redirect to the home page
-//       router.push("/");
-//     }
-//   } catch (error) {
-//     console.error('Error:', error);
-//     // Handle any unexpected errors
-//     router.push("/");
-//   }
-// }
-// onMounted(() => {
-//   // checkAuth();
-// })
-// const chartData = ref({
-//   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-//   datasets: [
-//     {
-//       label: 'Algorithm 1',
-//       data: [1, 2, 1, 3, 3, 2, 1],
-//       borderColor: '#f5a142',
-//       backgroundColor: '#000000'
-//     },
-//     {
-//       label: 'Algorithm 2',
-//       data: [2, 3, 1, 2, 2, 1, 1],
-//       borderColor: '#4300a1',
-//       backgroundColor: '#000000'
-//     }
-//   ],
-//   options: {
-//     scales: {
-//       x: {
-//         grid: {
-//           color: 'red' // Change the color of the x-axis grid lines
-//         }
-//       },
-//       y: {
-//         grid: {
-//           color: 'blue' // Change the color of the y-axis grid lines
-//         }
-//       }
-//     }
-//   }
-// })
 const getAllShipments = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -108,7 +58,7 @@ const getAllShipments = async () => {
           {
             label: 'Shipments Status',
             data: [statusCounts.Processing, statusCounts.Shipped, statusCounts.Delivered],
-            backgroundColor: ['#ffffff', '#f97316', '#5b21b6']
+            backgroundColor: ['#f97316', '#5b21b6', '#262626']
           }
         ]
       }
@@ -218,7 +168,7 @@ onMounted(() => {
           >
             <h2 class="mb-6 font-bold">Shipment Overview</h2>
             <div class="flex-grow">
-              <Chart type="bar" :data="chartData" class="h-full w-full" />
+              <Chart type="pie" :data="chartData" class="h-full w-full" />
             </div>
           </div>
           <div
