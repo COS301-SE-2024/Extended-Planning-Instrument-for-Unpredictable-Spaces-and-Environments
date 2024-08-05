@@ -631,8 +631,9 @@ const items = computed(() => [
 
 .light .active-menu-item:hover,
 .dark .active-menu-item:hover {
-  background-color: #8b5cf6 !important;
+  background-color: #c4b5fd !important;
 }
+
 .light .p-menuitem.p-focus > .p-menuitem-content:not(:hover) {
   background: #e1e1e1 !important;
 }

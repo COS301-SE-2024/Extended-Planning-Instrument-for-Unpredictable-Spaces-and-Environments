@@ -24,16 +24,15 @@ const toggleDialog = () => {
 const dialogVisible = ref(false)
 const shipmentsByDelivery = ref([])
 const deliveries = ref([])
+const shipments = ref([])
+
 // search functionality
 const searchQuery = ref('')
 const onGlobalFilterChange = (e) => {
   searchQuery.value = e.target.value.toLowerCase()
 }
 const filteredGroupedDeliveries = computed(() => {
-  console.log('searching ')
-
   if (!searchQuery.value) {
-    console.log('returning ')
     return groupedDeliveries.value
   }
 
@@ -60,7 +59,6 @@ async function setupSubscription() {
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
       const updatedShipment = payload.new
-      console.log('Updating ', updatedShipment)
 
       const deliveryId = updatedShipment.Delivery_id
       if (shipmentsByDelivery.value[deliveryId]) {
@@ -129,6 +127,23 @@ function updateGroupedDeliveries(deliveryId) {
   }
 }
 const visible = ref(true)
+
+const getAllShipments = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllShipments' }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      shipments.value = data.data
+      await getShipmentsByDeliveryID()
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
 const getAllDeliveries = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -140,7 +155,6 @@ const getAllDeliveries = async () => {
     } else {
       deliveries.value = data.data
       await getShipmentsByDeliveryID()
-      visible.value = false
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -150,30 +164,26 @@ const getAllDeliveries = async () => {
 const getShipmentsByDeliveryID = async () => {
   shipmentsByDelivery.value = {}
 
-  for (const delivery of deliveries.value) {
-    try {
-      const { data, error } = await supabase.functions.invoke('core', {
-        body: JSON.stringify({
-          type: 'getShipmentByDeliveryID',
-          deliveryID: delivery.id
-        }),
-        method: 'POST'
-      })
+  // Ensure deliveries and shipments are defined and are arrays
+  if (!Array.isArray(deliveries.value) || !Array.isArray(shipments.value)) {
+    console.error('Deliveries or shipments are not defined or are not arrays')
+    return
+  }
 
-      if (error) {
-        console.log(`API Error for delivery ${delivery.id}:`, error)
-      } else {
+  for (const delivery of deliveries.value) {
+    for (const shipment of shipments.value) {
+      if (delivery.id === shipment.Delivery_id) {
         if (!shipmentsByDelivery.value[delivery.id]) {
           shipmentsByDelivery.value[delivery.id] = []
         }
-        shipmentsByDelivery.value[delivery.id].push(...data.data)
-        // console.log(shipmentsByDelivery.value[delivery.id])
+        shipmentsByDelivery.value[delivery.id].push(shipment)
       }
-    } catch (error) {
-      console.error(`Error fetching shipments for delivery ${delivery.id}:`, error)
     }
   }
+
+  visible.value = false
 }
+
 const getStatusColor = (status) => {
   const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
   switch (cleanStatus) {
@@ -225,6 +235,7 @@ function formattedDateTime(slotProps) {
 onMounted(() => {
   setupSubscription()
   getAllDeliveries()
+  getAllShipments()
 })
 
 const loading = ref(false)

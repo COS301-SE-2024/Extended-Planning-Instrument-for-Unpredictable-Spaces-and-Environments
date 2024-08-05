@@ -18,12 +18,12 @@ import { getAllPackages } from './Packages/getAllPackages.ts'
 import { getAllShipments } from './Shipments/getAllShipments.ts'
 import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
 import { getPublicURL } from './Storage/getPublicURL.ts'
+import { getAllProcessing } from './Shipments/getAllProcessing.ts'
 
 // Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
 import { setFitnessValue } from './Shipments/setFitnessValue.ts'
 import { getDeliveriesByDriverID } from './Deliveries/getDeliveriesByDriverID.ts'
-
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -116,6 +116,9 @@ Deno.serve(async (req) => {
       if (requestBody.type == 'getAllShipments') {
         return responseBuilder(await getAllShipments(supabaseUser))
       }
+      if (requestBody.type == 'getAllProcessing') {
+        return responseBuilder(await getAllProcessing(supabaseUser))
+      }
       if (requestBody.type == 'getAllDeliveries') {
         return responseBuilder(await getAllDeliveries(supabaseUser))
       }
@@ -134,12 +137,7 @@ Deno.serve(async (req) => {
         )
       }
       if (requestBody.type == 'getDeliveriesByDriverID') {
-        return responseBuilder(
-          await getDeliveriesByDriverID(
-            supabaseUser,
-            requestBody.driverID
-          )
-        )
+        return responseBuilder(await getDeliveriesByDriverID(supabaseUser, requestBody.driverID))
       }
       // New endpoints
       if (requestBody.type == 'downloadFile') {
