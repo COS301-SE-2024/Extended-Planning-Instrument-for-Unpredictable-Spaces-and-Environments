@@ -122,27 +122,34 @@
 
   <Dialog
     v-model:visible="showShipment"
-    :class="[isDark ? 'dark' : '', 'w-[50%] rounded-lg']"
+    :class="[isDark ? 'dark' : 'light', 'w-[50%] rounded-lg']"
     :modal="true"
     @close-dialog="toggleShipment"
   >
-    <div class="flex flex-col items-center justify-center m-4">
+    <div class="flex flex-col items-center justify-center m-8">
       <p class="mb-4 text-3xl">New Shipment</p>
+
       <FileUpload
         name="demo[]"
         url="/api/upload"
-        @upload="onAdvancedUpload($event)"
+        @upload="onAdvancedUpload($event), processShipment"
         :multiple="true"
-        accept="image/*"
+        accept=".csv"
         :maxFileSize="1000000"
+        :class="[isDark ? 'dark' : 'light', 'px-2 py-2']"
       >
         <template #empty>
-          <span>Drag and drop files to here to upload.</span>
+          <div class="flex items-center justify-center">
+            <span class="text-center">Drag and drop files here to upload.</span>
+          </div>
         </template>
       </FileUpload>
-      <input type="file" accept=".csv" @change="onFileChange" class="mb-4" />
-      <Button @click="processShipment" class="mt-4 py-2 px-6 bg-green-800">Process Shipment</Button>
-      <Button @click="toggleShipment" class="mt-4 py-2 px-6 bg-red-800">Cancel</Button>
+
+      <!-- <input type="file" accept=".csv" @change="onFileChange" class="mb-4" /> -->
+      <Button @click="processShipment" class="mt-4 text-white py-2 px-6 bg-green-800"
+        >Process Shipment</Button
+      >
+      <Button @click="toggleShipment" class="mt-4 text-white py-2 px-6 bg-red-800">Cancel</Button>
     </div>
   </Dialog>
   <Toast />
@@ -631,7 +638,7 @@ const items = computed(() => [
 
 .light .active-menu-item:hover,
 .dark .active-menu-item:hover {
-  background-color: #c4b5fd !important;
+  background-color: #a58ffe !important;
 }
 
 .light .p-menuitem.p-focus > .p-menuitem-content:not(:hover) {
@@ -697,5 +704,60 @@ const items = computed(() => [
 
 .light .p-menuitem:not(.active-menu-item):hover > .p-menuitem-content span {
   color: black !important;
+}
+
+.light p-fileupload p-fileupload-advanced p-component {
+  background-color: transparent !important;
+}
+
+.dark p-fileupload p-fileupload-advanced p-component {
+  background-color: transparent !important;
+}
+.dark .p-fileupload .p-fileupload-buttonbar,
+.dark .p-fileupload .p-fileupload-content {
+  background-color: transparent !important;
+  font: white;
+  color: white;
+}
+
+.light .p-fileupload .p-fileupload-buttonbar,
+.light .p-fileupload .p-fileupload-content {
+  background-color: transparent !important;
+  color: black;
+}
+
+.light p-fileupload-upload-button {
+  background-color: red !important;
+}
+
+.light p-fileupload-upload-button {
+  background-color: red !important;
+  color: red !important;
+}
+
+.light .p-fileupload .p-button {
+  background-color: #0a0a0a !important;
+  color: white;
+}
+
+.light .p-fileupload .p-button .p-disabled {
+  background-color: #262626 !important;
+  color: rgb(255, 0, 0);
+  border: 1px;
+  border-color: black;
+}
+.light .p-button .p-button-label {
+  color: rgb(186, 185, 185);
+  border: 1px;
+  border-color: black;
+}
+
+.light .p-icon {
+  display: inline-block;
+  color: rgb(186, 185, 185);
+}
+
+.light .p-fileupload-upload-button {
+  padding: 10px;
 }
 </style>
