@@ -90,43 +90,20 @@ Deno.serve(async (req) => {
         )
       }
       if (requestBody.type == 'getShipmentByDeliveryID') {
-        return responseBuilder(
-          await getShipmentByDeliveryID(
-            supabaseUser,
-            requestBody.deliveryID
-          )
-        )
+        return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
       }
       if (requestBody.type == 'getPublicURL') {
-        return responseBuilder(
-          await getPublicURL(
-            supabaseUser,
-            requestBody.fileName
-          )
-        )
+        return responseBuilder(await getPublicURL(supabaseUser, requestBody.fileName))
       }
       if (requestBody.type == 'getOpenDriver') {
-        return responseBuilder(
-          await getOpenDriver(
-            supabaseUser
-          )
-        )
+        return responseBuilder(await getOpenDriver(supabaseUser))
       }
       if (requestBody.type == 'deleteCSV') {
-        return responseBuilder(
-          await deleteCSV(
-            supabaseUser,
-            requestBody.fileName
-          )
-        )
+        return responseBuilder(await deleteCSV(supabaseUser, requestBody.fileName))
       }
       if (requestBody.type == 'setFitnessValue') {
         return responseBuilder(
-          await setFitnessValue(
-            supabaseUser,
-            requestBody.Fitness_Value,
-            requestBody.deliveryID
-          )
+          await setFitnessValue(supabaseUser, requestBody.Fitness_Value, requestBody.deliveryID)
         )
       }
       if (requestBody.type == 'getAllUsers') {
@@ -157,42 +134,19 @@ Deno.serve(async (req) => {
       }
       // New endpoints
       if (requestBody.type == 'downloadFile') {
-        return responseBuilder(
-          await downloadFile(
-            supabaseUser,
-            requestBody.fileName
-          )
-        )
+        return responseBuilder(await downloadFile(supabaseUser, requestBody.fileName))
       }
       if (requestBody.type == 'parseCSV') {
-        return responseBuilder(
-          await parseCSV(
-            requestBody.csvText
-          )
-        )
+        return responseBuilder(await parseCSV(requestBody.csvText))
       }
       if (requestBody.type == 'getMaxDeliveryID') {
-        return responseBuilder(
-          await getMaxDeliveryID(
-            supabaseUser
-          )
-        )
+        return responseBuilder(await getMaxDeliveryID(supabaseUser))
       }
       if (requestBody.type == 'insertDelivery') {
-        return responseBuilder(
-          await insertDelivery(
-            supabaseUser,
-            requestBody.newDeliveryId,
-            requestBody.driver_id
-          )
-        )
+        return responseBuilder(await insertDelivery(supabaseUser, requestBody.newDeliveryId))
       }
       if (requestBody.type == 'getMaxShipmentID') {
-        return responseBuilder(
-          await getMaxShipmentID(
-            supabaseUser
-          )
-        )
+        return responseBuilder(await getMaxShipmentID(supabaseUser))
       }
       if (requestBody.type == 'insertShipment') {
         return responseBuilder(
@@ -203,8 +157,7 @@ Deno.serve(async (req) => {
             requestBody.newDeliveryId
           )
         )
-      }
-      else {
+      } else {
         return defaultResponse()
       }
     }

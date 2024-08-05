@@ -234,15 +234,7 @@ const validateCSV = (file) => {
         }
 
         const headers = results.data[0]
-        const expectedHeaders = [
-          'ID',
-          'Width (mm)',
-          'Length',
-          'Height',
-          'Weight (kg)',
-          'Volume (mm^2)',
-          'Location'
-        ]
+        const expectedHeaders = ['ID', 'Width', 'Length', 'Height', 'Weight', 'Volume', 'Location']
 
         // Check headers
         if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
@@ -318,37 +310,48 @@ const onFileChange = (event) => {
   selectedFile.value = event.target.files[0]
 }
 
-let maxShipmentID, maxDeliveryID, openDriverID, JSONText
+let maxShipmentID, maxDeliveryID, JSONText
 async function processData(jsonData) {
   const { data: ShipID, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({ type: 'getMaxShipmentID' }),
     method: 'POST'
   })
-  maxShipmentID = ShipID.id + 1
+  let maxShipmentID = ShipID.id + 1
 
   if (error) {
     console.log('API Error gettingMaxShipmentID:', error)
+    return null
   } else {
-    // Object to store locations and their IDs
-    const locationMap = {}
-    let locationId = maxShipmentID
+    // Object to store unique locations
+    const uniqueLocations = new Set()
 
-    // Process each item in the JSON data
+    // First pass: collect unique locations
+    jsonData.forEach((item) => {
+      const location = item['Location\r'].trim() // Trim to remove any trailing \r
+      uniqueLocations.add(location)
+    })
+
+    // Create locationMap with separate ID and location fields
+    const locationMap = Array.from(uniqueLocations).map((location, index) => ({
+      ID: maxShipmentID + index,
+      location: location
+    }))
+
+    // Create a quick lookup object for efficiency
+    const locationLookup = Object.fromEntries(locationMap.map((item) => [item.location, item.ID]))
+
+    // Second pass: process the data and assign ShipmentIDs
     const processedData = jsonData.map((item) => {
-      const location = item.Location
-      // If the location is not in the map, add it with a new ID
-      if (!locationMap[location]) {
-        locationMap[location] = locationId++
-      }
-      // Return a new object with the location ID
+      const location = item['Location\r'].trim()
       return {
         ...item,
-        ShipmentID: locationMap[location]
+        Location: location, // Replace 'Location\r' with 'Location'
+        ShipmentID: locationLookup[location]
       }
     })
 
     return {
-      locationMap: Object.fromEntries(Object.entries(locationMap).map(([k, v]) => [v, k])),
+      locationMap,
       processedData
     }
   }
@@ -386,11 +389,7 @@ const processShipment = async () => {
   }
 
   try {
-    // console.log('Selected file:', selectedFile.value)
     await validateCSV(selectedFile.value)
-
-    //KEEP HERE FOR NOW
-    console.log('Uploading file:', selectedFile.value.name)
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('data_bucket')
@@ -401,7 +400,6 @@ const processShipment = async () => {
       alert('Failed to upload file')
       return
     }
-    console.log('File uploaded successfully:', uploadData)
 
     const { data: CSVText, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'downloadFile', fileName: selectedFile.value.name }),
@@ -411,15 +409,7 @@ const processShipment = async () => {
     if (error) {
       console.log('API Error downloadingFile:', error)
     } else {
-      // const encodedCSVText = CSVText.data.replace(/\n/g, '\\n').replace(/\r/g, '\\r')
-      console.log('CSVTEXT : ' + CSVText.data)
-
-      // const { data: JsonText, error } = await supabase.functions.invoke('core', {
-      //   body: JSON.stringify({ type: 'parseCSV', csvText: CSVText.data }),
-      //   method: 'POST'
-      // })
       const jsonData = convertCSVToJSON(CSVText.data)
-      console.log(JSON.stringify(jsonData))
 
       JSONText = jsonData
 
@@ -436,91 +426,56 @@ const processShipment = async () => {
         if (error) {
           console.log('API Error getMaxDeliveryID:', error)
         } else {
-          const { data: openDriver, error } = await supabase.functions.invoke('core', {
-            body: JSON.stringify({ type: 'getOpenDriver' }),
+          const { data, error } = await supabase.functions.invoke('core', {
+            body: JSON.stringify({
+              type: 'insertDelivery',
+              newDeliveryId: maxDeliveryID
+            }),
             method: 'POST'
           })
-          openDriverID = openDriver.data[0].Driver_id
 
           if (error) {
-            console.log('API Error gettingOpenDriver:', error)
+            console.log('API Error insertingDelivery:', error)
           } else {
-            const { data, error } = await supabase.functions.invoke('core', {
-              body: JSON.stringify({
-                type: 'insertDelivery',
-                newDeliveryId: maxDeliveryID++,
-                driver_id: openDriverID
-              }),
-              method: 'POST'
-            })
+            const result = await processData(JSONText)
 
-            if (error) {
-              console.log('API Error insertingDelivery:', error)
-            } else {
-              console.log(JSONText)
-              const result = await processData(JSONText)
+            for (let row of result['locationMap']) {
+              const { data, error } = await supabase.functions.invoke('core', {
+                body: JSON.stringify({
+                  type: 'insertShipment',
+                  shipment_id: row['ID'],
+                  location: row['location'],
+                  newDeliveryId: maxDeliveryID
+                }),
+                method: 'POST'
+              })
 
-              console.log('result : ', result)
-
-              for (let [id, location] of Object.entries(result['locationMap'])) {
-                const { data, error } = await supabase.functions.invoke('core', {
-                  body: JSON.stringify({
-                    type: 'insertShipment',
-                    shipmentId: maxShipmentID++,
-                    location: location,
-                    newDeliveryId: maxDeliveryID
-                  }),
-                  method: 'POST'
-                })
-
-                // console.log(
-                //   JSON.stringify({
-                //     type: 'insertShipment',
-                //     shipmentId: maxShipmentID++,
-                //     location: location,
-                //     newDeliveryId: maxDeliveryID
-                //   })
-                // )
-
-                if (error) {
-                  console.log('API Error insertingShipment:', error)
-                  throw new Error('Failed to insert shipment')
-                }
+              if (error) {
+                console.log('API Error insertingShipment:', error)
+                throw new Error('Failed to insert shipment')
               }
-
-              for (let row of result['processedData']) {
-                const { data, error } = await supabase.functions.invoke('core', {
-                  body: JSON.stringify({
-                    type: 'insertPackage',
-                    shipmentId: row['ShipmentID'],
-                    width: row['Width'],
-                    length: row['Length'],
-                    height: row['Height'],
-                    weight: row['Weight'],
-                    volume: row['Volume']
-                  }),
-                  method: 'POST'
-                })
-
-                // console.log(
-                //   JSON.stringify({
-                //     type: 'insertPackage',
-                //     shipmentId: row['ShipmentID'],
-                //     width: row['Width'],
-                //     length: row['Length'],
-                //     height: row['Height'],
-                //     weight: row['Weight'],
-                //     volume: row['Volume']
-                //   })
-                // )
-
-                if (error) {
-                  console.log('API Error insertingPackages:', error)
-                  throw new Error('Failed to insert package')
-                }
-              }
-              console.log('All shipments and packages inserted successfully')
             }
+
+            for (let row of result['processedData']) {
+              const { data, error } = await supabase.functions.invoke('core', {
+                body: JSON.stringify({
+                  type: 'insertPackage',
+                  Shipment_id: row['ShipmentID'],
+                  Width: row['Width'],
+                  Length: row['Length'],
+                  Height: row['Height'],
+                  Weight: row['Weight'],
+                  Volume: row['Volume']
+                }),
+                method: 'POST'
+              })
+
+              if (error) {
+                console.log('API Error insertingPackages:', error)
+                throw new Error('Failed to insert package')
+              }
+            }
+            console.log('All shipments and packages inserted successfully')
           }
         }
       }
