@@ -24,6 +24,8 @@ import { getAllProcessing } from './Shipments/getAllProcessing.ts'
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
 import { setFitnessValue } from './Shipments/setFitnessValue.ts'
 import { getDeliveriesByDriverID } from './Deliveries/getDeliveriesByDriverID.ts'
+import { getDeliveriesByStatus } from './Deliveries/getDeliveriesByStatus.ts'
+
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -121,6 +123,9 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getAllDeliveries') {
         return responseBuilder(await getAllDeliveries(supabaseUser))
+      }
+      if (requestBody.type == 'getDeliveriesByStatus') {
+        return responseBuilder(await getDeliveriesByStatus(supabaseUser))
       }
       if (requestBody.type == 'checkRole') {
         return responseBuilder(await checkRole(supabaseUser, requestBody.email))
