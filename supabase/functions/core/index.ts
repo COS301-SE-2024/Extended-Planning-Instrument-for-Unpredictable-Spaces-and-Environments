@@ -13,7 +13,7 @@ import { getOpenDriver } from './Users/getOpenDriver.ts'
 import { insertPackage } from './Packages/insertPackage.ts'
 import { uploadFile } from './Packages/uploadCSV.ts'
 import { getAllPackages } from './Packages/getAllPackages.ts'
-
+import { getPackagesById } from './Packages/getPackagesById.ts'
 // Shipment
 import { getAllShipments } from './Shipments/getAllShipments.ts'
 import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
@@ -138,6 +138,9 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getDeliveriesByDriverID') {
         return responseBuilder(await getDeliveriesByDriverID(supabaseUser, requestBody.driverID))
+      }
+      if (requestBody.type == 'getPackagesById') {
+        return responseBuilder(await getPackagesById(supabaseUser, requestBody.ShipmentID))
       }
       // New endpoints
       if (requestBody.type == 'downloadFile') {
