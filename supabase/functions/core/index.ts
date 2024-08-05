@@ -22,6 +22,7 @@ import { getPublicURL } from './Storage/getPublicURL.ts'
 // Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
 import { setFitnessValue } from './Shipments/setFitnessValue.ts'
+import { getDeliveriesByDriverID } from './Deliveries/getDeliveriesByDriverID.ts'
 
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
@@ -129,6 +130,14 @@ Deno.serve(async (req) => {
             requestBody.role,
             requestBody.fullname,
             requestBody.phone
+          )
+        )
+      }
+      if (requestBody.type == 'getDeliveriesByDriverID') {
+        return responseBuilder(
+          await getDeliveriesByDriverID(
+            supabaseUser,
+            requestBody.driverID
           )
         )
       }
