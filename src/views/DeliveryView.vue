@@ -1,3 +1,5 @@
+<!-- DELIVERYVIEW.VUE -->
+
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -6,7 +8,7 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -95,42 +97,56 @@ const getStatusColor = (status) => {
   }
 }
 
-const groupedDeliveries = computed(() => {
-  const groupedByDeliveryId = {}
-
-  Object.entries(shipmentsByDelivery.value).forEach(([deliveryId, shipments]) => {
-    const delivery = deliveries.value.find((d) => d.id.toString() === deliveryId)
-    if (delivery) {
-      groupedByDeliveryId[deliveryId] = {
-        delivery_id: deliveryId,
-        driver_id: delivery.Driver_id || 0,
-        shipments: shipments.map((shipment, index) => {
-          const status = shipment.Status || 'Unknown'
-          return {
-            status: status,
-            time: shipment.Created_at || delivery.Start_time || 0,
-            shipment_id: shipment.id,
-            destination: shipment.Destination,
-            icon: 'pi pi-box',
-            color: getStatusColor(status),
-            line_colour: index === shipments.length - 1 ? '#6b7280' : getStatusColor(status),
-            past: index < shipments.length - 1
-          }
-        })
-      }
-    }
-  })
-  return Object.values(groupedByDeliveryId).filter((group) => group.shipments.length > 0)
-})
 function formattedDateTime(slotProps) {
   const options = { dateStyle: 'medium', timeStyle: 'short' }
   return new Date(slotProps.item.time).toLocaleString('en-US', options)
 }
+const currentDelivery = ref(null)
 
+const handleDeliveryFromSidebar = (delivery) => {
+  console.log('DeliveryView: Handling delivery from sidebar:', delivery)
+
+  // If delivery is a ref, we need to access its value
+  currentDelivery.value = delivery._isRef ? delivery.value : delivery
+
+  console.log('Processed delivery data:', currentDelivery.value)
+  // Trigger timeline update
+  updateTimeline()
+}
+
+const updateTimeline = () => {
+  if (currentDelivery.value) {
+    // Assuming the delivery object has a 'status' property
+    // You may need to adjust this based on the actual structure of your data
+    deliveries.value = [
+      {
+        status: currentDelivery.value.status || 'Unknown',
+        date: new Date(),
+        icon: 'pi pi-shopping-cart',
+        color: '#9C27B0',
+        image: 'game-controller.jpg'
+      }
+    ]
+  }
+}
+
+const timelineEvents = computed(() => {
+  return deliveries.value.map((delivery) => ({
+    status: delivery.status,
+    date: delivery.date,
+    icon: delivery.icon,
+    color: delivery.color,
+    image: delivery.image
+  }))
+})
 onMounted(() => {
-  setupSubscription()
+  console.log('DeliveryView: Component mounted')
   getAllDeliveries()
 })
+
+// const emitHandleDelivery = (delivery) => {
+//   emit('handle-delivery', delivery)
+// }
 </script>
 <script>
 export default {
@@ -168,7 +184,7 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
-    <DeliverySidebar />
+    <DeliverySidebar @handle-delivery="handleDeliveryFromSidebar" />
     <div
       :class="[
         isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
@@ -185,94 +201,68 @@ export default {
         <div class="mb-4">
           <Map />
         </div>
-        <div v-if="!visible">
-          <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-            <span class="font-bold">Track deliveries</span>
-          </h2>
-          <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
-            <Accordion :activeIndex="0" class="custom-accordion w-full">
-              <AccordionTab
-                v-for="group in filteredGroupedDeliveries"
-                :key="group.delivery_id"
-                :header="`Delivery ID: ${group.delivery_id}`"
-                :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
-              >
-                <div class="flex flex-row">
-                  <Timeline
-                    :value="group.shipments"
-                    layout="horizontal"
-                    class="customized-timeline w-full"
+        <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+          <span class="font-bold">Track deliveries</span>
+        </h2>
+        <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+          <div class="flex flex-row">
+            <Timeline
+              :value="timelineEvents"
+              layout="horizontal"
+              class="customized-timeline w-full"
+            >
+              <template #marker="slotProps">
+                <span
+                  class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
+                  :style="{ backgroundColor: slotProps.item.color }"
+                >
+                  <i :class="slotProps.item.icon"></i>
+                </span>
+              </template>
+              <template #content="slotProps">
+                <div class="timeline-card-wrapper">
+                  <Card
+                    :class="[
+                      isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
+                      'rounded-xl border border-neutral-500 h-full'
+                    ]"
                   >
-                    <template #marker="slotProps">
-                      <span
-                        class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
-                        :style="{ backgroundColor: slotProps.item.color }"
-                      >
-                        <i :class="slotProps.item.icon"></i>
-                      </span>
+                    <template #title>
+                      <div class="card-title">{{ slotProps.item.status }}</div>
                     </template>
-                    <template #content="slotProps">
-                      <div class="timeline-card-wrapper">
-                        <Card
-                          :class="[
-                            isDark
-                              ? 'dark bg-neutral-950 text-white'
-                              : 'light bg-white-100 text-black',
-                            'rounded-xl border border-neutral-500 h-full'
-                          ]"
-                        >
-                          <template #title>
-                            <div class="card-title">{{ slotProps.item.status }}</div>
-                          </template>
-                          <template #content>
-                            <div class="card-content">
-                              <div class="flex flex-col gap-2">
-                                <div>
-                                  <p class="text-neutral-500">Destination:</p>
-                                  {{ slotProps.item.destination }}
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Time:</p>
-                                  <span>{{ formattedDateTime(slotProps) }}</span>
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Delivery ID:</p>
-                                  {{ group.delivery_id }}
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Driver ID:</p>
-                                  {{ group.driver_id }}
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Shipment ID:</p>
-                                  {{ slotProps.item.shipment_id }}
-                                </div>
-                              </div>
-                            </div>
-                          </template>
-                        </Card>
+                    <template #content>
+                      <div class="card-content">
+                        <div class="flex flex-col gap-2">
+                          <div>
+                            <p class="text-neutral-500">Driver ID:</p>
+                            {{ currentDelivery?.value?.Driver_id }}
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">Date:</p>
+                            <!-- <span>{{ new Date(slotProps.item.date).toLocaleString() }}</span> -->
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">Delivery ID:</p>
+                            {{ currentDelivery?.value?.id }}
+                          </div>
+                        </div>
                       </div>
                     </template>
-                    <template #connector="slotProps">
-                      <span
-                        class="p-timeline-event-connector"
-                        :style="{ backgroundColor: slotProps.item.line_colour }"
-                      ></span>
-                    </template>
-                  </Timeline>
+                  </Card>
                 </div>
-              </AccordionTab>
-            </Accordion>
+              </template>
+              <template #connector="slotProps">
+                <span
+                  class="p-timeline-event-connector"
+                  :style="{ backgroundColor: slotProps.item.line_color }"
+                ></span>
+              </template>
+            </Timeline>
           </div>
         </div>
       </div>
     </div>
-    <Dialog
-      header="Edit User Profile"
-      v-model:visible="dialogVisible"
-      :modal="true"
-      :closable="false"
-    >
+    <Dialog v-model:visible="dialogVisible" :modal="true" :closable="false">
       <div
         :class="[
           isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
