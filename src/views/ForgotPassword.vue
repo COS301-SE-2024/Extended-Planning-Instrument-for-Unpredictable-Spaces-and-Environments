@@ -17,32 +17,40 @@ const router = useRouter()
 
 // Function to handle password recovery
 const recoverPassword = async () => {
-  const { data, error: fetchError } = await supabase
-    .from('Users')
-    .select('Email')
-    .eq('Email', email.value)
+  try {
+    const { data, error: fetchError } = await supabase
+      .from('Users')
+      .select('Email')
+      .eq('Email', email.value)
 
-  if (fetchError) {
-    alert('Error checking email: ' + fetchError.message)
-    return
-  }
+    if (fetchError) {
+      console.error('Error checking email:', fetchError)
+      alert('Error checking email: ' + fetchError.message)
+      return
+    }
 
-  if (data.length === 0) {
-    alert('Email not found in the database')
-    return
-  }
+    if (data.length === 0) {
+      alert('Email not found in the database')
+      return
+    }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-    redirectTo: `${window.location.origin}/callback`, // Change this URL as per your routing setup
-  })
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+      redirectTo: `${window.location.origin}/callback`,
+    })
 
-  if (error) {
-    alert('Error sending password recovery email: ' + error.message)
-  } else {
-    alert('Password recovery email sent.')
-    router.push({ name: 'login' }) // Redirect to login page or any other page after sending the email
+    if (error) {
+      console.error('Error sending password recovery email:', error)
+      alert('Error sending password recovery email: ' + error.message)
+    } else {
+      alert('Password recovery email sent.')
+      router.push({ name: 'login' })
+    }
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    alert('Unexpected error occurred: ' + error.message)
   }
 }
+
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
