@@ -182,14 +182,8 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { Result } from 'postcss'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
-
+import { supabase } from '@/supabase.js' // Import the Supabase client
 const toast = useToast()
-
-// Initialize Supabase client
-const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
-const supabaseKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo'
-const supabase = createClient(supabaseUrl, supabaseKey)
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
