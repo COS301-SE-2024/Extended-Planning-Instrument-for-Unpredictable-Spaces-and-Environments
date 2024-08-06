@@ -1,8 +1,8 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 
 const dialogVisible = ref(false)
@@ -16,6 +16,9 @@ const password2 = ref('')
 const email = ref('')
 const router = useRouter()
 const passwordError = ref(false)
+const emailSent = ref(false)
+const userEmail = ref('')
+const userToken = ref('')
 
 const passwordsMatch = computed(() => password1.value === password2.value)
 
@@ -24,45 +27,27 @@ const isValidPassword = computed(() => {
   return passwordRegex.test(password1.value)
 })
 
-// Function to handle password recovery
-const recoverPassword = async () => {
+// Function to handle password recovery request
+const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
+    passwordError.value = true
     alert('Passwords do not match. Please try again.')
     return
   }
 
-  if (!isValidPassword.value) {
-    passwordError.value = true
-    return
-  }
+  passwordError.value = false
 
   try {
-    const { data, error: fetchError } = await supabase
-      .from('Users')
-      .select('Email')
-      .eq('Email', email.value)
-
-    if (fetchError) {
-      console.error('Error checking email:', fetchError)
-      alert('Error checking email: ' + fetchError.message)
-      return
-    }
-
-    if (data.length === 0) {
-      alert('Email not found in the database')
-      return
-    }
-
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/reset-password`
+      redirectTo: `${window.location.origin}/forgot-password`
     })
 
     if (error) {
       console.error('Error sending password recovery email:', error)
       alert('Error sending password recovery email: ' + error.message)
     } else {
-      alert('Password recovery email sent.')
-      router.push({ name: 'login' })
+      alert('Password recovery email sent. Please check your inbox.')
+      emailSent.value = true
     }
   } catch (error) {
     console.error('Unexpected error:', error)
@@ -70,9 +55,43 @@ const recoverPassword = async () => {
   }
 }
 
-const toggleDialog = () => {
-  dialogVisible.value = !dialogVisible.value
+// Function to handle password update
+const resetPassword = async () => {
+  if (!passwordsMatch.value) {
+    passwordError.value = true
+    alert('Passwords do not match. Please try again.')
+    return
+  }
+
+  passwordError.value = false
+
+  try {
+    const { error } = await supabase.auth.updateUser({
+      email: userEmail.value,
+      password: password1.value
+    })
+
+    if (error) {
+      console.error('Error updating password:', error)
+      alert('Error updating password: ' + error.message)
+    } else {
+      alert('Password updated successfully.')
+    }
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    alert('Unexpected error occurred: ' + error.message)
+  }
 }
+
+const route = useRoute()
+onMounted(() => {
+  const { email, token } = route.query
+  if (email && token) {
+    userEmail.value = email
+    userToken.value = token
+    resetPassword()
+  }
+})
 </script>
 
 <template>
@@ -112,8 +131,8 @@ const toggleDialog = () => {
       >
         Forgot Password?
       </p>
-      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address</h2>
-      <form @submit.prevent="recoverPassword" class="flex flex-col">
+      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address and new password</h2>
+      <form @submit.prevent="requestPasswordReset" class="flex flex-col">
         <div class="form-group mb-6">
           <label
             for="email"
