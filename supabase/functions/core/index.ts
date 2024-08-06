@@ -21,6 +21,7 @@ import { getAllShipments } from './Shipments/getAllShipments.ts'
 import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
 import { getPublicURL } from './Storage/getPublicURL.ts'
 import { getAllProcessing } from './Shipments/getAllProcessing.ts'
+import { deleteShipment } from './Shipments/deleteShipment.ts'
 
 // Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
@@ -114,6 +115,9 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getPublicURL') {
         return responseBuilder(await getPublicURL(supabaseUser, requestBody.fileName))
+      }
+      if (requestBody.type == 'deleteShipment') {
+        return responseBuilder(await deleteShipment(supabaseUser, requestBody.fileName))
       }
       if (requestBody.type == 'getOpenDriver') {
         return responseBuilder(await getOpenDriver(supabaseUser))
