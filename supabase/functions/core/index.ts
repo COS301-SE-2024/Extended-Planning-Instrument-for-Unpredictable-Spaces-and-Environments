@@ -10,6 +10,7 @@ import { checkRole } from './Users/checkRole.ts'
 import { getOpenDriver } from './Users/getOpenDriver.ts'
 import { deleteUser } from './Users/deleteUser.ts'
 import { getCurrentUser } from './Users/getCurrentUser.ts'
+import { getUserIdFromId } from './Users/getUserIdFromId.ts'
 
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
@@ -22,6 +23,7 @@ import { getShipmentByDeliveryID } from './Shipments/getShipmentByDeliveryID.ts'
 import { getPublicURL } from './Storage/getPublicURL.ts'
 import { getAllProcessing } from './Shipments/getAllProcessing.ts'
 import { deleteShipment } from './Shipments/deleteShipment.ts'
+import { updateShipmentStatus } from './Shipments/updateShipmentStatus.ts'
 
 // Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
@@ -86,7 +88,8 @@ Deno.serve(async (req) => {
         return responseBuilder(
           await deleteUser(
             supabaseUser,
-            requestBody.userId
+            requestBody.userId,
+            requestBody.id
           )
         )
       }
@@ -115,6 +118,12 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getPublicURL') {
         return responseBuilder(await getPublicURL(supabaseUser, requestBody.fileName))
+      }
+      if (requestBody.type == 'getUserIdFromId') {
+        return responseBuilder(await getUserIdFromId(supabaseUser, requestBody.id))
+      }
+      if (requestBody.type == 'updateShipmentStatus') {
+        return responseBuilder(await updateShipmentStatus(supabaseUser, requestBody.shipmentId, requestBody.newStatus))
       }
       if (requestBody.type == 'deleteShipment') {
         return responseBuilder(await deleteShipment(supabaseUser, requestBody.fileName))
