@@ -5,14 +5,8 @@ import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
-
+import { supabase } from '@/supabase.js' // Import the Supabase client
 // SUPA BASE
-import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
-const supabaseKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA'
-// SUPA BASE
-const supabase = createClient(supabaseUrl, supabaseKey)
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value

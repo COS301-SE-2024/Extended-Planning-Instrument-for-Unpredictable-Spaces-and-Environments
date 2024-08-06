@@ -5,23 +5,25 @@ import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
-
-// SUPA BASE
-import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
-const supabaseKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA'
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { supabase } from '@/supabase.js' // Import the Supabase client
 const isDark = useDark()
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
 
-// search functionality
+// Utility to sanitize input
+const sanitizeInput = (input) => {
+  const trimmedInput = input.trim()
+  const div = document.createElement('div')
+  div.appendChild(document.createTextNode(trimmedInput))
+  return div.innerHTML
+}
+
+// Search functionality
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 })
 const onGlobalFilterChange = (e) => {
-  filters.value.global.value = e.target.value
+  filters.value.global.value = sanitizeInput(e.target.value)
 }
 
 const updateUserInTable = (newUserData) => {
@@ -33,38 +35,59 @@ const updateUserInTable = (newUserData) => {
   }
 }
 
-
 const currentUser = ref(null)
-async function fetchCurrentUser() {
-  const session = await supabase.auth.getSession()
-  if (session.data.session) {
-    const { user } = session.data.session
-    // Assuming you have a way to fetch user details, like their name
-    const { data, error } = await supabase
-      .from('Users')
-      .select('FullName')
-      .eq('Email', user.email)
-      .single()
 
-    if (error) {
-      console.log('Error fetching user:', error)
+const handleError = (error, context) => {
+  console.error(`Error in ${context}:`, error.message)
+  // Optionally send the error to an external logging service
+}
+
+const checkUserPermissions = (user) => {
+  // Implement your permission checks here
+  // Example: return user.role === 'admin';
+  return true // Assuming all authenticated users have permission for this example
+}
+
+async function fetchCurrentUser() {
+  try {
+    const session = await supabase.auth.getSession()
+    if (session.data.session) {
+      const { user } = session.data.session
+      if (checkUserPermissions(user)) {
+        const { data, error } = await supabase
+          .from('Users')
+          .select('FullName')
+          .eq('Email', sanitizeInput(user.email))
+          .single()
+
+        if (error) {
+          handleError(error, 'fetchCurrentUser')
+        } else {
+          currentUser.value = data.FullName
+          console.log('Current user fetched:', currentUser.value)
+        }
+      } else {
+        console.log('User does not have permission')
+      }
     } else {
-      currentUser.value = data.FullName
-      console.log('Current user fetched:', currentUser.value)
+      console.log('No session found')
     }
-  } else {
-    console.log('No session found')
+  } catch (error) {
+    handleError(error, 'fetchCurrentUser')
   }
 }
 
 async function setupSubscription() {
-  await supabase // Await for the subscription to be established
-    .channel('*')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-      // console.log(payload.new)
-      updateUserInTable(payload.new)
-    })
-    .subscribe()
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Users' }, (payload) => {
+        updateUserInTable(payload.new)
+      })
+      .subscribe()
+  } catch (error) {
+    handleError(error, 'setupSubscription')
+  }
 }
 
 const fetchUsers = async () => {
@@ -75,16 +98,15 @@ const fetchUsers = async () => {
     })
 
     if (error) {
-      console.log('API Error:', error)
+      handleError(error, 'fetchUsers')
     } else {
-      console.log(data.data)
       customers.value = data.data
-      // console.log(customers.value) // Now it should log an array
     }
   } catch (error) {
-    console.error('Error fetching data:', error)
+    handleError(error, 'fetchUsers')
   }
 }
+
 onMounted(() => {
   fetchUsers()
   fetchCurrentUser() // Fetch current user info on mount
@@ -114,33 +136,36 @@ const roles = ref([
 ])
 
 const saveChanges = async () => {
-  loading.value = true // Start loading animation
+  loading.value = true
   try {
+    const sanitizedFullName = sanitizeInput(selectedUser.value.FullName)
+    const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
+    const sanitizedPhone = sanitizeInput(selectedUser.value.Phone)
+
     const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateUser',
-        fullname: selectedUser.value.FullName,
-        email: selectedUser.value.Email,
-        role: selectedRole.value.name,
-        phone: selectedUser.value.Phone
+        fullname: sanitizedFullName,
+        email: sanitizedEmail,
+        role: sanitizeInput(selectedRole.value.name),
+        phone: sanitizedPhone
       }),
       method: 'POST'
     })
 
     if (error) {
-      console.log('API Error:', error)
-      console.log(error.message)
+      handleError(error, 'saveChanges')
     } else {
-      dialogVisible.value = false // Close the dialog if successful
+      dialogVisible.value = false
     }
   } catch (error) {
-    console.error('Error fetching data:', error)
+    handleError(error, 'saveChanges')
   } finally {
-    loading.value = false // Stop loading animation
+    loading.value = false
   }
 }
+
 const nameWithYou = (user) => {
-  console.log('nameWithYou function called with:', user)
   if (currentUser.value && user.FullName === currentUser.value) {
     return `${user.FullName} (You)`
   }
@@ -181,7 +206,7 @@ const nameWithYou = (user) => {
         </div>
       </div>
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Manage User's</span>
+        <span class="font-bold">Manage Users</span>
       </h2>
 
       <!-- Users Table -->
@@ -334,6 +359,7 @@ const nameWithYou = (user) => {
     />
   </div>
 </template>
+
 <script>
 export default {
   components: {
@@ -345,6 +371,7 @@ const toggleDialog = () => {
   showDialog.value = !showDialog.value
 }
 </script>
+
 <style>
 /* Light mode styles */
 .body {
