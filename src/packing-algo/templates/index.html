@@ -35,296 +35,305 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script>
-      let scene, camera, renderer, controls, truck;
-      const socket = io();
-      const scale = 0.1; // Ensure this scale is consistent with the dimensions in Python
-      let generations = [];
+      let scene, camera, renderer, controls, truck
+      const socket = io()
+      const scale = 0.1 // Ensure this scale is consistent with the dimensions in Python
+      let generations = []
       let moveForward = false,
         moveBackward = false,
         moveLeft = false,
         moveRight = false,
         moveUp = false,
-        moveDown = false;
-      let prevTime = performance.now();
-      const velocity = new THREE.Vector3();
-      const direction = new THREE.Vector3();
-      let lastBox;
-      let layerBoxes = []; // Ensure layerBoxes is defined
+        moveDown = false
+      let prevTime = performance.now()
+      const velocity = new THREE.Vector3()
+      const direction = new THREE.Vector3()
+      let lastBox
+      let layerBoxes = [] // Ensure layerBoxes is defined
 
-      let currentSection = 0;
-      let isShowingInstructions = false;
+      let currentSection = 0
+      let isShowingInstructions = false
 
       function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene = new THREE.Scene()
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
 
-        camera.position.set(0, 5, 60);
-        camera.lookAt(10, 0, 0);
+        camera.position.set(250, 200, 300)
+        camera.lookAt(10, 0, 0)
 
         // Change the background color to gray for better visibility
-        scene.background = new THREE.Color(0x808080);
+        scene.background = new THREE.Color(0x808080)
 
         // Add Ambient Light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // Increased intensity for better visibility
-        scene.add(ambientLight);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5) // Increased intensity for better visibility
+        scene.add(ambientLight)
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity for better visibility
-        directionalLight.position.set(50, 50, 50);
-        directionalLight.castShadow = true; // Enable shadows
-        scene.add(directionalLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5) // Increased intensity for better visibility
+        directionalLight.position.set(50, 50, 50)
+        directionalLight.castShadow = true // Enable shadows
+        scene.add(directionalLight)
 
         // Initialize Renderer
-        renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        renderer = new THREE.WebGLRenderer()
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        document.body.appendChild(renderer.domElement)
 
         // Initialize Controls
-        controls = new THREE.PointerLockControls(camera, document.body);
+        controls = new THREE.PointerLockControls(camera, document.body)
 
-        const instructions = document.getElementById('instructions');
+        const instructions = document.getElementById('instructions')
         instructions.addEventListener('click', () => {
-          controls.lock();
-        });
+          controls.lock()
+        })
 
         controls.addEventListener('lock', () => {
-          instructions.style.display = 'none';
-        });
+          instructions.style.display = 'none'
+        })
 
         controls.addEventListener('unlock', () => {
-          instructions.style.display = '';
-        });
+          instructions.style.display = ''
+        })
 
-        scene.add(controls.getObject());
+        scene.add(controls.getObject())
 
         // Event Listeners
-        window.addEventListener('resize', onWindowResize);
-        window.addEventListener('keydown', onKeyDown);
-        window.addEventListener('keyup', onKeyUp);
-        onWindowResize();
+        window.addEventListener('resize', onWindowResize)
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp)
+        onWindowResize()
 
-        createAxesHelper();
-        socket.emit('get_data'); // Request initial data
-        socket.on('update_data', updateData);
-        animate();
+        createAxesHelper()
+        socket.emit('get_data') // Request initial data
+        socket.on('update_data', updateData)
+        animate()
 
         // Add UI Buttons
-        const showInstructionsButton = document.createElement('button');
-        showInstructionsButton.id = 'showInstructionsButton';
-        showInstructionsButton.textContent = 'Show Instructions';
-        showInstructionsButton.style.position = 'absolute';
-        showInstructionsButton.style.right = '10px';
-        showInstructionsButton.style.bottom = '10px';
-        showInstructionsButton.addEventListener('click', toggleInstructions);
-        document.body.appendChild(showInstructionsButton);
+        const showInstructionsButton = document.createElement('button')
+        showInstructionsButton.id = 'showInstructionsButton'
+        showInstructionsButton.textContent = 'Show Instructions'
+        showInstructionsButton.style.position = 'absolute'
+        showInstructionsButton.style.right = '10px'
+        showInstructionsButton.style.bottom = '10px'
+        showInstructionsButton.addEventListener('click', toggleInstructions)
+        document.body.appendChild(showInstructionsButton)
 
-        const prevButton = document.createElement('button');
-        prevButton.id = 'prevButton';
-        prevButton.textContent = 'Previous Layer';
-        prevButton.style.position = 'absolute';
-        prevButton.style.left = '10px';
-        prevButton.style.top = '10px';
-        prevButton.addEventListener('click', () => changeLayer(-1));
-        document.body.appendChild(prevButton);
+        const prevButton = document.createElement('button')
+        prevButton.id = 'prevButton'
+        prevButton.textContent = 'Previous Layer'
+        prevButton.style.position = 'absolute'
+        prevButton.style.left = '10px'
+        prevButton.style.top = '10px'
+        prevButton.addEventListener('click', () => changeLayer(-1))
+        document.body.appendChild(prevButton)
 
-        const nextButton = document.createElement('button');
-        nextButton.id = 'nextButton';
-        nextButton.textContent = 'Next Layer';
-        nextButton.style.position = 'absolute';
-        nextButton.style.right = '10px';
-        nextButton.style.top = '10px';
-        nextButton.addEventListener('click', () => changeLayer(1));
-        document.body.appendChild(nextButton);
+        const nextButton = document.createElement('button')
+        nextButton.id = 'nextButton'
+        nextButton.textContent = 'Next Layer'
+        nextButton.style.position = 'absolute'
+        nextButton.style.right = '10px'
+        nextButton.style.top = '10px'
+        nextButton.addEventListener('click', () => changeLayer(1))
+        document.body.appendChild(nextButton)
 
-        const layerInfo = document.createElement('div');
-        layerInfo.id = 'layerInfo';
-        layerInfo.style.position = 'absolute';
-        layerInfo.style.left = '50%';
-        layerInfo.style.top = '10px';
-        layerInfo.style.transform = 'translateX(-50%)';
-        document.body.appendChild(layerInfo);
+        const layerInfo = document.createElement('div')
+        layerInfo.id = 'layerInfo'
+        layerInfo.style.position = 'absolute'
+        layerInfo.style.left = '50%'
+        layerInfo.style.top = '10px'
+        layerInfo.style.transform = 'translateX(-50%)'
+        document.body.appendChild(layerInfo)
 
-        document.getElementById('prevButton').style.display = 'none';
-        document.getElementById('nextButton').style.display = 'none';
-        document.getElementById('layerInfo').style.display = 'none';
+        document.getElementById('prevButton').style.display = 'none'
+        document.getElementById('nextButton').style.display = 'none'
+        document.getElementById('layerInfo').style.display = 'none'
 
         // Add a grid helper for better scene visualization
-        const gridHelper = new THREE.GridHelper(200, 50);
-        scene.add(gridHelper);
+        const gridHelper = new THREE.GridHelper(200, 50)
+        scene.add(gridHelper)
 
         // Load the truck model
-        const loader = new THREE.GLTFLoader();
-        loader.load('/truck/truckpackingView1.glb', function(gltf) {
-          truck = gltf.scene;
-          scene.add(truck);
+        const loader = new THREE.GLTFLoader()
+        loader.load(
+          '/truck/truckpackingView1.glb',
+          function (gltf) {
+            truck = gltf.scene
+            scene.add(truck)
 
-          truck.traverse(function(child) {
-            if (child.isMesh) {
-              const basicMaterial = new THREE.MeshBasicMaterial({
-                color: child.material.color || new THREE.Color(0xff0000)
-              });
+            truck.traverse(function (child) {
+              if (child.isMesh) {
+                const basicMaterial = new THREE.MeshBasicMaterial({
+                  color: child.material.color || new THREE.Color(0xff0000)
+                })
 
-              child.material = basicMaterial;
-              child.material.needsUpdate = true;
-            }
-          });
+                child.material = basicMaterial
+                child.material.needsUpdate = true
+              }
+            })
 
-          truck.scale.set(20, 20, 20);
-          truck.position.set(2, 0, 0);
-          displayFullSolution();
-        }, undefined, function(error) {
-          console.error('An error occurred while loading the truck model:', error);
-        });
+            truck.scale.set(20, 20, 20)
+            truck.position.set(2, 0, 0)
+            displayFullSolution()
+          },
+          undefined,
+          function (error) {
+            console.error('An error occurred while loading the truck model:', error)
+          }
+        )
       }
 
       function displayFullSolution() {
-    if (truck) {
-        scene.children = scene.children.filter(child => child === controls.getObject() || child === truck || child.name === "axesHelper");
-        if (layerBoxes && layerBoxes.length > 0) {
+        if (truck) {
+          scene.children = scene.children.filter(
+            (child) =>
+              child === controls.getObject() || child === truck || child.name === 'axesHelper'
+          )
+          if (layerBoxes && layerBoxes.length > 0) {
             // Adjust container visualization
-            const containerWidth = 1200;  // Set your container width
-            const containerHeight = 1380; // Set your container height
-            const containerLength = 2800; // Set your container length
+            const containerWidth = 1200 // Set your container width
+            const containerHeight = 1380 // Set your container height
+            const containerLength = 2800 // Set your container length
 
             const containerGeometry = new THREE.BoxGeometry(
-                containerWidth * scale,
-                containerHeight * scale,
-                containerLength * scale
-            );
+              containerWidth * scale,
+              containerHeight * scale,
+              containerLength * scale
+            )
             const containerMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffffff, // White color for the container wireframe
-                wireframe: true
-            });
-            const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
+              color: 0xffffff, // White color for the container wireframe
+              wireframe: true
+            })
+            const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial)
 
             // Position the container so its back left corner is at (0, containerHeight * scale / 2, 0)
-            containerMesh.position.set(containerWidth * scale / 2, containerHeight * scale / 2, containerLength * scale / 2);
-            scene.add(containerMesh);
+            containerMesh.position.set(
+              (containerWidth * scale) / 2,
+              (containerHeight * scale) / 2,
+              (containerLength * scale) / 2
+            )
+            scene.add(containerMesh)
 
             layerBoxes.flat().forEach((box) => {
-                addBoxToScene(
-                    box,
-                    box.container,
-                    0,
-                    box.minWeight,
-                    box.maxWeight,
-                    true
-                );
-            });
+              addBoxToScene(box, box.container, 0, box.minWeight, box.maxWeight, true)
+            })
+          }
+          document.getElementById('prevButton').style.display = 'none'
+          document.getElementById('nextButton').style.display = 'none'
+          document.getElementById('layerInfo').style.display = 'none'
+        } else {
+          console.error('Truck model is not loaded yet')
         }
-        document.getElementById('prevButton').style.display = 'none';
-        document.getElementById('nextButton').style.display = 'none';
-        document.getElementById('layerInfo').style.display = 'none';
-    } else {
-        console.error("Truck model is not loaded yet");
-    }
-}
-
+      }
 
       function toggleInstructions() {
-        isShowingInstructions = !isShowingInstructions;
-        const showInstructionsButton = document.getElementById('showInstructionsButton');
+        isShowingInstructions = !isShowingInstructions
+        const showInstructionsButton = document.getElementById('showInstructionsButton')
 
         if (isShowingInstructions) {
-          showInstructionsButton.textContent = 'Show Full Solution';
-          document.getElementById('prevButton').style.display = 'block';
-          document.getElementById('nextButton').style.display = 'block';
-          document.getElementById('layerInfo').style.display = 'block';
-          currentSection = 0;
-          displayLayer(currentSection);
-          updateLayerInfo();
+          showInstructionsButton.textContent = 'Show Full Solution'
+          document.getElementById('prevButton').style.display = 'block'
+          document.getElementById('nextButton').style.display = 'block'
+          document.getElementById('layerInfo').style.display = 'block'
+          currentSection = 0
+          displayLayer(currentSection)
+          updateLayerInfo()
         } else {
-          showInstructionsButton.textContent = 'Show Instructions';
-          document.getElementById('prevButton').style.display = 'none';
-          document.getElementById('nextButton').style.display = 'none';
-          document.getElementById('layerInfo').style.display = 'none';
-          displayFullSolution();
+          showInstructionsButton.textContent = 'Show Instructions'
+          document.getElementById('prevButton').style.display = 'none'
+          document.getElementById('nextButton').style.display = 'none'
+          document.getElementById('layerInfo').style.display = 'none'
+          displayFullSolution()
         }
       }
 
       function changeLayer(delta) {
-        currentSection += delta;
-        if (currentSection < 0) currentSection = 0;
-        if (currentSection >= layerBoxes.length) currentSection = layerBoxes.length - 1;
-        displayLayer(currentSection);
-        updateLayerInfo();
+        currentSection += delta
+        if (currentSection < 0) currentSection = 0
+        if (currentSection >= layerBoxes.length) currentSection = layerBoxes.length - 1
+        displayLayer(currentSection)
+        updateLayerInfo()
       }
 
       function updateLayerInfo() {
-        const layerInfo = document.getElementById('layerInfo');
-        layerInfo.textContent = `Section ${currentSection + 1} of ${layerBoxes.length}`;
+        const layerInfo = document.getElementById('layerInfo')
+        layerInfo.textContent = `Section ${currentSection + 1} of ${layerBoxes.length}`
       }
 
       function displayLayer(sectionIndex) {
-    scene.children = scene.children.filter((child) => child === controls.getObject() || child === truck);
+        scene.children = scene.children.filter(
+          (child) => child === controls.getObject() || child === truck
+        )
 
-    // Add container visualization
-    const containerGeometry = new THREE.BoxGeometry(
-        layerBoxes[0][0].container.width * scale,
-        layerBoxes[0][0].container.height * scale,
-        layerBoxes[0][0].container.length * scale
-    );
-    const containerMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff, // White color for the container wireframe
-        wireframe: true
-    });
-    const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
+        // Add container visualization
+        const containerGeometry = new THREE.BoxGeometry(
+          layerBoxes[0][0].container.width * scale,
+          layerBoxes[0][0].container.height * scale,
+          layerBoxes[0][0].container.length * scale
+        )
+        const containerMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffffff, // White color for the container wireframe
+          wireframe: true
+        })
+        const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial)
 
-    // Position the container so its back left corner is at (0, containerHeight * scale / 2, 0)
-    containerMesh.position.set(layerBoxes[0][0].container.width * scale / 2, layerBoxes[0][0].container.height * scale / 2, layerBoxes[0][0].container.length * scale / 2);
-    scene.add(containerMesh);
+        // Position the container so its back left corner is at (0, containerHeight * scale / 2, 0)
+        containerMesh.position.set(
+          (layerBoxes[0][0].container.width * scale) / 2,
+          (layerBoxes[0][0].container.height * scale) / 2,
+          (layerBoxes[0][0].container.length * scale) / 2
+        )
+        scene.add(containerMesh)
 
-    layerBoxes.forEach((section, index) => {
-        section.forEach((box) => {
+        layerBoxes.forEach((section, index) => {
+          section.forEach((box) => {
             addBoxToScene(
-                box,
-                box.container,
-                0,
-                box.minWeight,
-                box.maxWeight,
-                index === sectionIndex
-            );
-        });
-    });
-}
-
+              box,
+              box.container,
+              0,
+              box.minWeight,
+              box.maxWeight,
+              index === sectionIndex
+            )
+          })
+        })
+      }
 
       function getColorForWeight(weight, minWeight, maxWeight) {
-        const normalizedWeight = (weight - minWeight) / (maxWeight - minWeight);
-        const red = 255;
-        const green = Math.floor((1 - normalizedWeight) * 255);
-        return `rgb(${red},${green},0)`;
+        const normalizedWeight = (weight - minWeight) / (maxWeight - minWeight)
+        const red = 255
+        const green = Math.floor((1 - normalizedWeight) * 255)
+        return `rgb(${red},${green},0)`
       }
 
       function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth, window.innerHeight)
       }
 
       function onKeyDown(event) {
         switch (event.code) {
           case 'ArrowUp':
           case 'KeyW':
-            moveForward = true;
-            break;
+            moveForward = true
+            break
           case 'ArrowLeft':
           case 'KeyA':
-            moveLeft = true;
-            break;
+            moveLeft = true
+            break
           case 'ArrowDown':
           case 'KeyS':
-            moveBackward = true;
-            break;
+            moveBackward = true
+            break
           case 'ArrowRight':
           case 'KeyD':
-            moveRight = true;
-            break;
+            moveRight = true
+            break
           case 'Space':
-            moveDown = true;
-            break;
+            moveDown = true
+            break
           case 'KeyC':
-            moveUp = true;
-            break;
+            moveUp = true
+            break
         }
       }
 
@@ -332,103 +341,103 @@
         switch (event.code) {
           case 'ArrowUp':
           case 'KeyW':
-            moveForward = false;
-            break;
+            moveForward = false
+            break
           case 'ArrowLeft':
           case 'KeyA':
-            moveLeft = false;
-            break;
+            moveLeft = false
+            break
           case 'ArrowDown':
           case 'KeyS':
-            moveBackward = false;
-            break;
+            moveBackward = false
+            break
           case 'ArrowRight':
           case 'KeyD':
-            moveRight = false;
-            break;
+            moveRight = false
+            break
           case 'Space':
-            moveDown = false;
-            break;
+            moveDown = false
+            break
           case 'KeyC':
-            moveUp = false;
-            break;
+            moveUp = false
+            break
         }
       }
 
       function updateData(data) {
-        generations = data.generations;
+        generations = data.generations
         if (generations.length > 0) {
-          const lastGeneration = generations[generations.length - 1];
-          const container = lastGeneration.containers[0];
-          layerBoxes = container.layers;
+          const lastGeneration = generations[generations.length - 1]
+          const container = lastGeneration.containers[0]
+          layerBoxes = container.layers
 
-          const allBoxes = layerBoxes.flat();
-          const weights = allBoxes.map((box) => box.weight);
-          const minWeight = Math.min(...weights);
-          const maxWeight = Math.max(...weights);
+          const allBoxes = layerBoxes.flat()
+          const weights = allBoxes.map((box) => box.weight)
+          const minWeight = Math.min(...weights)
+          const maxWeight = Math.max(...weights)
 
           layerBoxes = layerBoxes.map((layer) =>
             layer.map((box) => ({ ...box, container, minWeight, maxWeight }))
-          );
+          )
 
           if (isShowingInstructions) {
-            displayLayer(currentSection);
-            updateLayerInfo();
+            displayLayer(currentSection)
+            updateLayerInfo()
           } else {
-            displayFullSolution();
+            displayFullSolution()
           }
         } else if (data.containers && data.containers.length > 0) {
-          displayEmptyContainers(data.containers);
+          displayEmptyContainers(data.containers)
         } else {
-          console.error('No container data available.');
+          console.error('No container data available.')
         }
       }
 
       function createTextSprite(message, parameters = {}) {
-        const fontface = parameters.fontface || 'Arial';
-        const fontsize = parameters.fontsize || 70;
-        const borderThickness = parameters.borderThickness || 4;
+        const fontface = parameters.fontface || 'Arial'
+        const fontsize = parameters.fontsize || 70
+        const borderThickness = parameters.borderThickness || 4
         const borderColor = parameters.borderColor || {
           r: 0,
           g: 0,
           b: 0,
           a: 1.0
-        };
+        }
         const backgroundColor = parameters.backgroundColor || {
           r: 255,
           g: 255,
           b: 255,
           a: 1.0
-        };
+        }
 
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        context.font = `${fontsize}px ${fontface}`;
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext('2d')
+        context.font = `${fontsize}px ${fontface}`
 
-        context.fillStyle = `rgba(${backgroundColor.r},${backgroundColor.g},${backgroundColor.b},${backgroundColor.a})`;
-        context.strokeStyle = `rgba(${borderColor.r},${borderColor.g},${borderColor.b},${borderColor.a})`;
+        context.fillStyle = `rgba(${backgroundColor.r},${backgroundColor.g},${backgroundColor.b},${backgroundColor.a})`
+        context.strokeStyle = `rgba(${borderColor.r},${borderColor.g},${borderColor.b},${borderColor.a})`
 
-        context.lineWidth = borderThickness;
-        context.fillStyle = 'rgba(255, 255, 255, 1.0)';
-        context.strokeStyle = 'rgba(0, 0, 0, 1.0)';
+        context.lineWidth = borderThickness
+        context.fillStyle = 'rgba(255, 255, 255, 1.0)'
+        context.strokeStyle = 'rgba(0, 0, 0, 1.0)'
 
         context.fillRect(
           borderThickness,
           borderThickness,
           context.measureText(message).width + borderThickness * 2,
           fontsize * 1.4 + borderThickness * 2
-        );
+        )
 
-        context.fillStyle = 'rgba(0, 0, 0, 1.0)';
-        context.fillText(message, borderThickness, fontsize + borderThickness);
+        context.fillStyle = 'rgba(0, 0, 0, 1.0)'
+        context.fillText(message, borderThickness, fontsize + borderThickness)
 
-        const texture = new THREE.Texture(canvas);
-        texture.needsUpdate = true;
+        const texture = new THREE.Texture(canvas)
+        texture.needsUpdate = true
 
-        const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-        const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(10, 5, 1.0);
-        return sprite;
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
+        const sprite = new THREE.Sprite(spriteMaterial)
+        sprite.scale.set(10, 5, 1.0)
+        return sprite
       }
 
       function addAxisLabels() {
@@ -437,54 +446,55 @@
           scene.getObjectByName('yLabel') ||
           scene.getObjectByName('zLabel')
         ) {
-          return; // Labels already exist, don't add them again
+          return // Labels already exist, don't add them again
         }
 
         const xLabel = createTextSprite('X', {
           fontsize: 24,
           backgroundColor: { r: 255, g: 0, b: 0, a: 1 }
-        });
-        xLabel.position.set(10, 0, 0);
-        xLabel.name = 'xLabel'; // Give it a name so we can identify it later
-        scene.add(xLabel);
+        })
+        xLabel.position.set(10, 0, 0)
+        xLabel.name = 'xLabel' // Give it a name so we can identify it later
+        scene.add(xLabel)
 
         const yLabel = createTextSprite('Y', {
           fontsize: 24,
           backgroundColor: { r: 0, g: 255, b: 0, a: 1 }
-        });
-        yLabel.position.set(0, 10, 0);
-        yLabel.name = 'yLabel'; // Give it a name so we can identify it later
-        scene.add(yLabel);
+        })
+        yLabel.position.set(0, 10, 0)
+        yLabel.name = 'yLabel' // Give it a name so we can identify it later
+        scene.add(yLabel)
 
         const zLabel = createTextSprite('Z', {
           fontsize: 24,
           backgroundColor: { r: 0, g: 0, b: 255, a: 1 }
-        });
-        zLabel.position.set(0, 0, 10);
-        zLabel.name = 'zLabel'; // Give it a name so we can identify it later
-        scene.add(zLabel);
+        })
+        zLabel.position.set(0, 0, 10)
+        zLabel.name = 'zLabel' // Give it a name so we can identify it later
+        scene.add(zLabel)
       }
 
       function createAxesHelper() {
-        const axesHelper = new THREE.AxesHelper(10); // Length of the axes lines
-        axesHelper.name = 'axesHelper'; // Give it a name so we can identify it later
-        scene.add(axesHelper);
+        const axesHelper = new THREE.AxesHelper(10) // Length of the axes lines
+        axesHelper.name = 'axesHelper' // Give it a name so we can identify it later
+        scene.add(axesHelper)
 
-        addAxisLabels(); // Add this line to add the axis labels
+        addAxisLabels() // Add this line to add the axis labels
       }
 
       function displayGeneration(index, minWeight, maxWeight) {
-        if (index < 0 || index >= generations.length) return;
+        if (index < 0 || index >= generations.length) return
 
-        const data = generations[index];
+        const data = generations[index]
 
         scene.children = scene.children.filter(
-          (child) => child.name === 'axesHelper' || child === controls.getObject() || child === truck
-        );
+          (child) =>
+            child.name === 'axesHelper' || child === controls.getObject() || child === truck
+        )
 
         if (!data.containers) {
-          console.error('No container data available.');
-          return;
+          console.error('No container data available.')
+          return
         }
 
         data.containers.forEach((containerData, containerIndex) => {
@@ -492,112 +502,119 @@
             containerData.width * scale,
             containerData.height * scale,
             containerData.length * scale
-          );
+          )
           const containerMaterial = new THREE.MeshBasicMaterial({
             color: 0xffffff, // White color for the container wireframe
             wireframe: true
-          });
-          const container = new THREE.Mesh(containerGeometry, containerMaterial);
-          container.position.set(containerIndex * 0, containerData.height * scale / 2, 0); // Offset containers for better visibility
-          scene.add(container);
+          })
+          const container = new THREE.Mesh(containerGeometry, containerMaterial)
+          container.position.set(containerIndex * 0, (containerData.height * scale) / 2, 0) // Offset containers for better visibility
+          scene.add(container)
 
           addContainerAxisLabels(
             container,
             containerData.width,
             containerData.height,
             containerData.length
-          );
+          )
 
           containerData.boxes.forEach((box) => {
-            addBoxToScene(box, containerData, containerIndex, minWeight, maxWeight);
-          });
-        });
+            addBoxToScene(box, containerData, containerIndex, minWeight, maxWeight)
+          })
+        })
       }
 
-      function addBoxToScene(box, container, containerIndex, minWeight, maxWeight, isCurrentSection) {
-    const boxGeometry = new THREE.BoxGeometry(
-        box.width * scale,
-        box.height * scale,
-        box.length * scale
-    );
+      function addBoxToScene(
+        box,
+        container,
+        containerIndex,
+        minWeight,
+        maxWeight,
+        isCurrentSection
+      ) {
+        const boxGeometry = new THREE.BoxGeometry(
+          box.width * scale,
+          box.height * scale,
+          box.length * scale
+        )
 
-    let boxColor, boxOpacity, lineOpacity;
-    if (isCurrentSection) {
-        boxColor = new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight));
-        boxOpacity = 0.6;
-        lineOpacity = 1;
-    } else {
-        boxColor = new THREE.Color(0xd5d5d5);
-        boxOpacity = 0.2;
-        lineOpacity = 0.2;
-    }
+        let boxColor, boxOpacity, lineOpacity
+        if (isCurrentSection) {
+          boxColor = new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight))
+          boxOpacity = 0.6
+          lineOpacity = 1
+        } else {
+          boxColor = new THREE.Color(0xd5d5d5)
+          boxOpacity = 0.2
+          lineOpacity = 0.2
+        }
 
-    const boxMaterial = new THREE.MeshBasicMaterial({
-        color: boxColor,
-        transparent: true,
-        opacity: boxOpacity
-    });
+        const boxMaterial = new THREE.MeshBasicMaterial({
+          color: boxColor,
+          transparent: true,
+          opacity: boxOpacity
+        })
 
-    const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
+        const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
 
-    const edges = new THREE.EdgesGeometry(boxGeometry);
-    const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0x000000,
-        opacity: lineOpacity,
-        transparent: true
-    });
-    const line = new THREE.LineSegments(edges, lineMaterial);
+        const edges = new THREE.EdgesGeometry(boxGeometry)
+        const lineMaterial = new THREE.LineBasicMaterial({
+          color: 0x000000,
+          opacity: lineOpacity,
+          transparent: true
+        })
+        const line = new THREE.LineSegments(edges, lineMaterial)
 
-    // Adjust the position so the back left corner remains fixed
-    mesh.position.set(
-        (box.x + box.width / 2) * scale,
-        (box.y + box.height / 2) * scale,
-        (box.z + box.length / 2) * scale
-    );
+        // Adjust the position so the back left corner remains fixed
+        mesh.position.set(
+          (box.x + box.width / 2) * scale,
+          (box.y + box.height / 2) * scale,
+          (box.z + box.length / 2) * scale
+        )
 
-    line.position.copy(mesh.position);
+        line.position.copy(mesh.position)
 
-    const textSprite = createTextSprite(box.id.toString());
-    textSprite.position.copy(mesh.position);
+        const textSprite = createTextSprite(box.id.toString())
+        textSprite.position.copy(mesh.position)
 
-    scene.add(mesh);
-    scene.add(line);
-    scene.add(textSprite);
+        scene.add(mesh)
+        scene.add(line)
+        scene.add(textSprite)
 
-    lastBox = mesh;
-}
+        lastBox = mesh
+      }
 
       function addContainerAxisLabels(container, width, height, length) {
         const xLabel = createTextSprite('X', {
           fontsize: 24,
           backgroundColor: { r: 255, g: 0, b: 0, a: 1 }
-        });
-        xLabel.position.set((width / 2 + 5) * 1.5 * scale, 0, 0);
-        scene.add(xLabel);
+        })
+        xLabel.position.set((width / 2 + 5) * 1.5 * scale, 0, 0)
+        scene.add(xLabel)
 
         const yLabel = createTextSprite('Y', {
           fontsize: 24,
           backgroundColor: { r: 0, g: 255, b: 0, a: 1 }
-        });
-        yLabel.position.set(0, (height / 2 + 5) * scale, 0);
-        scene.add(yLabel);
+        })
+        yLabel.position.set(0, (height / 2 + 5) * scale, 0)
+        scene.add(yLabel)
 
         const zLabel = createTextSprite('Z', {
           fontsize: 24,
           backgroundColor: { r: 0, g: 0, b: 255, a: 1 }
-        });
-        zLabel.position.set(0, 0, (length / 2 + 5) * scale);
-        scene.add(zLabel);
+        })
+        zLabel.position.set(0, 0, (length / 2 + 5) * scale)
+        scene.add(zLabel)
       }
 
       function displayEmptyContainers(containersData) {
         while (scene.children.length > 1) {
-          scene.remove(scene.children[1]);
+          scene.remove(scene.children[1])
         }
 
         if (!containersData || containersData.length === 0) {
-          console.error('No container data available.');
-          return;
+          console.error('No container data available.')
+          return
         }
 
         containersData.forEach((containerData, containerIndex) => {
@@ -605,53 +622,53 @@
             containerData.width * scale,
             containerData.height * scale,
             containerData.length * scale
-          );
+          )
           const containerMaterial = new THREE.MeshBasicMaterial({
             color: 0xffffff, // White color for the container wireframe
             wireframe: true
-          });
-          const container = new THREE.Mesh(containerGeometry, containerMaterial);
-          container.position.set(containerIndex * 30, containerData.height * scale / 2, 0); // Offset containers for better visibility
-          scene.add(container);
+          })
+          const container = new THREE.Mesh(containerGeometry, containerMaterial)
+          container.position.set(containerIndex * 30, (containerData.height * scale) / 2, 0) // Offset containers for better visibility
+          scene.add(container)
 
           addContainerAxisLabels(
             container,
             containerData.width,
             containerData.height,
             containerData.length
-          );
-        });
+          )
+        })
       }
 
       function animate() {
-        requestAnimationFrame(animate);
+        requestAnimationFrame(animate)
 
-        const time = performance.now();
-        const delta = (time - prevTime) / 1000;
+        const time = performance.now()
+        const delta = (time - prevTime) / 1000
 
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= velocity.y * 10.0 * delta;
+        velocity.x -= velocity.x * 10.0 * delta
+        velocity.z -= velocity.z * 10.0 * delta
+        velocity.y -= velocity.y * 10.0 * delta
 
-        direction.z = Number(moveForward) - Number(moveBackward);
-        direction.x = Number(moveRight) - Number(moveLeft);
-        direction.y = Number(moveUp) - Number(moveDown);
-        direction.normalize();
+        direction.z = Number(moveForward) - Number(moveBackward)
+        direction.x = Number(moveRight) - Number(moveLeft)
+        direction.y = Number(moveUp) - Number(moveDown)
+        direction.normalize()
 
-        if (moveForward || moveBackward) velocity.z -= direction.z * 1400.0 * delta;
-        if (moveLeft || moveRight) velocity.x -= direction.x * 1400.0 * delta;
-        if (moveUp || moveDown) velocity.y -= direction.y * 1400.0 * delta;
+        if (moveForward || moveBackward) velocity.z -= direction.z * 1400.0 * delta
+        if (moveLeft || moveRight) velocity.x -= direction.x * 1400.0 * delta
+        if (moveUp || moveDown) velocity.y -= direction.y * 1400.0 * delta
 
-        controls.moveRight(-velocity.x * delta);
-        controls.moveForward(-velocity.z * delta);
-        controls.getObject().position.y += velocity.y * delta;
+        controls.moveRight(-velocity.x * delta)
+        controls.moveForward(-velocity.z * delta)
+        controls.getObject().position.y += velocity.y * delta
 
-        prevTime = time;
+        prevTime = time
 
-        renderer.render(scene, camera);
+        renderer.render(scene, camera)
       }
 
-      window.onload = init;
+      window.onload = init
     </script>
   </body>
 </html>

@@ -28,6 +28,8 @@
     "primeicons": "^7.0.0",
     "primevue": "^3.52.0",
     "qrcode.vue": "^3.4.1",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
     "vue": "^3.4.21",
     "vue-barcode-reader": "^1.0.3",
     "vue-browser-geolocation": "^1.8.0",
