@@ -9,6 +9,7 @@ import { updateUser } from './Users/updateUser.ts'
 import { checkRole } from './Users/checkRole.ts'
 import { getOpenDriver } from './Users/getOpenDriver.ts'
 import { deleteUser } from './Users/deleteUser.ts'
+import { getCurrentUser } from './Users/getCurrentUser.ts'
 
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
@@ -98,6 +99,13 @@ Deno.serve(async (req) => {
             requestBody.Height,
             requestBody.Weight,
             requestBody.Volume
+          )
+        )
+      }
+      if (requestBody.type == 'getCurrentUser') {
+        return responseBuilder(
+          await getCurrentUser(
+            supabaseUser
           )
         )
       }
