@@ -1,65 +1,104 @@
 <script setup>
-// DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 
-// let localUser
 const dialogVisible = ref(false)
-
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
-
-// Authentication state
+const password1 = ref('')
+const password2 = ref('')
 const email = ref('')
-const password = ref('')
 const router = useRouter()
+const passwordError = ref(false)
+const emailSent = ref(false)
+const userEmail = ref('')
+const userToken = ref('')
 
-// Sign in with email and password
-const signIn = async () => {
-  const { user, error } = await supabase.auth.signInWithPassword({
-    email: email.value,
-    password: password.value
-  })
-  if (error) {
-    alert(error.message)
-  } else {
-    console.log('User signed in:', user)
-    // await checkRole()
-    router.push({ name: 'callback' })
+const passwordsMatch = computed(() => password1.value === password2.value)
+
+const isValidPassword = computed(() => {
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/
+  return passwordRegex.test(password1.value)
+})
+
+// Function to handle password recovery request
+const requestPasswordReset = async () => {
+  if (!passwordsMatch.value) {
+    passwordError.value = true
+    alert('Passwords do not match. Please try again.')
+    return
   }
-}
 
-// Sign in with OAuth provider
-const signInWithProvider = async (provider) => {
-  console.log(`signInWithProvider called with provider: ${provider}`)
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: `${window.location.origin}/callback`
+  passwordError.value = false
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+      redirectTo: `${window.location.origin}/forgot-password`
+    })
+
+    if (error) {
+      console.error('Error sending password recovery email:', error)
+      alert('Error sending password recovery email: ' + error.message)
+    } else {
+      alert('Password recovery email sent. Please check your inbox.')
+      emailSent.value = true
     }
-  })
-  if (error) {
-    alert(error.message)
-  } else {
-    console.log(`Redirecting to ${provider} login page`)
-    router.push({ name: 'callback' })
-
-    // Do not navigate to the home page here, handle this in the callback
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    alert('Unexpected error occurred: ' + error.message)
   }
 }
+
+// Function to handle password update
+const resetPassword = async () => {
+  if (!passwordsMatch.value) {
+    passwordError.value = true
+    alert('Passwords do not match. Please try again.')
+    return
+  }
+
+  passwordError.value = false
+
+  try {
+    const { error } = await supabase.auth.updateUser({
+      email: userEmail.value,
+      password: password1.value
+    })
+
+    if (error) {
+      console.error('Error updating password:', error)
+      alert('Error updating password: ' + error.message)
+    } else {
+      alert('Password updated successfully.')
+    }
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    alert('Unexpected error occurred: ' + error.message)
+  }
+}
+
+const route = useRoute()
+onMounted(() => {
+  const { email, token } = route.query
+  if (email && token) {
+    userEmail.value = email
+    userToken.value = token
+    resetPassword()
+  }
+})
 </script>
 
 <template>
   <div
     :class="[
       isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      ' min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
     ]"
   >
     <div
@@ -87,14 +126,14 @@ const signInWithProvider = async (provider) => {
       <p
         :class="[
           isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center  font-bold mb-2 '
+          'text-3xl flex items-center font-bold mb-2 '
         ]"
       >
         Forgot Password?
       </p>
-      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address</h2>
-      <form @submit.prevent="signIn" class="flex flex-col">
-        <div class="form-group mb-8">
+      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address and new password</h2>
+      <form @submit.prevent="requestPasswordReset" class="flex flex-col">
+        <div class="form-group mb-6">
           <label
             for="email"
             :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
@@ -109,15 +148,90 @@ const signInWithProvider = async (provider) => {
               isDark
                 ? 'text-white  bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
+              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
             ]"
           />
         </div>
+        <label
+          for="password1"
+          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
+          >Password</label
+        >
+
+        <Password
+          inputId="password1"
+          id="password1"
+          v-model="password1"
+          toggleMask
+          :invalid="password1 === ''"
+          required
+          :class="[
+            !isDark ? 'text-white' : 'text-neutral-800',
+            'focus:ring-0 hover:ring-0 mb-6 mt-2'
+          ]"
+        >
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="rounded-lg mt-2">Suggestions</p>
+            <ul class="rounded-lg pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>Minimum 8 characters</li>
+            </ul>
+          </template>
+        </Password>
+        <p v-if="passwordError" class="text-red-500 text-sm mt-2 mb-4">
+          Password must be at least 8 characters long and include one lowercase, one uppercase, and
+          one numeric character.
+        </p>
+        <label
+          for="password2"
+          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold ']"
+          >Confirm Password</label
+        >
+        <Password
+          inputId="password2"
+          id="password2"
+          v-model="password2"
+          toggleMask
+          :invalid="!passwordsMatch && password2 !== ''"
+          required
+          :class="[
+            !isDark ? 'text-white' : 'text-neutral-800',
+            'focus:ring-0 hover:ring-0 mt-2 mb-8 '
+          ]"
+        >
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="rounded-lg mt-2">Suggestions</p>
+            <ul class="rounded-lg pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>Minimum 8 characters</li>
+            </ul>
+          </template>
+        </Password>
+
+        <p v-if="!passwordsMatch && password2" class="text-red-500 mb-4">Passwords do not match</p>
         <button
           type="submit"
-          class="mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          :disabled="!passwordsMatch || !isValidPassword"
+          :class="[
+            'mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition duration-300',
+            passwordsMatch && isValidPassword
+              ? 'hover:transform hover:-translate-y-1'
+              : 'opacity-50 cursor-not-allowed'
+          ]"
         >
-          Recover Password
+          Recover Account
         </button>
         <p
           :class="[
@@ -157,7 +271,7 @@ const signInWithProvider = async (provider) => {
 
     <div>
       <DialogComponent
-        v-if="showDialog"
+        v-if="dialogVisible"
         imagePath="/Members/Photos/Login _ landing page.png"
         altText="Alternative Image"
         title="Contact Support"
@@ -165,12 +279,12 @@ const signInWithProvider = async (provider) => {
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
         ]"
-        :dialogVisible="showDialog"
+        :dialogVisible="dialogVisible"
         @close-dialog="toggleDialog"
       />
     </div>
     <DialogComponent
-      v-if="showDialog"
+      v-if="dialogVisible"
       :images="[
         { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
@@ -181,22 +295,12 @@ const signInWithProvider = async (provider) => {
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
       ]"
-      :dialogVisible="showDialog"
+      :dialogVisible="dialogVisible"
       @close-dialog="toggleDialog"
     />
   </div>
 </template>
-<script>
-export default {
-  components: {
-    DialogComponent
-  }
-}
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
-}
-</script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 

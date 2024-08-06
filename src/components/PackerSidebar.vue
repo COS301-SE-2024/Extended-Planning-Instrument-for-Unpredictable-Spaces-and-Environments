@@ -44,7 +44,6 @@ const items = [
     label: 'Current Shipments',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      console.log('Navigating to Dashboard')
       toggleDialog()
     }
   },
@@ -54,7 +53,6 @@ const items = [
     severity: 'warning',
     badge: '5',
     command: () => {
-      console.log('Navigating to Messages')
       router.push({ name: '/' })
     }
   },
@@ -62,7 +60,6 @@ const items = [
     label: 'Profile',
     icon: 'pi pi-fw pi-user',
     command: () => {
-      console.log('Navigating to Profile')
       router.push({ name: '/' })
     }
   },
@@ -70,7 +67,6 @@ const items = [
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      console.log('Toggling Dark Mode')
       toggleDark() // Correctly call the toggle function
     }
   },

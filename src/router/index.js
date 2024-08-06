@@ -11,9 +11,11 @@ import Loading from '../views/Loading.vue'
 import Inventory from '../views/Inventory.vue'
 import Tracking from '../views/Tracking.vue'
 import Shipments from '../views/Shipments.vue'
-import ForgotPassword from '../views/ForgotPassword.vue'
 import TruckEnvironment from '@/components/TruckEnvironment.vue'
+// import ConfirmResetPassword from '@/views/confirm-reset-password.vue'
+
 import { supabase } from '../supabase'
+// import ResetPassword from '@/views/confirm-reset-password.vue'
 
 const routes = [
   {
@@ -90,6 +92,12 @@ const routes = [
     name: 'forgot-password',
     component: ForgotPassword
   }
+  // ,
+  // {
+  //   path: '/confirm-reset-password',
+  //   name: 'confirm-reset-password',
+  //   component: ConfirmResetPassword
+  // }
 ]
 
 const router = createRouter({

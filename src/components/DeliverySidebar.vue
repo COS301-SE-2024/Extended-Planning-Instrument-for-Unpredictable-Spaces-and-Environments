@@ -1,13 +1,50 @@
+<!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router' // Import the router
+import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
-const dialogVisible = ref(false)
+
 const isDark = useDark()
-const toggleDark = useToggle(isDark) // Proper toggle function
-const router = useRouter() // Use the router instance
+const toggleDark = useToggle(isDark)
+const router = useRouter()
+
+// Use a single state variable for the dialog
+const dialogVisible = ref(false)
+
+const toggleDialog = () => {
+  console.log('Toggling Dialog Visibility', dialogVisible.value)
+  dialogVisible.value = !dialogVisible.value
+}
+
+//API CALLS FOR SHIPMENTS
+const deliveriesByStatus = ref([])
+const getDeliveriesByStatus = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getDeliveriesByStatus' }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      console.log('Data', data.data)
+      deliveriesByStatus.value = data.data
+      console.log('getDeliveriesByStatus Result:  ', deliveriesByStatus)
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+
+const emit = defineEmits(['handle-delivery'])
+
+const handleDelivery = (delivery) => {
+  // Emit an event to be caught by the parent component (DeliveryView)
+  emit('handle-delivery', delivery)
+  toggleDialog()
+}
 
 async function logout() {
   const { error } = await supabase.auth.signOut()
@@ -21,17 +58,17 @@ async function logout() {
 components: {
   DialogComponent
 }
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
-}
+
+onMounted(() => {
+  getDeliveriesByStatus()
+})
+
 const items = [
   {
     label: 'Start New Delivery',
     icon: 'pi pi-fw pi-truck',
     command: () => {
-      console.log('Navigating to Dashboard')
-      router.push({ name: 'dashboard' }) // Navigate to the login page after logout
+      toggleDialog()
     }
   },
   {
@@ -73,7 +110,7 @@ const items = [
     icon: 'pi pi-fw pi-question',
     command: () => {
       console.log('Opening Help Menu')
-      toggleDialog()
+      // toggleDialog()
     }
   }
 ]
@@ -95,7 +132,7 @@ const items = [
         </svg>
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
-        <a v-ripple class="flex items-center p-6" v-bind="props.action">
+        <a class="flex items-center p-6" v-bind="props.action">
           <span :class="item.icon" />
           <span class="ml-2">{{ item.label }}</span>
           <Badge
@@ -137,6 +174,50 @@ const items = [
         </div>
       </template>
     </Menubar>
+    <Dialog
+      header="Edit User Profile"
+      v-model:visible="dialogVisible"
+      :modal="true"
+      :closable="false"
+      class="z-10000000000 w-[auto] p-4 relative"
+    >
+      <div
+        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+        class="mb-4"
+      >
+        <p class="text-3xl mb-2">Current Deliveries:</p>
+      </div>
+      <div v-if="isLoading">Loading deliveries...</div>
+      <div v-else-if="errorMessage">{{ errorMessage }}</div>
+      <div v-else class="pb-12">
+        <!-- Adjust padding to avoid overlap -->
+        <div v-for="delivery in deliveriesByStatus" :key="delivery.id" class="mb-8">
+          <p class="text-neutral-400 text-lg">Delivery Status:</p>
+          <p class="text-lg">{{ delivery.Status }}</p>
+          <p class="text-neutral-500 text-lg">Delivery ID:</p>
+          <p class="mb-2 text-lg">{{ delivery.id }}</p>
+
+          <Button
+            @click="handleDelivery(delivery)"
+            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
+            >Start Delivery</Button
+          >
+        </div>
+        <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
+      </div>
+      <div
+        :class="[
+          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+          'focus:outline-none focus:ring-0'
+        ]"
+        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+      >
+        <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+          >Close</Button
+        >
+      </div>
+    </Dialog>
     <div>
       <DialogComponent
         v-if="showDialog"

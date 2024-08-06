@@ -8,13 +8,7 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import { FilterMatchMode } from 'primevue/api'
-
-// SUPA BASE
-import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
-const supabaseKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA'
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { supabase } from '@/supabase.js' // Import the Supabase client
 const isDark = useDark()
 const showDialog = ref(false)
 const toggleDialog = () => {

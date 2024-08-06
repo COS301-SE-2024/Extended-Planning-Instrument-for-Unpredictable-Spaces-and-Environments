@@ -11,6 +11,12 @@ const chartData = ref({
   labels: [],
   datasets: []
 })
+
+const fitnessData = ref({
+  labels: [],
+  datasets: []
+})
+
 const chartDataDeliveries = ref({
   labels: [],
   datasets: []
@@ -45,12 +51,29 @@ const getAllShipments = async () => {
         Delivered: 0
       }
 
+      const fitnessValues = []
+
       data.data.forEach((shipment) => {
         const status = shipment.Status.trim()
         if (statusCounts[status] !== undefined) {
           statusCounts[status]++
         }
+
+        // Parse fitness value and add it to the array
+        const fitness = parseFloat(shipment.Fitness_Value)
+        if (!isNaN(fitness)) {
+          fitnessValues.push({
+            x: statusCounts[status], // Use status count as x-axis
+            y: fitness // Use fitness value as y-axis
+          })
+        }
       })
+
+      // Calculate linear regression
+      const { slope, intercept } = calculateLinearRegression(fitnessValues)
+
+      // Generate trendline data
+      const trendlineData = generateTrendlineData(fitnessValues, slope, intercept)
 
       chartData.value = {
         labels: ['Processing', 'Shipped', 'Delivered'],
@@ -62,10 +85,62 @@ const getAllShipments = async () => {
           }
         ]
       }
+
+      fitnessData.value = {
+        datasets: [
+          {
+            label: 'Fitness Value vs Shipment Count',
+            data: fitnessValues,
+            backgroundColor: '#8b5cf6',
+            type: 'scatter'
+          },
+          {
+            label: 'Trendline',
+            data: trendlineData,
+            type: 'line',
+            borderColor: '#ea580c',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0
+          }
+        ]
+      }
     }
   } catch (error) {
     console.error('Error fetching data:', error)
   }
+}
+
+// Function to calculate linear regression
+function calculateLinearRegression(data) {
+  const n = data.length
+  let sumX = 0,
+    sumY = 0,
+    sumXY = 0,
+    sumXX = 0
+
+  for (let i = 0; i < n; i++) {
+    sumX += data[i].x
+    sumY += data[i].y
+    sumXY += data[i].x * data[i].y
+    sumXX += data[i].x * data[i].x
+  }
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
+  const intercept = (sumY - slope * sumX) / n
+
+  return { slope, intercept }
+}
+
+// Function to generate trendline data
+function generateTrendlineData(data, slope, intercept) {
+  const minX = Math.min(...data.map((point) => point.x))
+  const maxX = Math.max(...data.map((point) => point.x))
+
+  return [
+    { x: minX, y: slope * minX + intercept },
+    { x: maxX, y: slope * maxX + intercept }
+  ]
 }
 const getAllPackages = async () => {
   try {
@@ -159,7 +234,7 @@ onMounted(() => {
         <span class="font-bold">Welcome back</span>
       </h2>
       <div class="flex flex-wrap mb-4">
-        <div class="w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
+        <div class="justify-center w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
@@ -167,8 +242,10 @@ onMounted(() => {
             ]"
           >
             <h2 class="mb-6 font-bold">Shipment Overview</h2>
-            <div class="flex-grow">
-              <Chart type="pie" :data="chartData" class="h-full w-full" />
+            <div class="flex justify-center items-center w-full h-full">
+              <div class="w-[300px] h-[300px]">
+                <Chart type="pie" :data="chartData" cl ass="h-full w-full" />
+              </div>
             </div>
           </div>
           <div
@@ -233,16 +310,21 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        <div class="w-full flex flex-wrap mb-4">
+        <div class="w-full sm:w-[50%] flex flex-wrap mb-4">
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
+              'flex flex-col p-4 rounded-xl w-full h-auto'
             ]"
           >
-            <h2 class="mb-6 font-bold">Monthly Deliveries</h2>
-            <div class="flex-grow">
-              <Chart type="scatter" :data="chartData" class="h-full w-full" />
+            <h2 class="mb-6 font-bold">Fitness Value</h2>
+            <div class="flex justify-center items-center w-full h-full">
+              <Chart
+                type="scatter"
+                :data="fitnessData"
+                :options="scatterOptions"
+                class="h-full w-full"
+              />
             </div>
           </div>
         </div>
