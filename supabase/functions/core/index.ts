@@ -8,6 +8,7 @@ import { insertUser } from './Users/insertUser.ts'
 import { updateUser } from './Users/updateUser.ts'
 import { checkRole } from './Users/checkRole.ts'
 import { getOpenDriver } from './Users/getOpenDriver.ts'
+import { deleteUser } from './Users/deleteUser.ts'
 
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
@@ -76,6 +77,14 @@ Deno.serve(async (req) => {
             requestBody.email,
             requestBody.role,
             requestBody.phone
+          )
+        )
+      }
+      if (requestBody.type == 'deleteUser') {
+        return responseBuilder(
+          await deleteUser(
+            supabaseUser,
+            requestBody.userId
           )
         )
       }
