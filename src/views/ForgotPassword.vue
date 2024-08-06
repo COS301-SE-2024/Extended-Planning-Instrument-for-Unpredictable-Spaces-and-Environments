@@ -1,6 +1,6 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -11,12 +11,31 @@ const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
-
+const password1 = ref('')
+const password2 = ref('')
 const email = ref('')
 const router = useRouter()
+const passwordError = ref(false)
+
+const passwordsMatch = computed(() => password1.value === password2.value)
+
+const isValidPassword = computed(() => {
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/
+  return passwordRegex.test(password1.value)
+})
 
 // Function to handle password recovery
 const recoverPassword = async () => {
+  if (!passwordsMatch.value) {
+    alert('Passwords do not match. Please try again.')
+    return
+  }
+
+  if (!isValidPassword.value) {
+    passwordError.value = true
+    return
+  }
+
   try {
     const { data, error: fetchError } = await supabase
       .from('Users')
@@ -35,7 +54,7 @@ const recoverPassword = async () => {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/callback`,
+      redirectTo: `${window.location.origin}/reset-password`
     })
 
     if (error) {
@@ -50,7 +69,6 @@ const recoverPassword = async () => {
     alert('Unexpected error occurred: ' + error.message)
   }
 }
-
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
@@ -96,7 +114,7 @@ const toggleDialog = () => {
       </p>
       <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address</h2>
       <form @submit.prevent="recoverPassword" class="flex flex-col">
-        <div class="form-group mb-8">
+        <div class="form-group mb-6">
           <label
             for="email"
             :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
@@ -115,11 +133,86 @@ const toggleDialog = () => {
             ]"
           />
         </div>
+        <label
+          for="password1"
+          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
+          >Password</label
+        >
+
+        <Password
+          inputId="password1"
+          id="password1"
+          v-model="password1"
+          toggleMask
+          :invalid="password1 === ''"
+          required
+          :class="[
+            !isDark ? 'text-white' : 'text-neutral-800',
+            'focus:ring-0 hover:ring-0 mb-6 mt-2'
+          ]"
+        >
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="rounded-lg mt-2">Suggestions</p>
+            <ul class="rounded-lg pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>Minimum 8 characters</li>
+            </ul>
+          </template>
+        </Password>
+        <p v-if="passwordError" class="text-red-500 text-sm mt-2 mb-4">
+          Password must be at least 8 characters long and include one lowercase, one uppercase, and
+          one numeric character.
+        </p>
+        <label
+          for="password2"
+          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold ']"
+          >Confirm Password</label
+        >
+        <Password
+          inputId="password2"
+          id="password2"
+          v-model="password2"
+          toggleMask
+          :invalid="!passwordsMatch && password2 !== ''"
+          required
+          :class="[
+            !isDark ? 'text-white' : 'text-neutral-800',
+            'focus:ring-0 hover:ring-0 mt-2 mb-8 '
+          ]"
+        >
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="rounded-lg mt-2">Suggestions</p>
+            <ul class="rounded-lg pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>Minimum 8 characters</li>
+            </ul>
+          </template>
+        </Password>
+
+        <p v-if="!passwordsMatch && password2" class="text-red-500 mb-4">Passwords do not match</p>
         <button
           type="submit"
-          class="mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          :disabled="!passwordsMatch || !isValidPassword"
+          :class="[
+            'mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition duration-300',
+            passwordsMatch && isValidPassword
+              ? 'hover:transform hover:-translate-y-1'
+              : 'opacity-50 cursor-not-allowed'
+          ]"
         >
-          Recover Password
+          Recover Account
         </button>
         <p
           :class="[

@@ -14,10 +14,10 @@ const dialogVisible = ref(false)
 
 // Utility to sanitize input
 const sanitizeInput = (input) => {
-  const trimmedInput = input.trim();
-  const div = document.createElement('div');
-  div.appendChild(document.createTextNode(trimmedInput));
-  return div.innerHTML;
+  const trimmedInput = input.trim()
+  const div = document.createElement('div')
+  div.appendChild(document.createTextNode(trimmedInput))
+  return div.innerHTML
 }
 
 // Search functionality
@@ -47,7 +47,7 @@ const handleError = (error, context) => {
 const checkUserPermissions = (user) => {
   // Implement your permission checks here
   // Example: return user.role === 'admin';
-  return true; // Assuming all authenticated users have permission for this example
+  return true // Assuming all authenticated users have permission for this example
 }
 
 async function fetchCurrentUser() {
