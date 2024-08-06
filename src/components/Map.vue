@@ -27,6 +27,10 @@ import { ref, onMounted, watch } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import { useDark } from '@vueuse/core'
 
+const startingPosition = ref(null)
+
+let markers = []
+
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
@@ -50,7 +54,7 @@ export default {
     const currentStepIndex = ref(0)
     let map = null
     let google = null
-    let watchId = null
+    // let watchId = null
 
     // console.log('HERE IS PROPS FROM MAPS', props)
 
@@ -92,11 +96,9 @@ export default {
 
       const geocoder = new google.maps.Geocoder()
       try {
-        // console.log('Geocoding address:', props.destination) // Log the input address
         const result = await new Promise((resolve, reject) => {
           const fullAddress = `${props.destination}, South Africa`
           geocoder.geocode({ address: fullAddress }, (results, status) => {
-            // console.log('Geocode status:', status) // Log the status
             if (status === 'OK') {
               resolve(results[0].geometry.location)
             } else {
@@ -109,7 +111,6 @@ export default {
           lat: result.lat(),
           long: result.lng()
         }
-        // console.log('Geocoded coordinates:', destinationCoords.value) // Log the result
       } catch (error) {
         console.error('Error geocoding destination:', error)
         errorMessage.value = `Unable to find the destination address. Error: ${error.message}`
@@ -125,29 +126,32 @@ export default {
       try {
         const { Map } = await loader.importLibrary('maps')
         google = window.google
-        // console.log('Google Maps API loaded successfully')
 
-        map = new Map(document.getElementById('map'), {
-          center: { lat: coordinates.value.lat, lng: coordinates.value.long },
-          zoom: 12
-        })
+        if (!map) {
+          map = new Map(document.getElementById('map'), {
+            center: { lat: coordinates.value.lat, lng: coordinates.value.long },
+            zoom: 12
+          })
+        }
 
         await geocodeDestination()
 
         const { Marker } = await loader.importLibrary('marker')
 
-        new Marker({
+        const startMarker = new Marker({
           position: { lat: coordinates.value.lat, lng: coordinates.value.long },
           map: map,
           title: 'Current Location'
         })
+        markers.push(startMarker)
 
         if (destinationCoords.value.lat && destinationCoords.value.long) {
-          new Marker({
+          const destinationMarker = new Marker({
             position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
             map: map,
             title: 'Destination'
           })
+          markers.push(destinationMarker)
         }
 
         const { DirectionsRenderer } = await loader.importLibrary('routes')
@@ -179,6 +183,7 @@ export default {
         directionsRenderer.value.setDirections(result)
         steps.value = result.routes[0].legs[0].steps
         currentStep.value = steps.value[0].instructions
+        isNavigating.value = true
       } catch (error) {
         console.error('Directions request failed:', error)
         errorMessage.value = 'Unable to calculate route. Please check your API key permissions.'
@@ -192,20 +197,6 @@ export default {
       }
       isNavigating.value = true
       calculateRoute()
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          coordinates.value = {
-            lat: position.coords.latitude,
-            long: position.coords.longitude
-          }
-          calculateRoute()
-        },
-        (error) => {
-          console.error('Error watching position:', error)
-          errorMessage.value = 'Unable to track your location. Please check your browser settings.'
-        },
-        { enableHighAccuracy: true }
-      )
     }
 
     const nextStep = () => {
@@ -215,6 +206,44 @@ export default {
       } else {
         currentStep.value = 'You have reached your destination!'
       }
+    }
+
+    const updateMap = async () => {
+      if (!map || !google) {
+        console.error('Map or Google API not initialized')
+        return
+      }
+
+      // Remove existing markers
+      markers.forEach((marker) => marker.setMap(null))
+      markers = []
+
+      // Add marker for starting position
+      const startMarker = new google.maps.Marker({
+        position: { lat: coordinates.value.lat, lng: coordinates.value.long },
+        map: map,
+        title: 'Starting Position'
+      })
+      markers.push(startMarker)
+
+      // Add marker for new destination
+      if (destinationCoords.value.lat && destinationCoords.value.long) {
+        const destinationMarker = new google.maps.Marker({
+          position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
+          map: map,
+          title: 'Destination'
+        })
+        markers.push(destinationMarker)
+      }
+
+      // Fit the map to show both markers
+      const bounds = new google.maps.LatLngBounds()
+      bounds.extend({ lat: coordinates.value.lat, lng: coordinates.value.long })
+      bounds.extend({ lat: destinationCoords.value.lat, lng: destinationCoords.value.long })
+      map.fitBounds(bounds)
+
+      // Recalculate route
+      await calculateRoute()
     }
 
     onMounted(async () => {
@@ -235,13 +264,25 @@ export default {
 
     watch(
       () => props.destination,
-      () => {
-        geocodeDestination().then(() => {
+      async (newDestination) => {
+        console.log('WE GOT THE NEW DESTINATION', newDestination)
+        if (newDestination) {
+          if (startingPosition.value) {
+            // Make the old destination the new starting position
+            coordinates.value = { ...destinationCoords.value }
+          } else {
+            // For the first time, use the current location as starting position
+            startingPosition.value = { ...coordinates.value }
+          }
+          await geocodeDestination()
           if (map) {
+            updateMap()
+          } else {
             initMap()
           }
-        })
-      }
+        }
+      },
+      { immediate: true }
     )
 
     return {

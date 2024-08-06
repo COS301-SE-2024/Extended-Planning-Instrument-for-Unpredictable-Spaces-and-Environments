@@ -32,6 +32,8 @@ const updateUserInTable = (newUserData) => {
     customers.value.push(newUserData)
   }
 }
+
+
 const currentUser = ref(null)
 async function fetchCurrentUser() {
   const session = await supabase.auth.getSession()

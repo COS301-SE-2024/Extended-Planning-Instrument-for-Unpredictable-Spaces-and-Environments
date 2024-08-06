@@ -37,6 +37,12 @@ const deliveriesByDriverID = ref([])
 const deliveries = ref([])
 const visible = ref(true)
 
+const timelineEvents = ref([])
+
+const confirmedShipments = ref(new Set())
+
+const selectedShipmentId = ref(null)
+
 const getShipmentByDeliveryId = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -58,6 +64,7 @@ const getShipmentByDeliveryId = async () => {
         mapDestination.value = data.data[0].Destination
       }
       identifyPendingLocations()
+      updateTimelineEvents()
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -85,7 +92,7 @@ const getStatusColor = (status) => {
     case 'delivered':
       return '#14532d'
     default:
-      console.log('Error fetching status: ' + status)
+      // console.log('Error fetching status: ' + status)
       return '#6b7280'
   }
 }
@@ -97,8 +104,6 @@ function formattedDateTime(slotProps) {
 const currentDelivery = ref(null)
 
 const handleDeliveryFromSidebar = (delivery) => {
-  console.log('DeliveryView: Handling delivery from sidebar:', delivery)
-
   // If delivery is a ref, we need to access its value
   currentDelivery.value = delivery._isRef ? delivery.value : delivery
 
@@ -108,27 +113,86 @@ const handleDeliveryFromSidebar = (delivery) => {
   updateTimeline()
 }
 
-function save() {
+const upDateShipmentStatus = async (shipmentId) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentStatus',
+        shipmentId: shipmentId,
+        newStatus: 'Delivered'
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
+    } else {
+      console.log('Successfully updated Status')
+    }
+  } catch (error) {
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+  }
+}
+
+function save(shipmentid) {
   // const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
   // console.log(isEmpty)
   // console.log(data)
-  toggleDialog()
+
+  console.log('SHIPEMENT ID HAS ARRIVED', shipmentid)
 
   if (pendingLocations.value.length > 0) {
     pendingLocations.value.shift() // Remove the first (current) destination
     if (pendingLocations.value.length > 0) {
       currentDestination.value = pendingLocations.value[0]
+      upDateShipmentStatus(shipmentid)
     } else {
       currentDestination.value = ''
       console.log('All destinations visited')
     }
   }
+
+  confirmedShipments.value.add(shipmentid)
+  toggleDialog()
+}
+async function setupSubscription() {
+  await supabase // Await for the subscription to be established
+    .channel('*')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
+      // console.log(payload.new)
+      updateTimelineEvent(payload.new)
+    })
+    .subscribe()
+}
+
+const updateTimelineEvent = (updatedShipment) => {
+  const index = timelineEvents.value.findIndex((event) => event.shipment_id === updatedShipment.id)
+  if (index !== -1) {
+    const newStatus = updatedShipment.Status
+    const newColor = getStatusColor(newStatus)
+
+    // Update the current event
+    timelineEvents.value[index] = {
+      ...timelineEvents.value[index],
+      status: newStatus,
+      color: newColor,
+      line_colour: newColor
+    }
+
+    // Update the next event's line_colour if it exists
+    if (index < timelineEvents.value.length - 1) {
+      timelineEvents.value[index + 1] = {
+        ...timelineEvents.value[index + 1],
+        line_colour: newColor
+      }
+    }
+
+    // Force Vue to react to the change
+    timelineEvents.value = [...timelineEvents.value]
+  }
 }
 
 const updateTimeline = () => {
   if (currentDelivery.value) {
-    // Assuming the delivery object has a 'status' property
-    // You may need to adjust this based on the actual structure of your data
     deliveries.value = [
       {
         status: currentDelivery.value.status || 'Unknown',
@@ -141,12 +205,13 @@ const updateTimeline = () => {
   }
 }
 
-const timelineEvents = computed(() => {
+const updateTimelineEvents = () => {
   const events = []
   for (const deliveryId in shipmentsByDelivery.value) {
     const shipments = shipmentsByDelivery.value[deliveryId]
     shipments.forEach((shipment, index) => {
       const status = shipment.Status || 'Unknown'
+      const color = getStatusColor(status)
       events.push({
         status: status,
         time: shipment.Created_at || shipment.Start_time || 0,
@@ -155,16 +220,16 @@ const timelineEvents = computed(() => {
         delivery_id: shipment.Delivery_id,
         end_time: shipment.End_time,
         icon: 'pi pi-box',
-        color: getStatusColor(status),
-        line_colour: index === shipments.length - 1 ? '#6b7280' : getStatusColor(status)
+        color: color,
+        line_colour: index === shipments.length - 1 ? '#6b7280' : color
       })
     })
   }
-  return events
-})
-
+  timelineEvents.value = events
+}
 onMounted(() => {
-  console.log('DeliveryView: Component mounted')
+  // console.log('DeliveryView: Component mounted')
+  setupSubscription()
 })
 </script>
 <script>
@@ -269,10 +334,24 @@ export default {
                           </div>
                         </div>
                         <Button
-                          @click="dialogVisible = true"
+                          @click="
+                            (dialogVisible = true),
+                              (selectedShipmentId = slotProps.item.shipment_id)
+                          "
+                          :disabled="confirmedShipments.has(slotProps.item.shipment_id)"
                           class="text-white mt-4 bg-orange-600 py-2 px-4 w-full justify-center"
-                          >Confirm Delivery</Button
+                          :class="{
+                            'opacity-50 cursor-not-allowed': confirmedShipments.has(
+                              slotProps.item.shipment_id
+                            )
+                          }"
                         >
+                          {{
+                            confirmedShipments.has(slotProps.item.shipment_id)
+                              ? 'Delivered'
+                              : 'Confirm Delivery'
+                          }}
+                        </Button>
                       </div>
                     </template>
                   </Card>
@@ -316,7 +395,7 @@ export default {
           <div>
             <Button
               class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
-              @click="save"
+              @click="save(selectedShipmentId)"
               >Save</Button
             >
             <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
