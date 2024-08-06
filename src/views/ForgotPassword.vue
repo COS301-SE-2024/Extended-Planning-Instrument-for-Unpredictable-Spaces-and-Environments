@@ -1,57 +1,51 @@
 <script setup>
-// DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 
-// let localUser
 const dialogVisible = ref(false)
-
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
   console.log('Dark mode:', isDark.value ? 'on' : 'off')
 }
 
-// Authentication state
 const email = ref('')
-const password = ref('')
 const router = useRouter()
 
-// Sign in with email and password
-const signIn = async () => {
-  const { user, error } = await supabase.auth.signInWithPassword({
-    email: email.value,
-    password: password.value
+// Function to handle password recovery
+const recoverPassword = async () => {
+  const { data, error: fetchError } = await supabase
+    .from('Users')
+    .select('Email')
+    .eq('Email', email.value)
+
+  if (fetchError) {
+    alert('Error checking email: ' + fetchError.message)
+    return
+  }
+
+  if (data.length === 0) {
+    alert('Email not found in the database')
+    return
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+    redirectTo: `${window.location.origin}/callback`, // Change this URL as per your routing setup
   })
+
   if (error) {
-    alert(error.message)
+    alert('Error sending password recovery email: ' + error.message)
   } else {
-    console.log('User signed in:', user)
-    // await checkRole()
-    router.push({ name: 'callback' })
+    alert('Password recovery email sent.')
+    router.push({ name: 'login' }) // Redirect to login page or any other page after sending the email
   }
 }
 
-// Sign in with OAuth provider
-const signInWithProvider = async (provider) => {
-  console.log(`signInWithProvider called with provider: ${provider}`)
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: `${window.location.origin}/callback`
-    }
-  })
-  if (error) {
-    alert(error.message)
-  } else {
-    console.log(`Redirecting to ${provider} login page`)
-    router.push({ name: 'callback' })
-
-    // Do not navigate to the home page here, handle this in the callback
-  }
+const toggleDialog = () => {
+  dialogVisible.value = !dialogVisible.value
 }
 </script>
 
@@ -59,7 +53,7 @@ const signInWithProvider = async (provider) => {
   <div
     :class="[
       isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      ' min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
     ]"
   >
     <div
@@ -87,13 +81,13 @@ const signInWithProvider = async (provider) => {
       <p
         :class="[
           isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center  font-bold mb-2 '
+          'text-3xl flex items-center font-bold mb-2 '
         ]"
       >
         Forgot Password?
       </p>
       <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address</h2>
-      <form @submit.prevent="signIn" class="flex flex-col">
+      <form @submit.prevent="recoverPassword" class="flex flex-col">
         <div class="form-group mb-8">
           <label
             for="email"
@@ -109,7 +103,7 @@ const signInWithProvider = async (provider) => {
               isDark
                 ? 'text-white  bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
+              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
             ]"
           />
         </div>
@@ -157,7 +151,7 @@ const signInWithProvider = async (provider) => {
 
     <div>
       <DialogComponent
-        v-if="showDialog"
+        v-if="dialogVisible"
         imagePath="/Members/Photos/Login _ landing page.png"
         altText="Alternative Image"
         title="Contact Support"
@@ -165,12 +159,12 @@ const signInWithProvider = async (provider) => {
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
         ]"
-        :dialogVisible="showDialog"
+        :dialogVisible="dialogVisible"
         @close-dialog="toggleDialog"
       />
     </div>
     <DialogComponent
-      v-if="showDialog"
+      v-if="dialogVisible"
       :images="[
         { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
@@ -181,22 +175,12 @@ const signInWithProvider = async (provider) => {
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
       ]"
-      :dialogVisible="showDialog"
+      :dialogVisible="dialogVisible"
       @close-dialog="toggleDialog"
     />
   </div>
 </template>
-<script>
-export default {
-  components: {
-    DialogComponent
-  }
-}
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
-}
-</script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
