@@ -23,12 +23,16 @@ const toggleDark = () => {
 const showDialog = ref(false)
 const dialogVisible = ref(false)
 
+const mapDestination = ref(null)
+
 const toggleDialog = () => {
   console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
 const shipmentsByDelivery = ref([])
+const pendingLocations = ref([])
 
+const currentDestination = ref('')
 const deliveriesByDriverID = ref([])
 const deliveries = ref([])
 const visible = ref(true)
@@ -49,10 +53,26 @@ const getShipmentByDeliveryId = async () => {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
       shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
-      console.log('Shipments updated:', shipmentsByDelivery.value)
+
+      if (data.data.length > 0 && data.data[0].Destination) {
+        mapDestination.value = data.data[0].Destination
+      }
+      identifyPendingLocations()
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+  }
+}
+
+const identifyPendingLocations = () => {
+  const allLocations = Object.values(shipmentsByDelivery.value)
+    .flat()
+    .map((shipment) => shipment.Destination)
+    .filter(Boolean)
+
+  pendingLocations.value = [...new Set(allLocations)]
+  if (pendingLocations.value.length > 0) {
+    currentDestination.value = pendingLocations.value[0]
   }
 }
 
@@ -82,10 +102,27 @@ const handleDeliveryFromSidebar = (delivery) => {
   // If delivery is a ref, we need to access its value
   currentDelivery.value = delivery._isRef ? delivery.value : delivery
 
-  console.log('Processed delivery data:', currentDelivery.id)
+  // console.log('Processed delivery data:', currentDelivery.id)
   getShipmentByDeliveryId()
   // Trigger timeline update
   updateTimeline()
+}
+
+function save() {
+  // const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
+  // console.log(isEmpty)
+  // console.log(data)
+  toggleDialog()
+
+  if (pendingLocations.value.length > 0) {
+    pendingLocations.value.shift() // Remove the first (current) destination
+    if (pendingLocations.value.length > 0) {
+      currentDestination.value = pendingLocations.value[0]
+    } else {
+      currentDestination.value = ''
+      console.log('All destinations visited')
+    }
+  }
 }
 
 const updateTimeline = () => {
@@ -129,10 +166,6 @@ const timelineEvents = computed(() => {
 onMounted(() => {
   console.log('DeliveryView: Component mounted')
 })
-
-// const emitHandleDelivery = (delivery) => {
-//   emit('handle-delivery', delivery)
-// }
 </script>
 <script>
 export default {
@@ -154,11 +187,6 @@ export default {
   methods: {
     undo() {
       this.$refs.signaturePad.undoSignature()
-    },
-    save() {
-      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-      console.log(isEmpty)
-      console.log(data)
     }
   }
 }
@@ -185,7 +213,7 @@ export default {
       >
         <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
         <div class="mb-4">
-          <Map />
+          <Map :destination="mapDestination" />
         </div>
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
