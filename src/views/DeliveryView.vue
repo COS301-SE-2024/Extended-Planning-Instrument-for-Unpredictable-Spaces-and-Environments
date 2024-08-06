@@ -1,3 +1,5 @@
+<!-- DELIVERYVIEW.VUE -->
+
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -5,8 +7,8 @@ import 'primevue/resources/themes/saga-blue/theme.css'
 import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
-
-import { ref, computed, onMounted } from 'vue'
+import { supabase } from '@/supabase'
+import { ref, computed, onMounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -21,68 +23,68 @@ const toggleDark = () => {
 const showDialog = ref(false)
 const dialogVisible = ref(false)
 
+const mapDestination = ref(null)
+
 const toggleDialog = () => {
   console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
+const shipmentsByDelivery = ref([])
+const pendingLocations = ref([])
 
-const submitImage = () => {
-  console.log('Image submitted')
-  showDialog.value = false
-}
-
+const currentDestination = ref('')
 const deliveriesByDriverID = ref([])
 const deliveries = ref([])
 const visible = ref(true)
-const getAllDeliveries = async () => {
+
+const timelineEvents = ref([])
+
+const confirmedShipments = ref(new Set())
+
+const selectedShipmentId = ref(null)
+
+const getShipmentByDeliveryId = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'getAllDeliveries' }),
+      body: JSON.stringify({
+        type: 'getShipmentByDeliveryID',
+        deliveryID: currentDelivery.value.id
+      }),
       method: 'POST'
     })
     if (error) {
-      console.log('API Error:', error)
+      console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      deliveries.value = data.data
-      await getDeliveriesByDriverID()
-      visible.value = false
+      if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
+        shipmentsByDelivery.value[currentDelivery.value.id] = []
+      }
+      shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
+
+      if (data.data.length > 0 && data.data[0].Destination) {
+        mapDestination.value = data.data[0].Destination
+      }
+      identifyPendingLocations()
+      updateTimelineEvents()
     }
   } catch (error) {
-    console.error('Error fetching data:', error)
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
   }
 }
 
-const getDeliveriesByDriverID = async () => {
-  deliveriesByDriverID.value = {}
+const identifyPendingLocations = () => {
+  const allLocations = Object.values(shipmentsByDelivery.value)
+    .flat()
+    .map((shipment) => shipment.Destination)
+    .filter(Boolean)
 
-  for (const delivery of deliveries.value) {
-    try {
-      const { data, error } = await supabase.functions.invoke('core', {
-        body: JSON.stringify({
-          type: 'getDeliveriesByDriverID',
-          deliveryID: delivery.id
-        }),
-        method: 'POST'
-      })
-
-      if (error) {
-        console.log(`API Error for delivery ${delivery.id}:`, error)
-      } else {
-        if (!shipmentsByDelivery.value[delivery.id]) {
-          shipmentsByDelivery.value[delivery.id] = []
-        }
-        shipmentsByDelivery.value[delivery.id].push(...data.data)
-        // console.log(shipmentsByDelivery.value[delivery.id])
-      }
-    } catch (error) {
-      console.error(`Error fetching shipments for delivery ${delivery.id}:`, error)
-    }
+  pendingLocations.value = [...new Set(allLocations)]
+  if (pendingLocations.value.length > 0) {
+    currentDestination.value = pendingLocations.value[0]
   }
 }
 
 const getStatusColor = (status) => {
-  const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
-  switch (cleanStatus) {
+  switch (status.toLowerCase()) {
     case 'shipped':
       return '#d97706'
     case 'processing':
@@ -90,46 +92,144 @@ const getStatusColor = (status) => {
     case 'delivered':
       return '#14532d'
     default:
-      console.log('Error fetching status: ' + status)
+      // console.log('Error fetching status: ' + status)
       return '#6b7280'
   }
 }
 
-const groupedDeliveries = computed(() => {
-  const groupedByDeliveryId = {}
-
-  Object.entries(shipmentsByDelivery.value).forEach(([deliveryId, shipments]) => {
-    const delivery = deliveries.value.find((d) => d.id.toString() === deliveryId)
-    if (delivery) {
-      groupedByDeliveryId[deliveryId] = {
-        delivery_id: deliveryId,
-        driver_id: delivery.Driver_id || 0,
-        shipments: shipments.map((shipment, index) => {
-          const status = shipment.Status || 'Unknown'
-          return {
-            status: status,
-            time: shipment.Created_at || delivery.Start_time || 0,
-            shipment_id: shipment.id,
-            destination: shipment.Destination,
-            icon: 'pi pi-box',
-            color: getStatusColor(status),
-            line_colour: index === shipments.length - 1 ? '#6b7280' : getStatusColor(status),
-            past: index < shipments.length - 1
-          }
-        })
-      }
-    }
-  })
-  return Object.values(groupedByDeliveryId).filter((group) => group.shipments.length > 0)
-})
 function formattedDateTime(slotProps) {
   const options = { dateStyle: 'medium', timeStyle: 'short' }
   return new Date(slotProps.item.time).toLocaleString('en-US', options)
 }
+const currentDelivery = ref(null)
 
+const handleDeliveryFromSidebar = (delivery) => {
+  // If delivery is a ref, we need to access its value
+  currentDelivery.value = delivery._isRef ? delivery.value : delivery
+
+  // console.log('Processed delivery data:', currentDelivery.id)
+  getShipmentByDeliveryId()
+  // Trigger timeline update
+  updateTimeline()
+}
+
+const upDateShipmentStatus = async (shipmentId) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentStatus',
+        shipmentId: shipmentId,
+        newStatus: 'Delivered'
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
+    } else {
+      console.log('Successfully updated Status')
+    }
+  } catch (error) {
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+  }
+}
+
+function save(shipmentid) {
+  // const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
+  // console.log(isEmpty)
+  // console.log(data)
+
+  console.log('SHIPEMENT ID HAS ARRIVED', shipmentid)
+
+  if (pendingLocations.value.length > 0) {
+    pendingLocations.value.shift() // Remove the first (current) destination
+    if (pendingLocations.value.length > 0) {
+      currentDestination.value = pendingLocations.value[0]
+      upDateShipmentStatus(shipmentid)
+    } else {
+      currentDestination.value = ''
+      console.log('All destinations visited')
+    }
+  }
+
+  confirmedShipments.value.add(shipmentid)
+  toggleDialog()
+}
+async function setupSubscription() {
+  await supabase // Await for the subscription to be established
+    .channel('*')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
+      // console.log(payload.new)
+      updateTimelineEvent(payload.new)
+    })
+    .subscribe()
+}
+
+const updateTimelineEvent = (updatedShipment) => {
+  const index = timelineEvents.value.findIndex((event) => event.shipment_id === updatedShipment.id)
+  if (index !== -1) {
+    const newStatus = updatedShipment.Status
+    const newColor = getStatusColor(newStatus)
+
+    // Update the current event
+    timelineEvents.value[index] = {
+      ...timelineEvents.value[index],
+      status: newStatus,
+      color: newColor,
+      line_colour: newColor
+    }
+
+    // Update the next event's line_colour if it exists
+    if (index < timelineEvents.value.length - 1) {
+      timelineEvents.value[index + 1] = {
+        ...timelineEvents.value[index + 1],
+        line_colour: newColor
+      }
+    }
+
+    // Force Vue to react to the change
+    timelineEvents.value = [...timelineEvents.value]
+  }
+}
+
+const updateTimeline = () => {
+  if (currentDelivery.value) {
+    deliveries.value = [
+      {
+        status: currentDelivery.value.status || 'Unknown',
+        date: new Date(),
+        icon: 'pi pi-shopping-cart',
+        color: '#9C27B0',
+        image: 'game-controller.jpg'
+      }
+    ]
+  }
+}
+
+const updateTimelineEvents = () => {
+  const events = []
+  for (const deliveryId in shipmentsByDelivery.value) {
+    const shipments = shipmentsByDelivery.value[deliveryId]
+    shipments.forEach((shipment, index) => {
+      const status = shipment.Status || 'Unknown'
+      const color = getStatusColor(status)
+      events.push({
+        status: status,
+        time: shipment.Created_at || shipment.Start_time || 0,
+        shipment_id: shipment.id,
+        destination: shipment.Destination,
+        delivery_id: shipment.Delivery_id,
+        end_time: shipment.End_time,
+        icon: 'pi pi-box',
+        color: color,
+        line_colour: index === shipments.length - 1 ? '#6b7280' : color
+      })
+    })
+  }
+  timelineEvents.value = events
+}
 onMounted(() => {
+  // console.log('DeliveryView: Component mounted')
   setupSubscription()
-  getAllDeliveries()
 })
 </script>
 <script>
@@ -139,7 +239,7 @@ export default {
     return {
       option1: {
         penColor: 'rgb(255, 255, 255)',
-        backgroundColor: 'rgb(23,23,23)'
+        backgroundColor: '#262626'
       },
       option2: {
         penColor: 'rgb(0,0,0)',
@@ -152,11 +252,6 @@ export default {
   methods: {
     undo() {
       this.$refs.signaturePad.undoSignature()
-    },
-    save() {
-      const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-      console.log(isEmpty)
-      console.log(data)
     }
   }
 }
@@ -168,7 +263,7 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
-    <DeliverySidebar />
+    <DeliverySidebar @handle-delivery="handleDeliveryFromSidebar" />
     <div
       :class="[
         isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
@@ -183,99 +278,100 @@ export default {
       >
         <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
         <div class="mb-4">
-          <Map />
+          <Map :destination="mapDestination" />
         </div>
-        <div v-if="!visible">
-          <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-            <span class="font-bold">Track deliveries</span>
-          </h2>
-          <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
-            <Accordion :activeIndex="0" class="custom-accordion w-full">
-              <AccordionTab
-                v-for="group in filteredGroupedDeliveries"
-                :key="group.delivery_id"
-                :header="`Delivery ID: ${group.delivery_id}`"
-                :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
-              >
-                <div class="flex flex-row">
-                  <Timeline
-                    :value="group.shipments"
-                    layout="horizontal"
-                    class="customized-timeline w-full"
+        <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+          <span class="font-bold">Track deliveries</span>
+        </h2>
+        <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+          <div class="flex flex-row">
+            <Timeline
+              :value="timelineEvents"
+              layout="horizontal"
+              class="customized-timeline w-full"
+            >
+              <template #marker="slotProps">
+                <span
+                  class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
+                  :style="{ backgroundColor: slotProps.item.color }"
+                >
+                  <i :class="slotProps.item.icon"></i>
+                </span>
+              </template>
+              <template #content="slotProps">
+                <div class="timeline-card-wrapper">
+                  <Card
+                    :class="[
+                      isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
+                      'rounded-xl border border-neutral-500 h-full'
+                    ]"
                   >
-                    <template #marker="slotProps">
-                      <span
-                        class="flex w-10 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
-                        :style="{ backgroundColor: slotProps.item.color }"
-                      >
-                        <i :class="slotProps.item.icon"></i>
-                      </span>
+                    <template #title>
+                      <div class="card-title">{{ slotProps.item.status }}</div>
                     </template>
-                    <template #content="slotProps">
-                      <div class="timeline-card-wrapper">
-                        <Card
-                          :class="[
-                            isDark
-                              ? 'dark bg-neutral-950 text-white'
-                              : 'light bg-white-100 text-black',
-                            'rounded-xl border border-neutral-500 h-full'
-                          ]"
+                    <template #content>
+                      <div class="card-content">
+                        <div class="flex flex-col gap-2">
+                          <div>
+                            <p class="text-neutral-500">Shipment ID:</p>
+                            {{ slotProps.item.shipment_id }}
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">Start Date:</p>
+                            <span>{{ slotProps.item.time }}</span>
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">End Date:</p>
+                            <span>{{ slotProps.item.end_time }}</span>
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">Delivery ID:</p>
+                            {{ slotProps.item.delivery_id }}
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">Destination:</p>
+                            {{ slotProps.item.destination }}
+                          </div>
+                        </div>
+                        <Button
+                          @click="
+                            (dialogVisible = true),
+                              (selectedShipmentId = slotProps.item.shipment_id)
+                          "
+                          :disabled="confirmedShipments.has(slotProps.item.shipment_id)"
+                          class="text-white mt-4 bg-orange-600 py-2 px-4 w-full justify-center"
+                          :class="{
+                            'opacity-50 cursor-not-allowed': confirmedShipments.has(
+                              slotProps.item.shipment_id
+                            )
+                          }"
                         >
-                          <template #title>
-                            <div class="card-title">{{ slotProps.item.status }}</div>
-                          </template>
-                          <template #content>
-                            <div class="card-content">
-                              <div class="flex flex-col gap-2">
-                                <div>
-                                  <p class="text-neutral-500">Destination:</p>
-                                  {{ slotProps.item.destination }}
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Time:</p>
-                                  <span>{{ formattedDateTime(slotProps) }}</span>
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Delivery ID:</p>
-                                  {{ group.delivery_id }}
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Driver ID:</p>
-                                  {{ group.driver_id }}
-                                </div>
-                                <div>
-                                  <p class="text-neutral-500">Shipment ID:</p>
-                                  {{ slotProps.item.shipment_id }}
-                                </div>
-                              </div>
-                            </div>
-                          </template>
-                        </Card>
+                          {{
+                            confirmedShipments.has(slotProps.item.shipment_id)
+                              ? 'Delivered'
+                              : 'Confirm Delivery'
+                          }}
+                        </Button>
                       </div>
                     </template>
-                    <template #connector="slotProps">
-                      <span
-                        class="p-timeline-event-connector"
-                        :style="{ backgroundColor: slotProps.item.line_colour }"
-                      ></span>
-                    </template>
-                  </Timeline>
+                  </Card>
                 </div>
-              </AccordionTab>
-            </Accordion>
+              </template>
+              <template #connector="slotProps">
+                <span
+                  class="p-timeline-event-connector"
+                  :style="{ backgroundColor: slotProps.item.line_colour }"
+                ></span>
+              </template>
+            </Timeline>
           </div>
         </div>
       </div>
     </div>
-    <Dialog
-      header="Edit User Profile"
-      v-model:visible="dialogVisible"
-      :modal="true"
-      :closable="false"
-    >
+    <Dialog v-model:visible="dialogVisible" :modal="true" :closable="false">
       <div
         :class="[
-          isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
+          isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
           'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
         ]"
         class="flex flex-col"
@@ -299,7 +395,7 @@ export default {
           <div>
             <Button
               class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
-              @click="save"
+              @click="save(selectedShipmentId)"
               >Save</Button
             >
             <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"

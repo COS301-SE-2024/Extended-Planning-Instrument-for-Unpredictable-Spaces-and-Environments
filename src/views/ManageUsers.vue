@@ -6,9 +6,7 @@ import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
-
 const isDark = useDark()
-
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
 
