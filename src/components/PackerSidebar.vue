@@ -96,15 +96,29 @@ const getPackagesById = async (shipmentId) => {
       console.log('API Error:', error)
     } else {
       console.log(data.data)
-      packages.value = data.data
+      // packages.value = data.data
+      return data.data
     }
   } catch (error) {
     console.error('Error fetching data:', error)
   }
 }
+const runPackingAlgo = async (shipmentId) => {
+  const result = await getPackagesById(shipmentId)
+  const { data, error } = await supabase.functions.invoke('packing', {
+    body: JSON.stringify({ boxes_data: result, container_dimensions: [1200, 1380, 2800] }),
+    method: 'POST'
+  })
 
+  if (error) {
+    console.log('PACKING API ERROR: ', error)
+  } else {
+    console.log('PACKING API SUCCESS')
+    router.push({ name: '3DTruck', params: { packingData: JSON.stringify(data) } })
+  }
+}
 const handleSelectShipment = (shipmentId) => {
-  getPackagesById(shipmentId)
+  runPackingAlgo(shipmentId)
 }
 
 onMounted(() => {

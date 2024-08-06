@@ -12,7 +12,7 @@ import Inventory from '../views/Inventory.vue'
 import Tracking from '../views/Tracking.vue'
 import Shipments from '../views/Shipments.vue'
 import ForgotPassword from '../views/ForgotPassword.vue'
-
+import TruckEnvironment from '@/components/TruckEnvironment.vue'
 import { supabase } from '../supabase'
 
 const routes = [
@@ -48,6 +48,11 @@ const routes = [
     name: 'packer',
     component: Packer,
     meta: { requiresAuth: true, requiredRole: 'Packer' }
+  },
+  {
+    path: '/3DTruck',
+    name: '3DTruck',
+    component: TruckEnvironment
   },
   {
     path: '/driver',
