@@ -7,7 +7,7 @@ import 'primevue/resources/themes/saga-blue/theme.css'
 import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
-
+import { supabase } from '@/supabase'
 import { ref, computed, onMounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
@@ -27,64 +27,37 @@ const toggleDialog = () => {
   console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
-
-const submitImage = () => {
-  console.log('Image submitted')
-  showDialog.value = false
-}
+const shipmentsByDelivery = ref([])
 
 const deliveriesByDriverID = ref([])
 const deliveries = ref([])
 const visible = ref(true)
-const getAllDeliveries = async () => {
+
+const getShipmentByDeliveryId = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'getAllDeliveries' }),
+      body: JSON.stringify({
+        type: 'getShipmentByDeliveryID',
+        deliveryID: currentDelivery.value.id
+      }),
       method: 'POST'
     })
     if (error) {
-      console.log('API Error:', error)
+      console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      deliveries.value = data.data
-      await getDeliveriesByDriverID()
-      visible.value = false
+      if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
+        shipmentsByDelivery.value[currentDelivery.value.id] = []
+      }
+      shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
+      console.log('Shipments updated:', shipmentsByDelivery.value)
     }
   } catch (error) {
-    console.error('Error fetching data:', error)
-  }
-}
-
-const getDeliveriesByDriverID = async () => {
-  deliveriesByDriverID.value = {}
-
-  for (const delivery of deliveries.value) {
-    try {
-      const { data, error } = await supabase.functions.invoke('core', {
-        body: JSON.stringify({
-          type: 'getDeliveriesByDriverID',
-          deliveryID: delivery.id
-        }),
-        method: 'POST'
-      })
-
-      if (error) {
-        console.log(`API Error for delivery ${delivery.id}:`, error)
-      } else {
-        if (!shipmentsByDelivery.value[delivery.id]) {
-          shipmentsByDelivery.value[delivery.id] = []
-        }
-        shipmentsByDelivery.value[delivery.id].push(...data.data)
-        // console.log(shipmentsByDelivery.value[delivery.id])
-      }
-    } catch (error) {
-      console.error(`Error fetching shipments for delivery ${delivery.id}:`, error)
-    }
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
   }
 }
 
 const getStatusColor = (status) => {
-  const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
-  switch (cleanStatus) {
+  switch (status.toLowerCase()) {
     case 'shipped':
       return '#d97706'
     case 'processing':
@@ -109,7 +82,8 @@ const handleDeliveryFromSidebar = (delivery) => {
   // If delivery is a ref, we need to access its value
   currentDelivery.value = delivery._isRef ? delivery.value : delivery
 
-  console.log('Processed delivery data:', currentDelivery.value)
+  console.log('Processed delivery data:', currentDelivery.id)
+  getShipmentByDeliveryId()
   // Trigger timeline update
   updateTimeline()
 }
@@ -131,17 +105,29 @@ const updateTimeline = () => {
 }
 
 const timelineEvents = computed(() => {
-  return deliveries.value.map((delivery) => ({
-    status: delivery.status,
-    date: delivery.date,
-    icon: delivery.icon,
-    color: delivery.color,
-    image: delivery.image
-  }))
+  const events = []
+  for (const deliveryId in shipmentsByDelivery.value) {
+    const shipments = shipmentsByDelivery.value[deliveryId]
+    shipments.forEach((shipment, index) => {
+      const status = shipment.Status || 'Unknown'
+      events.push({
+        status: status,
+        time: shipment.Created_at || shipment.Start_time || 0,
+        shipment_id: shipment.id,
+        destination: shipment.Destination,
+        delivery_id: shipment.Delivery_id,
+        end_time: shipment.End_time,
+        icon: 'pi pi-box',
+        color: getStatusColor(status),
+        line_colour: index === shipments.length - 1 ? '#6b7280' : getStatusColor(status)
+      })
+    })
+  }
+  return events
 })
+
 onMounted(() => {
   console.log('DeliveryView: Component mounted')
-  getAllDeliveries()
 })
 
 // const emitHandleDelivery = (delivery) => {
@@ -155,7 +141,7 @@ export default {
     return {
       option1: {
         penColor: 'rgb(255, 255, 255)',
-        backgroundColor: 'rgb(23,23,23)'
+        backgroundColor: '#262626'
       },
       option2: {
         penColor: 'rgb(0,0,0)',
@@ -234,18 +220,31 @@ export default {
                       <div class="card-content">
                         <div class="flex flex-col gap-2">
                           <div>
-                            <p class="text-neutral-500">Driver ID:</p>
-                            {{ currentDelivery?.value?.Driver_id }}
+                            <p class="text-neutral-500">Shipment ID:</p>
+                            {{ slotProps.item.shipment_id }}
                           </div>
                           <div>
-                            <p class="text-neutral-500">Date:</p>
-                            <!-- <span>{{ new Date(slotProps.item.date).toLocaleString() }}</span> -->
+                            <p class="text-neutral-500">Start Date:</p>
+                            <span>{{ slotProps.item.time }}</span>
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">End Date:</p>
+                            <span>{{ slotProps.item.end_time }}</span>
                           </div>
                           <div>
                             <p class="text-neutral-500">Delivery ID:</p>
-                            {{ currentDelivery?.value?.id }}
+                            {{ slotProps.item.delivery_id }}
+                          </div>
+                          <div>
+                            <p class="text-neutral-500">Destination:</p>
+                            {{ slotProps.item.destination }}
                           </div>
                         </div>
+                        <Button
+                          @click="dialogVisible = true"
+                          class="text-white mt-4 bg-orange-600 py-2 px-4 w-full justify-center"
+                          >Confirm Delivery</Button
+                        >
                       </div>
                     </template>
                   </Card>
@@ -254,7 +253,7 @@ export default {
               <template #connector="slotProps">
                 <span
                   class="p-timeline-event-connector"
-                  :style="{ backgroundColor: slotProps.item.line_color }"
+                  :style="{ backgroundColor: slotProps.item.line_colour }"
                 ></span>
               </template>
             </Timeline>
@@ -265,7 +264,7 @@ export default {
     <Dialog v-model:visible="dialogVisible" :modal="true" :closable="false">
       <div
         :class="[
-          isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
+          isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
           'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
         ]"
         class="flex flex-col"
