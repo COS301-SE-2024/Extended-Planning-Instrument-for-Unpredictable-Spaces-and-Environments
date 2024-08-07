@@ -12,6 +12,7 @@ import { deleteUser } from './Users/deleteUser.ts'
 import { getCurrentUser } from './Users/getCurrentUser.ts'
 import { getUserIdFromId } from './Users/getUserIdFromId.ts'
 import { getNameByEmail } from './Users/getNameByEmail.ts'
+import { updateDriverID } from './Users/updateDriverID.ts'
 
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
@@ -137,6 +138,12 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getAllUsers') {
         return responseBuilder(await getAllUsers(supabaseUser))
+      }
+      if (requestBody.type == 'updateDriverID') {
+        return responseBuilder(await updateDriverID(supabaseUser
+          , requestBody.deliveryID
+          , requestBody.driverID
+        ))
       }
       if (requestBody.type == 'getAllPackages') {
         return responseBuilder(await getAllPackages(supabaseUser))
