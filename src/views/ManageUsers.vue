@@ -34,6 +34,12 @@ const updateUserInTable = (newUserData) => {
     customers.value.push(newUserData)
   }
 }
+const handleDelete = (oldUserData) => {
+  const index = customers.value.findIndex((user) => user.id === oldUserData.id)
+  if (index !== -1) {
+    customers.value.splice(index, 1)
+  }
+}
 
 const currentUser = ref(null)
 
@@ -43,8 +49,6 @@ const handleError = (error, context) => {
 }
 
 const checkUserPermissions = (user) => {
-  // Implement your permission checks here
-  // Example: return user.role === 'admin';
   return true // Assuming all authenticated users have permission for this example
 }
 
@@ -56,15 +60,15 @@ async function fetchCurrentUser() {
       if (checkUserPermissions(user)) {
         const { data, error } = await supabase
           .from('Users')
-          .select('FullName')
+          .select('FullName, Email')
           .eq('Email', sanitizeInput(user.email))
           .single()
 
         if (error) {
           handleError(error, 'fetchCurrentUser')
         } else {
-          currentUser.value = data.FullName
-          console.log('Current user fetched:', currentUser.value)
+          currentUser.value = data
+          // console.log('Current user fetched:', currentUser.value)
         }
       } else {
         console.log('User does not have permission')
@@ -81,8 +85,9 @@ async function setupSubscription() {
   try {
     await supabase
       .channel('custom-all-channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Users' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
         updateUserInTable(payload.new)
+        console.log(payload.new)
       })
       .subscribe()
   } catch (error) {
@@ -106,6 +111,26 @@ const fetchUsers = async () => {
     handleError(error, 'fetchUsers')
   }
 }
+const DelteUser = async () => {
+  loadingDel.value = true
+  const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'deleteUser', email: sanitizedEmail }),
+      method: 'POST'
+    })
+
+    if (error) {
+      handleError(error, 'deleteUser')
+    } else {
+      dialogVisible.value = false
+    }
+  } catch (error) {
+    handleError(error, 'deleteUser')
+  } finally {
+    loadingDel.value = false
+  }
+}
 
 onMounted(() => {
   fetchUsers()
@@ -122,6 +147,7 @@ const selectedUser = ref({
 const selectedRole = ref(null)
 
 const loading = ref(false)
+const loadingDel = ref(false)
 
 const onRemoveThing = (user) => {
   selectedUser.value = { ...user }
@@ -166,7 +192,7 @@ const saveChanges = async () => {
 }
 
 const nameWithYou = (user) => {
-  if (currentUser.value && user.FullName === currentUser.value) {
+  if (currentUser.value.Email === user.Email) {
     return `${user.FullName} (You)`
   }
   return user.FullName
@@ -332,8 +358,8 @@ const nameWithYou = (user) => {
         <Button
           label="Delete User"
           class="w-full font-semibold p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
-          :loading="loading"
-          @click=""
+          :loading="loadingDel"
+          @click="DelteUser"
         />
         <Button
           icon="pi pi-arrow-left"

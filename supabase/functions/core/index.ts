@@ -85,13 +85,7 @@ Deno.serve(async (req) => {
         )
       }
       if (requestBody.type == 'deleteUser') {
-        return responseBuilder(
-          await deleteUser(
-            supabaseUser,
-            requestBody.userId,
-            requestBody.id
-          )
-        )
+        return responseBuilder(await deleteUser(supabaseUser, requestBody.email))
       }
       if (requestBody.type == 'insertPackage') {
         return responseBuilder(
@@ -107,11 +101,7 @@ Deno.serve(async (req) => {
         )
       }
       if (requestBody.type == 'getCurrentUser') {
-        return responseBuilder(
-          await getCurrentUser(
-            supabaseUser
-          )
-        )
+        return responseBuilder(await getCurrentUser(supabaseUser))
       }
       if (requestBody.type == 'getShipmentByDeliveryID') {
         return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
@@ -123,7 +113,9 @@ Deno.serve(async (req) => {
         return responseBuilder(await getUserIdFromId(supabaseUser, requestBody.id))
       }
       if (requestBody.type == 'updateShipmentStatus') {
-        return responseBuilder(await updateShipmentStatus(supabaseUser, requestBody.shipmentId, requestBody.newStatus))
+        return responseBuilder(
+          await updateShipmentStatus(supabaseUser, requestBody.shipmentId, requestBody.newStatus)
+        )
       }
       if (requestBody.type == 'deleteShipment') {
         return responseBuilder(await deleteShipment(supabaseUser, requestBody.fileName))

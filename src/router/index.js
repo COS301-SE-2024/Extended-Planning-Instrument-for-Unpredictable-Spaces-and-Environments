@@ -12,7 +12,9 @@ import Inventory from '../views/Inventory.vue'
 import Tracking from '../views/Tracking.vue'
 import Shipments from '../views/Shipments.vue'
 import TruckEnvironment from '@/components/TruckEnvironment.vue'
+import ForgotPassword from '@/views/ForgotPassword.vue'
 // import ConfirmResetPassword from '@/views/confirm-reset-password.vue'
+
 
 import { supabase } from '../supabase'
 // import ResetPassword from '@/views/confirm-reset-password.vue'
