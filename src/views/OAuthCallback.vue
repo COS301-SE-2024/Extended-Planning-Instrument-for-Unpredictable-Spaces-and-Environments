@@ -61,16 +61,17 @@ async function checkRole(email) {
   }
 
   if (!data || !data.data || data.data.length === 0) {
-    console.error('Invalid data format:', data)
+    // console.error('Invalid data format:', data)
     // Set default role behavior if no role is found
     router.push({ name: 'home' })
     return
   }
 
-  // console.log('OAuthCallback ', data)
-  const role = data.data[0].Role
+  const role = data.data.Role
+  console.log('OAuthCallback ', role)
 
   if (role === 'Driver') {
+    // console.log('here boss')
     router.push({ name: 'driver' })
   } else if (role === 'Manager') {
     router.push({ name: 'dashboard' })

@@ -12,10 +12,44 @@ const router = useRouter()
 
 // Use a single state variable for the dialog
 const dialogVisible = ref(false)
+const driverID = ref(false)
 
 const toggleDialog = () => {
   console.log('Toggling Dialog Visibility', dialogVisible.value)
   dialogVisible.value = !dialogVisible.value
+}
+
+async function getSession() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) {
+    console.error('Error fetching session:', error)
+    return
+  }
+  // console.log(data)
+  if (data.session) {
+    const user = data.session.user
+    const email = user.user_metadata.email || user.email // Access email from user metadata or fallback to user.email
+    await checkRole(email)
+    return
+  } else {
+    console.error('No session found')
+  }
+}
+
+async function checkRole(email) {
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: {
+      type: 'checkRole',
+      email: email
+    }
+  })
+  if (error) {
+    console.error('API Error:', error)
+    return
+  } else {
+    // console.log('this is data.data[0]', data.data[0])
+    driverID.value = data.data.id
+  }
 }
 
 //API CALLS FOR SHIPMENTS
@@ -29,9 +63,9 @@ const getDeliveriesByStatus = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      console.log('Data', data.data)
+      // console.log('Data', data.data)
       deliveriesByStatus.value = data.data
-      console.log('getDeliveriesByStatus Result:  ', deliveriesByStatus)
+      // console.log('getDeliveriesByStatus Result:  ', deliveriesByStatus)
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -40,7 +74,29 @@ const getDeliveriesByStatus = async () => {
 
 const emit = defineEmits(['handle-delivery'])
 
+const updateDriverID = async (delivery) => {
+  await getSession('Driver ID : ', driverID.value)
+  console.log('Driver iD : ', driverID.value)
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDriverID',
+        deliveryID: delivery.id,
+        driverID: driverID.value
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+
 const handleDelivery = (delivery) => {
+  console.log('Delivery:', delivery)
+  updateDriverID(delivery)
   // Emit an event to be caught by the parent component (DeliveryView)
   emit('handle-delivery', delivery)
   toggleDialog()

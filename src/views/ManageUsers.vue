@@ -26,14 +26,6 @@ const onGlobalFilterChange = (e) => {
   filters.value.global.value = sanitizeInput(e.target.value)
 }
 
-const updateUserInTable = (newUserData) => {
-  const index = customers.value.findIndex((user) => user.id === newUserData.id)
-  if (index !== -1) {
-    customers.value[index] = newUserData
-  } else {
-    customers.value.push(newUserData)
-  }
-}
 const handleDelete = (oldUserData) => {
   const index = customers.value.findIndex((user) => user.id === oldUserData.id)
   if (index !== -1) {
@@ -58,16 +50,15 @@ async function fetchCurrentUser() {
     if (session.data.session) {
       const { user } = session.data.session
       if (checkUserPermissions(user)) {
-        const { data, error } = await supabase
-          .from('Users')
-          .select('FullName, Email')
-          .eq('Email', sanitizeInput(user.email))
-          .single()
+        const { data, error } = await supabase.functions.invoke('core', {
+          body: JSON.stringify({ type: 'getNameByEmail', email: sanitizeInput(user.email) }),
+          method: 'POST'
+        })
 
         if (error) {
           handleError(error, 'fetchCurrentUser')
         } else {
-          currentUser.value = data
+          currentUser.value = data.data
           // console.log('Current user fetched:', currentUser.value)
         }
       } else {
@@ -85,13 +76,30 @@ async function setupSubscription() {
   try {
     await supabase
       .channel('custom-all-channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-        updateUserInTable(payload.new)
-        console.log(payload.new)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Users' }, (payload) => {
+        handleInsertOrUpdate(payload.new)
+        console.log('Inserted:', payload.new)
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Users' }, (payload) => {
+        handleInsertOrUpdate(payload.new)
+        console.log('Updated:', payload.new)
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Users' }, (payload) => {
+        handleDelete(payload.old)
+        console.log('Deleted:', payload.old)
       })
       .subscribe()
   } catch (error) {
     handleError(error, 'setupSubscription')
+  }
+}
+
+const handleInsertOrUpdate = (newUserData) => {
+  const index = customers.value.findIndex((user) => user.id === newUserData.id)
+  if (index !== -1) {
+    customers.value[index] = newUserData
+  } else {
+    customers.value.push(newUserData)
   }
 }
 
@@ -192,7 +200,7 @@ const saveChanges = async () => {
 }
 
 const nameWithYou = (user) => {
-  if (currentUser.value.Email === user.Email) {
+  if (currentUser.value.email === user.Email) {
     return `${user.FullName} (You)`
   }
   return user.FullName
