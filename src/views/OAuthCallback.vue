@@ -1,6 +1,23 @@
 <template>
-  <div class="loading">
-    <ProgressSpinner />
+  <div
+    class="loading"
+    :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black']"
+  >
+    <img
+      :src="
+        isDark
+          ? '/Members/Photos/Logos/Logo-Light-Transparent.svg'
+          : '/Members/Photos/Logos/Logo-Dark-Transparent.svg'
+      "
+      class="logo"
+      alt="Logo"
+    />
+    <ProgressSpinner
+      style="width: 150px; height: 150px"
+      strokeWidth="4"
+      animationDuration=".5s"
+      aria-label="Custom ProgressSpinner"
+    />
   </div>
 </template>
 
@@ -9,6 +26,8 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
+import { useDark } from '@vueuse/core'
+const isDark = useDark()
 
 const router = useRouter()
 
@@ -42,16 +61,17 @@ async function checkRole(email) {
   }
 
   if (!data || !data.data || data.data.length === 0) {
-    console.error('Invalid data format:', data)
+    // console.error('Invalid data format:', data)
     // Set default role behavior if no role is found
     router.push({ name: 'home' })
     return
   }
 
-  // console.log('OAuthCallback ', data)
-  const role = data.data[0].Role
+  const role = data.data.Role
+  console.log('OAuthCallback ', role)
 
   if (role === 'Driver') {
+    // console.log('here boss')
     router.push({ name: 'driver' })
   } else if (role === 'Manager') {
     router.push({ name: 'dashboard' })
@@ -70,8 +90,24 @@ onMounted(() => {
 <style scoped>
 .loading {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo {
+  width: 500px; /* Adjust size as needed */
+  margin-bottom: 20px; /* Space between logo and spinner */
+}
+
+.ProgressSpinner {
+  z-index: 2;
+}
+
+:deep(.p-progress-spinner-circle) {
+  stroke: rgb(182, 119, 2) !important;
 }
 </style>

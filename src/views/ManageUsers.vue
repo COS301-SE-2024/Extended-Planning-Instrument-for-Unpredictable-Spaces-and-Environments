@@ -4,39 +4,103 @@ import InputText from 'primevue/inputtext'
 import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
-
-// SUPA BASE
-import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
-const supabaseKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzMTMxNTEsImV4cCI6MjAzMTg4OTE1MX0.xNhTpM5Qxz8sHW0JPFSoFaWAtI425QPoI17jofYxoFA'
-// SUPA BASE
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { FilterMatchMode } from 'primevue/api'
+import { supabase } from '@/supabase.js' // Import the Supabase client
 const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
 
-const updateUserInTable = (newUserData) => {
+// Utility to sanitize input
+const sanitizeInput = (input) => {
+  const trimmedInput = input.trim()
+  const div = document.createElement('div')
+  div.appendChild(document.createTextNode(trimmedInput))
+  return div.innerHTML
+}
+
+// Search functionality
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+const onGlobalFilterChange = (e) => {
+  filters.value.global.value = sanitizeInput(e.target.value)
+}
+
+const handleDelete = (oldUserData) => {
+  const index = customers.value.findIndex((user) => user.id === oldUserData.id)
+  if (index !== -1) {
+    customers.value.splice(index, 1)
+  }
+}
+
+const currentUser = ref(null)
+
+const handleError = (error, context) => {
+  console.error(`Error in ${context}:`, error.message)
+  // Optionally send the error to an external logging service
+}
+
+const checkUserPermissions = (user) => {
+  return true // Assuming all authenticated users have permission for this example
+}
+
+async function fetchCurrentUser() {
+  try {
+    const session = await supabase.auth.getSession()
+    if (session.data.session) {
+      const { user } = session.data.session
+      if (checkUserPermissions(user)) {
+        const { data, error } = await supabase.functions.invoke('core', {
+          body: JSON.stringify({ type: 'getNameByEmail', email: sanitizeInput(user.email) }),
+          method: 'POST'
+        })
+
+        if (error) {
+          handleError(error, 'fetchCurrentUser')
+        } else {
+          currentUser.value = data.data
+          // console.log('Current user fetched:', currentUser.value)
+        }
+      } else {
+        console.log('User does not have permission')
+      }
+    } else {
+      console.log('No session found')
+    }
+  } catch (error) {
+    handleError(error, 'fetchCurrentUser')
+  }
+}
+
+async function setupSubscription() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Users' }, (payload) => {
+        handleInsertOrUpdate(payload.new)
+        console.log('Inserted:', payload.new)
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Users' }, (payload) => {
+        handleInsertOrUpdate(payload.new)
+        console.log('Updated:', payload.new)
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Users' }, (payload) => {
+        handleDelete(payload.old)
+        console.log('Deleted:', payload.old)
+      })
+      .subscribe()
+  } catch (error) {
+    handleError(error, 'setupSubscription')
+  }
+}
+
+const handleInsertOrUpdate = (newUserData) => {
   const index = customers.value.findIndex((user) => user.id === newUserData.id)
   if (index !== -1) {
     customers.value[index] = newUserData
   } else {
     customers.value.push(newUserData)
   }
-}
-
-async function setupSubscription() {
-  await supabase // Await for the subscription to be established
-    .channel('*')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-      // console.log(payload.new)
-      updateUserInTable(payload.new)
-    })
-    .subscribe()
 }
 
 const fetchUsers = async () => {
@@ -47,18 +111,38 @@ const fetchUsers = async () => {
     })
 
     if (error) {
-      console.log('API Error:', error)
+      handleError(error, 'fetchUsers')
     } else {
-      console.log(data.data)
       customers.value = data.data
-      // console.log(customers.value) // Now it should log an array
     }
   } catch (error) {
-    console.error('Error fetching data:', error)
+    handleError(error, 'fetchUsers')
   }
 }
+const DelteUser = async () => {
+  loadingDel.value = true
+  const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'deleteUser', email: sanitizedEmail }),
+      method: 'POST'
+    })
+
+    if (error) {
+      handleError(error, 'deleteUser')
+    } else {
+      dialogVisible.value = false
+    }
+  } catch (error) {
+    handleError(error, 'deleteUser')
+  } finally {
+    loadingDel.value = false
+  }
+}
+
 onMounted(() => {
   fetchUsers()
+  fetchCurrentUser() // Fetch current user info on mount
   setupSubscription()
 })
 
@@ -71,6 +155,7 @@ const selectedUser = ref({
 const selectedRole = ref(null)
 
 const loading = ref(false)
+const loadingDel = ref(false)
 
 const onRemoveThing = (user) => {
   selectedUser.value = { ...user }
@@ -85,30 +170,40 @@ const roles = ref([
 ])
 
 const saveChanges = async () => {
-  loading.value = true // Start loading animation
+  loading.value = true
   try {
+    const sanitizedFullName = sanitizeInput(selectedUser.value.FullName)
+    const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
+    const sanitizedPhone = sanitizeInput(selectedUser.value.Phone)
+
     const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateUser',
-        fullname: selectedUser.value.FullName,
-        email: selectedUser.value.Email,
-        role: selectedRole.value.name,
-        phone: selectedUser.value.Phone
+        fullname: sanitizedFullName,
+        email: sanitizedEmail,
+        role: sanitizeInput(selectedRole.value.name),
+        phone: sanitizedPhone
       }),
       method: 'POST'
     })
 
     if (error) {
-      console.log('API Error:', error)
-      console.log(error.message)
+      handleError(error, 'saveChanges')
     } else {
-      dialogVisible.value = false // Close the dialog if successful
+      dialogVisible.value = false
     }
   } catch (error) {
-    console.error('Error fetching data:', error)
+    handleError(error, 'saveChanges')
   } finally {
-    loading.value = false // Stop loading animation
+    loading.value = false
   }
+}
+
+const nameWithYou = (user) => {
+  if (currentUser.value.email === user.Email) {
+    return `${user.FullName} (You)`
+  }
+  return user.FullName
 }
 </script>
 
@@ -129,12 +224,14 @@ const saveChanges = async () => {
             isDark
               ? 'border-neutral-500 bg-neutral-900 text-white'
               : 'border-gray-500 bg-white text-black',
-            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-yellow-600'
+            'border flex items-center px-4 py-2 rounded-xl focus-within:ring-2 focus-within:ring-orange-500'
           ]"
         >
           <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
           <InputText
+            v-model="filters['global'].value"
             placeholder="Search"
+            @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
               'focus:outline-none focus:ring-0'
@@ -143,7 +240,7 @@ const saveChanges = async () => {
         </div>
       </div>
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Manage User's</span>
+        <span class="font-bold">Manage Users</span>
       </h2>
 
       <!-- Users Table -->
@@ -153,9 +250,15 @@ const saveChanges = async () => {
           :value="customers"
           paginator
           :rows="5"
+          :filters="filters"
+          :globalFilterFields="['FullName', 'Email', 'Role', 'Phone']"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="FullName" header="Full Name" style="width: 25%"></Column>
+          <Column field="FullName" header="Full Name" style="width: 25%">
+            <template #body="slotProps">
+              {{ nameWithYou(slotProps.data) }}
+            </template>
+          </Column>
           <Column field="Email" header="Email" style="width: 25%"></Column>
           <Column field="Role" header="Role" style="width: 25%"></Column>
           <Column field="Phone" header="Phone Number" style="width: 25%"></Column>
@@ -163,7 +266,7 @@ const saveChanges = async () => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-yellow-700 text-gray-100 rounded-xl p-2"
+                class="bg-orange-500 text-gray-100 rounded-lg p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -174,7 +277,7 @@ const saveChanges = async () => {
       <div class="mt-4 flex items-center justify-center">
         <p
           @click="toggleDialog"
-          class="text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+          class="text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
         >
           Help
         </p>
@@ -191,8 +294,8 @@ const saveChanges = async () => {
   >
     <div
       :class="[
-        isDark ? 'text-white bg-neutral-900' : ' bg-white text-neutral-800',
-        'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+        isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
+        'mt-2  form-control w-full px-3  pt-6 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
       ]"
       class="flex flex-col"
     >
@@ -203,7 +306,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.FullName"
           id="FullName"
@@ -216,7 +319,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.Email"
           id="Email"
@@ -230,7 +333,7 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-yellow-600',
+            'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
             { 'z-99999999999999999': true } // Adjust z-index here
           ]"
           v-model="selectedRole"
@@ -247,28 +350,33 @@ const saveChanges = async () => {
             isDark
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600' // Changes here
+            'mt-2   form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
           ]"
           v-model="selectedUser.Phone"
           id="Phone"
         />
       </div>
-    </div>
-    <div class="flex flex-col items-center align-center">
-      <Button
-        label="Save"
-        class="w-full font-semibold p-button-text text-white bg-green-800 rounded-xl p-2 mb-3"
-        :loading="loading"
-        @click="saveChanges"
-      />
-
-      <Button
-        icon="pi pi-arrow-left"
-        iconPos="left"
-        label="Back"
-        class="font-semibold w-auto p-button-text text-yellow-700 p-2"
-        @click="dialogVisible = false"
-      />
+      <div class="mt-6 flex flex-col items-center align-center">
+        <Button
+          label="Save"
+          class="w-full font-semibold p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
+          :loading="loading"
+          @click="saveChanges"
+        />
+        <Button
+          label="Delete User"
+          class="w-full font-semibold p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
+          :loading="loadingDel"
+          @click="DelteUser"
+        />
+        <Button
+          icon="pi pi-arrow-left"
+          iconPos="left"
+          label="Back"
+          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          @click="dialogVisible = false"
+        />
+      </div>
     </div>
   </Dialog>
   <div>
@@ -285,6 +393,7 @@ const saveChanges = async () => {
     />
   </div>
 </template>
+
 <script>
 export default {
   components: {
@@ -296,6 +405,7 @@ const toggleDialog = () => {
   showDialog.value = !showDialog.value
 }
 </script>
+
 <style>
 /* Light mode styles */
 .body {
@@ -475,11 +585,13 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 .dark .p-dialog {
   background-color: #262626;
   color: white;
+  border-radius: 0.375rem;
 }
 
 .dark .p-dialog .p-dialog-content {
   background-color: #171717;
   color: white;
+  border-radius: 0.375rem;
 }
 .dark .p-dialog-titlebar {
   background-color: #171717;
