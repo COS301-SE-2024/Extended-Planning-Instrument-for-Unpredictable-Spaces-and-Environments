@@ -127,7 +127,7 @@ async function getUserRole(email) {
     console.error('API Error:', error)
     return null
   }
-  return data.data && data.data[0] ? data.data[0].Role : null
+  return data.data && data.data ? data.data.Role : null
 }
 
 router.beforeEach(async (to, from, next) => {

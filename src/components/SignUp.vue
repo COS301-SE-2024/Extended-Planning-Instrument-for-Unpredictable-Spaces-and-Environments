@@ -46,8 +46,8 @@ const signUp = async () => {
     phoneNumberError.value = false
     passwordError.value = false
 
-    console.log(email.value)
-    console.log(password.value)
+    // console.log(email.value)
+    // console.log(password.value)
     const { user, error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value
@@ -71,7 +71,7 @@ const signUp = async () => {
           phone: number.value
         }
       })
-      console.log(name.value, email.value, number.value)
+      // console.log(name.value, email.value, number.value)
       // console.log('This is data.data ' + data.data);
       if (error) {
         console.log('API Error:', error)

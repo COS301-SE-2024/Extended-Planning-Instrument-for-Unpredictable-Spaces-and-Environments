@@ -47,7 +47,7 @@ const signInWithProvider = async (provider) => {
   if (error) {
     alert(error.message)
   } else {
-    console.log(`Redirecting to ${provider} login page`)
+    // console.log(`Redirecting to ${provider} login page`)
     router.push({ name: 'callback' })
 
     // Do not navigate to the home page here, handle this in the callback
