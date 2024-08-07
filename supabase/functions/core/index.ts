@@ -11,6 +11,7 @@ import { getOpenDriver } from './Users/getOpenDriver.ts'
 import { deleteUser } from './Users/deleteUser.ts'
 import { getCurrentUser } from './Users/getCurrentUser.ts'
 import { getUserIdFromId } from './Users/getUserIdFromId.ts'
+import { getNameByEmail } from './Users/getNameByEmail.ts'
 
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
@@ -105,6 +106,9 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getShipmentByDeliveryID') {
         return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
+      }
+      if (requestBody.type == 'getNameByEmail') {
+        return responseBuilder(await getNameByEmail(supabaseUser, requestBody.email))
       }
       if (requestBody.type == 'getPublicURL') {
         return responseBuilder(await getPublicURL(supabaseUser, requestBody.fileName))
