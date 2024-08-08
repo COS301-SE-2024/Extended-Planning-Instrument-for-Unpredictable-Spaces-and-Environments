@@ -30,9 +30,9 @@ class Container:
     def can_fit(self, box, space):
         _, _, _, w, h, l = space
         return box.width <= w and box.height <= h and box.length <= l
-
+    
     def add_box(self, box):
-        for space in sorted(self.remaining_space, key=lambda s: (s[1], s[0])):  # Sort by y then x
+        for space in sorted(self.remaining_space, key=lambda s: (s[2],s[1])):
             for orientation in self.generate_orientations(box):
                 if self.can_fit(orientation, space):
                     x, y, z, w, h, l = space
@@ -82,7 +82,7 @@ class Container:
         if y == 0:
             return True  # The box is on the container floor
         support_area = 0
-        required_area = 0.6 * box.width * box.length  # At least 60% of the bottom face should be supported
+        required_area = 0.85 * box.width * box.length  # At least 60% of the bottom face should be supported
 
         for other_box, ox, oy, oz in self.boxes:
             if oy + other_box.height == y:  # Check if other box is directly below
@@ -136,6 +136,7 @@ def evaluate_fitness(individual, container_dimensions):
             unplaced_boxes.append(box)
 
     container.apply_gravity()
+    # optimize_packing(container)
 
     placed_volume = container.total_volume - container.total_remaining_volume
     total_box_volume = sum(box.volume for box in individual)
@@ -161,6 +162,7 @@ def evaluate_fitness(individual, container_dimensions):
 best_fitness = float('-inf')
 best_container = None
 best_individual = None
+iteration_count = 0;
 
 def clone_container(container):
     new_container = Container(container.width, container.height, container.length)
@@ -170,11 +172,14 @@ def clone_container(container):
     return new_container
 
 def update_best_solution(individual, container, fitness):
-    global best_fitness, best_container, best_individual
+    global best_fitness, best_container, best_individual,iteration_count
     if fitness > best_fitness:
         best_fitness = fitness
         best_container = container
         best_individual = individual
+        iteration_count = 0
+    else:
+        iteration_count+=1
 
 def select_parents(population, fitness, num_parents):
     ranks = np.argsort(np.argsort(fitness))
@@ -197,58 +202,139 @@ def mutate(individual, mutation_rate):
             j = random.randint(0, len(individual) - 1)
             individual[i], individual[j] = individual[j], individual[i]
 
+def optimize_packing(container):
+    moved = True
+    while moved:   
+        moved = False
+        for i, (box, x, y, z) in enumerate(container.boxes):
+            # Move the box back in the z-direction
+            new_z = z
+            while new_z > 0 and not container.check_overlap(box, x, y, new_z - 1) and container.is_supported(box, x, y, new_z - 1):
+                new_z -= 1
+            if new_z != z:
+                container.boxes[i] = (box, x, y, new_z)
+                moved = True
+        moved = False
+        for i, (box, x, y, z) in enumerate(container.boxes):
+            # Move the box down in the y-direction
+            new_y = y
+            while new_y > 0 and not container.check_overlap(box, x, new_y - 1, z) and container.is_supported(box, x, new_y - 1, z):
+                new_y -= 1
+            if new_y != y:
+                container.boxes[i] = (box, x, new_y, z)
+                moved = True
+       
+
+    # Update the remaining space
+    container.remaining_space = []
+    for box, x, y, z in container.boxes:
+        container.split_space(x, y, z, box)
+    container.total_remaining_volume = sum(s[3] * s[4] * s[5] for s in container.remaining_space)
+
 def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_generations=300, mutation_rate=0.01):
+    # boxes_data = [
+    #     {'id': 1, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 2, 'width': 200, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 3, 'width': 400, 'depth': 250, 'height': 240, 'weight': 85},
+    #     {'id': 4, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 5, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 6, 'width': 400, 'depth': 250, 'height': 360, 'weight': 100},
+    #     {'id': 7, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 8, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+    #     {'id': 9, 'width': 400, 'depth': 250, 'height': 480, 'weight': 65},
+    #     {'id': 10, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
+    #     {'id': 11, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 12, 'width': 800, 'depth': 250, 'height': 480, 'weight': 70},
+    #     {'id': 13, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 14, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 15, 'width': 400, 'depth': 250, 'height': 480, 'weight': 50},
+    #     {'id': 16, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 17, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40},
+    #     {'id': 18, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 19, 'width': 400, 'depth': 250, 'height': 480, 'weight': 40},
+    #     {'id': 20, 'width': 300, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 21, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
+    #     {'id': 22, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 23, 'width': 800, 'depth': 250, 'height': 240, 'weight': 100},
+    #     {'id': 24, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 25, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
+    #     {'id': 26, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
+    #     {'id': 27, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 28, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40},
+    #     {'id': 29, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 30, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
+    #     {'id': 31, 'width': 300, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 32, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
+    #     {'id': 33, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 34, 'width': 800, 'depth': 250, 'height': 240, 'weight': 100},
+    #     {'id': 35, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 36, 'width': 400, 'depth': 250, 'height': 240, 'weight': 100},
+    #     {'id': 37, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
+    #     {'id': 38, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 39, 'width': 200, 'depth': 125, 'height': 480, 'weight': 100},
+    #     {'id': 40, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 41, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
+    #     {'id': 42, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 43, 'width': 400, 'depth': 250, 'height': 240, 'weight': 100},
+    #     {'id': 44, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
+    #     {'id': 45, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
+    #     {'id': 46, 'width': 200, 'depth': 125, 'height': 480, 'weight': 100},
+    #     {'id': 47, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 48, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
+    #     {'id': 49, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
+    #     {'id': 50, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
+    # ]
     boxes_data = [
         {'id': 1, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
-        {'id': 2, 'width': 200, 'depth': 250, 'height': 480, 'weight': 100},
-        {'id': 3, 'width': 400, 'depth': 250, 'height': 240, 'weight': 85},
+        {'id': 2, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 3, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
         {'id': 4, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
         {'id': 5, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
-        {'id': 6, 'width': 400, 'depth': 250, 'height': 360, 'weight': 100},
+        {'id': 6, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
         {'id': 7, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
         {'id': 8, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
-        {'id': 9, 'width': 400, 'depth': 250, 'height': 480, 'weight': 65},
-        {'id': 10, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
-        {'id': 11, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 12, 'width': 800, 'depth': 250, 'height': 480, 'weight': 70},
-        {'id': 13, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 14, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 15, 'width': 400, 'depth': 250, 'height': 480, 'weight': 50},
-        {'id': 16, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 17, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40},
-        {'id': 18, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 19, 'width': 400, 'depth': 250, 'height': 480, 'weight': 40},
-        {'id': 20, 'width': 300, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 21, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
-        {'id': 22, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 23, 'width': 800, 'depth': 250, 'height': 240, 'weight': 100},
-        {'id': 24, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 25, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
-        {'id': 26, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
-        {'id': 27, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 28, 'width': 200, 'depth': 125, 'height': 480, 'weight': 40},
-        {'id': 29, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 30, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
-        {'id': 31, 'width': 300, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 32, 'width': 400, 'depth': 125, 'height': 240, 'weight': 60},
-        {'id': 33, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 34, 'width': 800, 'depth': 250, 'height': 240, 'weight': 100},
-        {'id': 35, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 36, 'width': 400, 'depth': 250, 'height': 240, 'weight': 100},
-        {'id': 37, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
-        {'id': 38, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 39, 'width': 200, 'depth': 125, 'height': 480, 'weight': 100},
-        {'id': 40, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 41, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
-        {'id': 42, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 43, 'width': 400, 'depth': 250, 'height': 240, 'weight': 100},
-        {'id': 44, 'width': 400, 'depth': 250, 'height': 240, 'weight': 60},
-        {'id': 45, 'width': 400, 'depth': 250, 'height': 480, 'weight': 60},
-        {'id': 46, 'width': 200, 'depth': 125, 'height': 480, 'weight': 100},
-        {'id': 47, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 48, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
-        {'id': 49, 'width': 400, 'depth': 250, 'height': 240, 'weight': 40},
-        {'id': 50, 'width': 100, 'depth': 250, 'height': 240, 'weight': 30},
+        {'id': 9, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 10, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 11, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 12, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 13, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 14, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 15, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 16, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 17, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 18, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 19, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 20, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 21, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 22, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 23, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 24, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 25, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 26, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 27, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 28, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 29, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 30, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 31, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 32, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 33, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 34, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 35, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 36, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 37, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 38, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 39, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 40, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 41, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 42, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 43, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 44, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 45, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 46, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 47, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 48, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 49, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
+        {'id': 50, 'width': 400, 'depth': 250, 'height': 480, 'weight': 100},
     ]
 
     boxes = [Box(box['id'], box['width'], box['height'], box['depth'], box['weight']) for box in boxes_data]
@@ -256,7 +342,7 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
 
     population = initialize_population(pop_size, boxes)
 
-    global best_fitness, best_container, best_individual
+    global best_fitness, best_container, best_individual, iteration_count
 
     for generation in range(num_generations):
         fitness_results = [evaluate_fitness(individual, container_dimensions) for individual in population]
@@ -276,7 +362,7 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
 
         parents = select_parents(population, fitness, pop_size // 2)
         next_population = []
-
+        
         for i in range(0, len(parents), 2):
             parent1 = parents[i]
             parent2 = parents[i + 1] if i + 1 < len(parents) else parents[0]
@@ -291,6 +377,9 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
         next_population[0] = best_individual_clone
 
         population = next_population
+        
+        if iteration_count > 22:
+            break
 
     # Emit the best global solution at the end
     emit_solution(sio, best_container, num_generations, best_fitness)
