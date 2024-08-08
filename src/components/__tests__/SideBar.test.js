@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import SidebarComponent from '../Sidebar.vue'; // Update this to the correct file path
+import Sidebar from '../Sidebar.vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../../supabase';
 import PrimeVue from 'primevue/config';
@@ -8,23 +8,38 @@ import Badge from 'primevue/badge';
 import Menu from 'primevue/menu';
 import Avatar from 'primevue/avatar';
 import Ripple from 'primevue/ripple';
+import FileUpload from 'primevue/fileupload';
+import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
+import Toast from 'primevue/toast';
+import { RouterLinkStub } from '@vue/test-utils'; // Import RouterLinkStub
+import { createRouter, createWebHistory } from 'vue-router'
 
+// Mock PrimeVue Toast
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({
+    add: vi.fn(),
+    clear: vi.fn(),
+  }),
+}));
+
+// Mock Vue Router
 const mockPush = vi.fn();
-
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
 }));
 
+// Mock VueUse
 const mockToggleDark = vi.fn();
-
 vi.mock('@vueuse/core', () => ({
   useDark: vi.fn(() => false),
   useToggle: vi.fn(() => mockToggleDark),
 }));
 
-vi.mock('@/supabase', () => ({
+// Mock Supabase
+vi.mock('../../supabase', () => ({
   supabase: {
     auth: {
       signOut: vi.fn(() => Promise.resolve({})),
@@ -32,28 +47,48 @@ vi.mock('@/supabase', () => ({
   },
 }));
 
-describe('SidebarComponent.vue', () => {
+// Mock PrimeVue components
+vi.mock('primevue/fileupload', () => ({
+  default: {
+    name: 'FileUpload',
+    template: '<div>FileUpload</div>',
+  },
+}));
+vi.mock('primevue/button', () => ({
+  default: {
+    name: 'Button',
+    template: '<div>Button</div>',
+  },
+}));
+vi.mock('primevue/dialog', () => ({
+  default: {
+    name: 'Dialog',
+    template: '<div>Dialog</div>',
+  },
+}));
+vi.mock('primevue/toast', () => ({
+  default: {
+    name: 'Toast',
+    template: '<div>Toast</div>',
+  },
+}));
+
+describe('Sidebar.vue', () => {
   let wrapper;
 
   beforeEach(() => {
-    wrapper = mount(SidebarComponent, {
-      global: {
-        plugins: [PrimeVue],
-        components: {
-          Badge,
-          Menu,
-          Avatar,
-          'router-link': {
-            template: '<a><slot /></a>',
-          },
-        },
-        directives: {
-          ripple: Ripple,
-        },
-      },
+    beforeEach(() => {
+      mount(Sidebar, {
+        global: {
+          plugins: [router],
+          stubs: {
+            RouterLink: RouterLinkStub
+          }
+        }
+      })
     });
-    mockPush.mockClear(); // Clear previous mock calls
-    mockToggleDark.mockClear(); // Clear previous mock calls
+    mockPush.mockClear();
+    mockToggleDark.mockClear();
   });
 
   it('renders the component', () => {
@@ -81,7 +116,7 @@ describe('SidebarComponent.vue', () => {
   });
 
   it('calls the logout function and redirects to login', async () => {
-    const logoutItem = wrapper.findAll('.p-menuitem-content').at(8);
+    const logoutItem = wrapper.findAll('.p-menuitem-content').at(6);
     await logoutItem.trigger('click');
 
     expect(supabase.auth.signOut).toHaveBeenCalled();
@@ -89,10 +124,9 @@ describe('SidebarComponent.vue', () => {
   });
 
   it('toggles dark mode when the corresponding menu item is clicked', async () => {
-    const darkModeItem = wrapper.findAll('.p-menuitem-content').at(7);
+    const darkModeItem = wrapper.findAll('.p-menuitem-content').at(5);
     await darkModeItem.trigger('click');
 
     expect(mockToggleDark).toHaveBeenCalled();
   });
 });
-
