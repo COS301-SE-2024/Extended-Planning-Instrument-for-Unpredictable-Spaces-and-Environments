@@ -17,20 +17,26 @@
   },
   "dependencies": {
     "@fawmi/vue-google-maps": "^0.9.79",
-    "@googlemaps/js-api-loader": "^1.16.6",
+    "@googlemaps/js-api-loader": "^1.16.8",
     "@supabase/supabase-js": "^2.43.4",
     "@vue/cli-service": "^3.3.1",
     "@vueuse/core": "^10.10.0",
     "chart.js": "^4.4.3",
     "cors": "^2.8.5",
+    "date-fns": "^3.6.0",
+    "papaparse": "^5.4.1",
     "primeicons": "^7.0.0",
     "primevue": "^3.52.0",
     "qrcode.vue": "^3.4.1",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
     "vue": "^3.4.21",
     "vue-barcode-reader": "^1.0.3",
+    "vue-browser-geolocation": "^1.8.0",
     "vue-qrcode-reader": "^5.5.6",
     "vue-router": "^4.3.0",
     "vue-signature-pad": "^3.0.2",
+    "vue3-google-map": "^0.20.0",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
@@ -45,6 +51,7 @@
     "c8": "^9.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.23.0",
+    "flush-promises": "^1.0.2",
     "jsdom": "^24.0.0",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
@@ -53,7 +60,6 @@
     "vite": "^5.3.4",
     "vite-plugin-vue-devtools": "^7.0.25",
     "vitest": "^1.6.0",
-    "vue-browser-geolocation": "^1.8.0",
     "vue2-google-maps": "^0.10.7"
   }
 }

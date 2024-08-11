@@ -37,23 +37,22 @@ const signIn = async () => {
 
 // Sign in with OAuth provider
 const signInWithProvider = async (provider) => {
-  console.log(`signInWithProvider called with provider: ${provider}`);
+  console.log(`signInWithProvider called with provider: ${provider}`)
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo: `${window.location.origin}/callback`
     }
-  });
+  })
   if (error) {
-    alert(error.message);
+    alert(error.message)
   } else {
-    console.log(`Redirecting to ${provider} login page`)
+    // console.log(`Redirecting to ${provider} login page`)
     router.push({ name: 'callback' })
 
     // Do not navigate to the home page here, handle this in the callback
   }
-};
-
+}
 </script>
 
 <template>
@@ -69,21 +68,30 @@ const signInWithProvider = async (provider) => {
         'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
       ]"
     >
-      <i
-        :class="[isDark ? 'text-neutral-300' : 'text-neutral-700', 'mb-6 pi pi-truck']"
-        style="font-size: 2rem"
-      ></i>
-      <h1
+      <div class="flex items-center justify-center">
+        <img
+          v-if="isDark"
+          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          alt="Dark Mode Image"
+          class="mb-10"
+          style="width: 10rem; height: auto"
+        />
+        <img
+          v-else
+          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          alt="Light Mode Image"
+          class="mb-10"
+          style="width: 10rem; height: auto"
+        />
+      </div>
+      <p
         :class="[
-          isDark ? 'dark text-white' : 'text-neutral-800',
-          'mb-2 text-left text-3xl font-normal'
+          isDark ? 'text-white' : ' text-neutral-800 ',
+          'text-3xl flex items-center  font-bold mb-6 '
         ]"
       >
-        Sign in to Janeeb Solutions
-      </h1>
-      <h2 class="mb-10 text-neutral-700 dark:text-neutral-400 text-left">
-        Streamlined Cargo Solutions
-      </h2>
+        Sign in
+      </p>
 
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
@@ -101,7 +109,7 @@ const signInWithProvider = async (provider) => {
               isDark
                 ? 'text-white  bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-yellow-600'
+              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
             ]"
           />
         </div>
@@ -115,16 +123,20 @@ const signInWithProvider = async (provider) => {
           id="password"
           v-model="password"
           toggleMask
+          :invalid="value === null"
           required
           :feedback="false"
           :class="[
             !isDark ? 'text-white' : 'text-neutral-800',
-            'focus:ring-0 hover:ring-0 mb-8 mt-2'
+            'focus:ring-0 hover:ring-0 mb-6 mt-2'
           ]"
         />
+        <router-link to="/forgot-password" class="text-center text-md text-orange-500">
+          Forgot Password ?</router-link
+        >
         <button
           type="submit"
-          class="mb-6 sign-in-button w-full py-2 bg-yellow-700 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
         >
           Sign In
         </button>
@@ -135,7 +147,8 @@ const signInWithProvider = async (provider) => {
         </div>
 
         <div class="flex justify-center mb-8">
-          <button data-provider="google"
+          <button
+            data-provider="google"
             @click.prevent="signInWithProvider('google')"
             :class="[
               isDark
@@ -148,7 +161,8 @@ const signInWithProvider = async (provider) => {
               <i class="pi pi-google"></i>
             </div>
           </button>
-          <button data-provider="github"
+          <button
+            data-provider="github"
             @click.prevent="signInWithProvider('github')"
             :class="[
               isDark
@@ -170,7 +184,7 @@ const signInWithProvider = async (provider) => {
           ]"
         >
           Don't have an account ?
-          <router-link to="/SignUp" class="ml-2 text-yellow-600"> Sign up</router-link>
+          <router-link to="/SignUp" class="ml-2 text-orange-500"> Sign up</router-link>
         </p>
       </form>
     </div>
@@ -179,18 +193,22 @@ const signInWithProvider = async (provider) => {
         @click="toggleDark"
         :class="[
           isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-          'hover:transform hover:-translate-y-1 transition duration-300 mb-4 w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-8 flex flex-row items-center justify-center'
+          'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 mb-4 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
         ]"
       >
-        <p class="mr-4 text-gray-500 dark:text-gray-400 text-left">Dark Mode Toggle</p>
+        <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
+          <span v-if="isDark">Light Mode</span>
+          <span v-else>Dark Mode</span>
+        </p>
+
         <button class="focus:outline-none">
-          <i :class="[isDark ? 'pi pi-moon' : 'pi pi-sun', 'text-xl']"></i>
+          <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
         </button>
       </div>
 
       <p
         @click="toggleDialog"
-        class="flex items-center justify-center mr-4 text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        class="flex items-center justify-center mr-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help
       </p>
@@ -289,6 +307,11 @@ body {
   background-color: #171717;
   color: white;
   border: 1px solid #171717;
+}
+
+.specific-container .dark h1 {
+  color: white !important;
+  background-color: #262626 !important;
 }
 
 .dark .p-password input:focus {

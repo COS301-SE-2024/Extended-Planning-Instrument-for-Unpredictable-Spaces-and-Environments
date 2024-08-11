@@ -7,14 +7,35 @@ import { supabase } from '@/supabase'
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
-
+const dialogVisible = ref(false)
+const toggleDialog = () => {
+  dialogVisible.value = !dialogVisible.value
+}
 async function logout() {
   const { error } = await supabase.auth.signOut()
   if (error) {
     console.log(error)
   } else {
     router.push({ name: 'login' })
-    console.log('Log out successful')
+  }
+}
+//API CALLS FOR SHIPMENTS
+const shipmentsByProcessing = ref([])
+const getAllProcessing = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getAllProcessing' }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      console.log('Data', data.data)
+      shipmentsByProcessing.value = data.data
+      console.log('SHIPS', shipmentsByProcessing)
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
   }
 }
 
@@ -23,8 +44,7 @@ const items = [
     label: 'Current Shipments',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      console.log('Navigating to Dashboard')
-      router.push({ name: 'dashboard' }) // Navigate to the login page after logout
+      toggleDialog()
     }
   },
   {
@@ -33,7 +53,6 @@ const items = [
     severity: 'warning',
     badge: '5',
     command: () => {
-      console.log('Navigating to Messages')
       router.push({ name: '/' })
     }
   },
@@ -41,7 +60,6 @@ const items = [
     label: 'Profile',
     icon: 'pi pi-fw pi-user',
     command: () => {
-      console.log('Navigating to Profile')
       router.push({ name: '/' })
     }
   },
@@ -49,7 +67,6 @@ const items = [
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      console.log('Toggling Dark Mode')
       toggleDark() // Correctly call the toggle function
     }
   },
@@ -62,6 +79,47 @@ const items = [
     }
   }
 ]
+
+const packages = ref([])
+const getPackagesById = async (shipmentId) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({ type: 'getPackagesById', ShipmentID: shipmentId }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.log('API Error:', error)
+    } else {
+      console.log(data.data)
+      // packages.value = data.data
+      return data.data
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+const runPackingAlgo = async (shipmentId) => {
+  const result = await getPackagesById(shipmentId)
+  const { data, error } = await supabase.functions.invoke('packing', {
+    body: JSON.stringify({ boxes_data: result, container_dimensions: [1200, 1380, 2800] }),
+    method: 'POST'
+  })
+
+  if (error) {
+    console.log('PACKING API ERROR: ', error)
+  } else {
+    console.log('PACKING API SUCCESS')
+    router.push({ name: '3DTruck', params: { packingData: JSON.stringify(data) } })
+  }
+}
+const handleSelectShipment = (shipmentId) => {
+  runPackingAlgo(shipmentId)
+}
+
+onMounted(() => {
+  getAllProcessing()
+})
 </script>
 
 <template>
@@ -88,7 +146,7 @@ const items = [
             v-if="item.badge"
             :class="{ 'ml-auto': !root, 'ml-2': root }"
             :value="item.badge"
-            class="bg-yellow-500 text-black px-2"
+            class="bg-orange-600 text-black px-2"
           />
           <span
             v-if="item.shortcut"
@@ -109,7 +167,7 @@ const items = [
                 isDark
                   ? 'border-neutral-500 bg-neutral-950 text-white'
                   : 'border-gray-500 bg-white text-black',
-                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
+                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-orange-600'
               ]"
             >
               <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
@@ -125,6 +183,51 @@ const items = [
         </div>
       </template>
     </Menubar>
+    <Dialog
+      header="Edit User Profile"
+      v-model:visible="dialogVisible"
+      :modal="true"
+      :closable="false"
+      class="z-100000 w-[auto] p-4 relative"
+    >
+      <div
+        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+        class="mb-4"
+      >
+        <p class="text-3xl mb-2">Current Shipments:</p>
+      </div>
+      <div v-if="isLoading">Loading shipments...</div>
+      <div v-else-if="errorMessage">{{ errorMessage }}</div>
+      <div v-else class="pb-12">
+        <!-- Adjust padding to avoid overlap -->
+        <div v-for="shipment in shipmentsByProcessing" :key="shipment.id" class="mb-8">
+          <p class="text-neutral-400 text-lg">Shipment Status:</p>
+          <p class="text-lg">{{ shipment.Status }}</p>
+          <p class="text-neutral-500 text-lg">Shipment ID:</p>
+          <p class="text-lg">{{ shipment.id }}</p>
+          <p class="text-neutral-400 text-lg">Destination:</p>
+          <p class="text-lg mb-2">{{ shipment.Destination }}</p>
+          <Button
+            @click="handleSelectShipment(shipment.id)"
+            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
+            >Select Shipment</Button
+          >
+        </div>
+        <div v-if="shipmentsByProcessing.length === 0">No shipments found.</div>
+      </div>
+      <div
+        :class="[
+          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+          'focus:outline-none focus:ring-0'
+        ]"
+        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+      >
+        <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+          >Close</Button
+        >
+      </div>
+    </Dialog>
   </div>
 </template>
 

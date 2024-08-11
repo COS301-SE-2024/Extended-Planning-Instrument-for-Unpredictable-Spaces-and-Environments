@@ -244,7 +244,7 @@ const images = ref([
             ]"
           ></div>
           <Button
-            class="w-full bg-yellow-700 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
+            class="w-full bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
             @click="dialogVisible = true"
           >
             <span>Scan Barcode</span>
@@ -255,7 +255,7 @@ const images = ref([
       </Accordion>
       <p
         @click="toggleDialog"
-        class="flex items-center justify-center mt-4 text-yellow-600 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help
       </p>
@@ -297,7 +297,7 @@ const images = ref([
         icon="pi pi-arrow-left"
         iconPos="left"
         label="Back"
-        class="font-semibold w-auto p-button-text text-yellow-700 p-2"
+        class="font-semibold w-auto p-button-text text-orange-500 p-2"
         @click="dialogVisible = false"
       />
     </div>
