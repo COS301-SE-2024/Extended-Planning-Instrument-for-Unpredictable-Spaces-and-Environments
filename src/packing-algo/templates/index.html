@@ -67,6 +67,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script>
       let scene, camera, renderer, controls, truck, trailer, wheels;
+      // Global variables
+      let containerGeometry, containerMaterial, containerMesh;
+
       const socket = io();
       const scale = 0.1; // Ensure this scale is consistent with the dimensions in Python
       let generations = [];
@@ -228,49 +231,56 @@
         document.getElementById('update-trailer').addEventListener('click', updateTrailerSize);
       }
   
-
       function displayFullSolution() {
-        if (truck) {
-          scene.children = scene.children.filter(
+    if (truck) {
+        // Clean up existing objects
+        scene.children = scene.children.filter(
             (child) =>
-              child === controls.getObject() || child === truck || child.name === 'axesHelper'
-          );
-          if (layerBoxes && layerBoxes.length > 0) {
-            // Adjust container visualization
-            const containerWidth = 1200; // Set your container width
-            const containerHeight = 1380; // Set your container height
-            const containerLength = 2800; // Set your container length
+                child === controls.getObject() || child === truck || child.name === 'axesHelper'
+        );
 
-            const containerGeometry = new THREE.BoxGeometry(
-              containerWidth * scale,
-              containerHeight * scale,
-              containerLength * scale
-            );
-            const containerMaterial = new THREE.MeshBasicMaterial({
-              color: 0xffffff, // White color for the container wireframe
-              wireframe: true
+        if (layerBoxes && layerBoxes.length > 0) {
+            // Define default dimensions or use variables
+            const containerWidth = 1200 * scale;
+            const containerHeight = 1380 * scale;
+            const containerLength = 2800 * scale;
+
+            // Initialize container geometry and material
+            containerGeometry = new THREE.BoxGeometry(containerWidth, containerHeight, containerLength);
+            containerMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                wireframe: true
             });
-            const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
 
-            // Position the container so its back left corner is at (0, containerHeight * scale / 2, 0)
+            // Create and add the container mesh
+            containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
+            containerMesh.name = 'containerMesh';
+
+            // Position the container
             containerMesh.position.set(
-              (containerWidth * scale) / 2,
-              (containerHeight * scale) / 2,
-              (containerLength * scale) / 2
+                containerWidth / 2,
+                containerHeight / 2,
+                containerLength / 2
             );
             scene.add(containerMesh);
 
+            // Debugging
+            console.log('Initial container added with dimensions:', containerWidth, containerHeight, containerLength);
+            console.log('Container Mesh:', containerMesh);
+
             layerBoxes.flat().forEach((box) => {
-              addBoxToScene(box, box.container, 0, box.minWeight, box.maxWeight, true);
+                addBoxToScene(box, box.container, 0, box.minWeight, box.maxWeight, true);
             });
-          }
-          document.getElementById('prevButton').style.display = 'none';
-          document.getElementById('nextButton').style.display = 'none';
-          document.getElementById('layerInfo').style.display = 'none';
-        } else {
-          console.error('Truck model is not loaded yet');
         }
-      }
+
+        document.getElementById('prevButton').style.display = 'none';
+        document.getElementById('nextButton').style.display = 'none';
+        document.getElementById('layerInfo').style.display = 'none';
+    } else {
+        console.error('Truck model is not loaded yet');
+    }
+}
+
       function toggleInstructions() {
         isShowingInstructions = !isShowingInstructions;
         const showInstructionsButton = document.getElementById('showInstructionsButton');
@@ -654,33 +664,46 @@
         // Store the original scale
         const originalScaleY = trailer.scale.y;
         const originalLength = originalScaleY * 20;
+        const originalScaleZ = trailer.scale.z;
+        const originalHeight = originalScaleZ * 20;
+        const originalScaleX = trailer.scale.x;
+        const originalWidth = originalScaleX * 20;
 
         // Calculate new scales
         const newScaleX = width / 20;
         const newScaleY = length / 20;
         const newScaleZ = height / 20;
 
+        // Calculate the scaling ratios
+        const lengthRatio = newScaleY / originalScaleY;
+        const heightRatio = newScaleZ / originalScaleZ;
+        const widthRatio = newScaleX / originalScaleX;
+
         // Apply the new scale
         trailer.scale.set(newScaleX, newScaleY, newScaleZ);
-        displayFullSolution(newScaleX, newScaleZ, newScaleY);
+        
         // Reset the trailer's position to the origin after scaling
         trailer.position.set(0, 0, 0);
 
-        // Calculate the new length
-        const newLength = newScaleY * 20;
-
-        // Calculate the ratio of the new length to the original length
-        const lengthRatio = newLength - originalLength;
+        // Update the white box dimensions
+        adjustWhiteBox(widthRatio, heightRatio, lengthRatio);
 
         // Log values for debugging
         console.log('Original Length:', originalLength);
-        console.log('New Length:', newLength);
+        console.log('New Length:', newScaleY * 20);
         console.log('Length Ratio:', lengthRatio);
+        console.log('Original Height:', originalHeight);
+        console.log('New Height:', newScaleZ * 20);
+        console.log('Height Ratio:', heightRatio);
+        console.log('Original Width:', originalWidth);
+        console.log('New Width:', newScaleX * 20);
+        console.log('Width Ratio:', widthRatio);
 
         // Adjust the wheels' position based on the length ratio
         if (wheels) {
+            const lengthDifference = (newScaleY - originalScaleY) * 20;
             console.log('Current Wheels Position:', wheels.position); // Log before update
-            wheels.position.z += lengthRatio / 10; // Adjust wheels' z position based on the ratio
+            wheels.position.z += lengthDifference / 10; // Adjust wheels' z position based on the ratio
             console.log('Updated Wheels Position:', wheels.position); // Log after update
         } else {
             console.error('Wheels object is not loaded or not available');
@@ -693,6 +716,43 @@
         console.error('Trailer model is not loaded yet');
     }
 }
+function adjustWhiteBox(widthRatio, heightRatio, lengthRatio) {
+    if (containerMesh) {
+        // Get the current dimensions of the white box
+        const currentWidth = containerMesh.scale.x * 120; // Original width
+        const currentHeight = containerMesh.scale.y * 138; // Original height
+        const currentLength = containerMesh.scale.z * 280; // Original length
+
+        // Calculate the new dimensions
+        const newWidth = currentWidth * widthRatio;
+        const newHeight = currentHeight * heightRatio;
+        const newLength = currentLength * lengthRatio;
+
+        // Calculate the offsets to keep the front left corner in place
+        const offsetX = (newWidth - currentWidth) / 2;
+        const offsetY = (newHeight - currentHeight) / 2;
+        const offsetZ = (newLength - currentLength) / 2;
+
+        // Apply scaling
+        containerMesh.scale.set(
+            containerMesh.scale.x * widthRatio,
+            containerMesh.scale.y * heightRatio,
+            containerMesh.scale.z * lengthRatio
+        );
+
+        // Adjust the position to keep the front left corner in place
+        containerMesh.position.set(
+            containerMesh.position.x + offsetX,
+            containerMesh.position.y + offsetY,
+            containerMesh.position.z + offsetZ
+        );
+
+        console.log(`Updated container with new dimensions: ${containerMesh.scale.x * 120} ${containerMesh.scale.y * 138} ${containerMesh.scale.z * 280}`);
+    } else {
+        console.error('Container mesh is not defined');
+    }
+}
+
       function animate() {
         requestAnimationFrame(animate);
 
