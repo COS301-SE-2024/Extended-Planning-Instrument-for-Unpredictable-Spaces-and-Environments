@@ -10,6 +10,8 @@ const supabaseUser = createClient(supabaseUrl, supabaseKey)
 
 //ALGO
 import { geneticAlgorithm } from './algorithm.ts'
+import { getPackagesById } from '../core/Packages/getPackagesById.ts'
+import { updateFitnessValue } from './updateFitnessValue.ts'
 
 
 function defaultResponse() {
@@ -40,15 +42,56 @@ Deno.serve(async (req) => {
     if (req.method === 'POST') {
       const requestBody = await req.json()
       if (requestBody.type == 'geneticAlgorithm') {
-        return responseBuilder(
-          await geneticAlgorithm(
-            requestBody.boxesData,
-            requestBody.containerDimensions,
-            150,
-            300,
-            0.01
-          )
-        )
+        // Invoke the Supabase function to get packages by Shipment ID
+        const { data, error } = await supabaseUser.functions.invoke('core', {
+          body: JSON.stringify({ type: 'getPackagesById', ShipmentID: requestBody.ShipmentID }),
+          method: 'POST'
+        });
+      
+        if (error) {
+          console.error('Error fetching packages:', error);
+          // Handle the error (e.g., return an error response, throw an exception, etc.)
+          return responseBuilder({ error: 'Failed to fetch packages.' });
+        }
+      
+        if (data) {
+          const boxesData = data.data; // Assuming `data.data` contains the list of boxes
+      
+          if (requestBody.type == 'geneticAlgorithm') {
+            // Run the genetic algorithm and get the result
+            const algorithmResult = await geneticAlgorithm(
+              boxesData,
+              requestBody.containerDimensions,
+              150,
+              300,
+              0.01
+            );
+      
+            // Assuming the algorithmResult contains the fitness value
+            const fitnessValue = algorithmResult.data.fitness;
+      
+            // Update the fitness value in the Shipment table
+            const updateResult = await updateFitnessValue(supabaseUser, requestBody.ShipmentID, fitnessValue);
+      
+            if (updateResult.error) {
+              console.error('Error updating fitness value:', updateResult.error);
+              return responseBuilder({ error: 'Failed to update fitness value.' });
+            }
+      
+            // Return the result of the genetic algorithm after updating the fitness value
+            return responseBuilder(algorithmResult);
+          }
+        }
+      }
+      
+      if (requestBody.type == 'updateFitnessValue') {
+            return responseBuilder(
+              await updateFitnessValue(
+                supabaseUser,
+                requestBody.ShipmentId,
+                requestBody.newFitnessValue
+              )
+            );
       }
       else {
         return defaultResponse()
