@@ -1,7 +1,7 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router' // Import the router
+import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 
 const isDark = useDark()
@@ -19,6 +19,8 @@ async function logout() {
     router.push({ name: 'login' })
   }
 }
+const emit = defineEmits(['handle-json'])
+
 //API CALLS FOR SHIPMENTS
 const shipmentsByProcessing = ref([])
 const getAllProcessing = async () => {
@@ -65,29 +67,15 @@ const items = [
   }
 ]
 
-const packages = ref([])
-const getPackagesById = async (shipmentId) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'getPackagesById', ShipmentID: shipmentId }),
-      method: 'POST'
-    })
-
-    if (error) {
-      console.log('API Error:', error)
-    } else {
-      console.log(data.data)
-      // packages.value = data.data
-      return data.data
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error)
-  }
-}
+const packingResults = ref(null)
 const runPackingAlgo = async (shipmentId) => {
-  const result = await getPackagesById(shipmentId)
+  console.log('Shipment Id:', shipmentId)
   const { data, error } = await supabase.functions.invoke('packing', {
-    body: JSON.stringify({ boxes_data: result, container_dimensions: [1200, 1380, 2800] }),
+    body: JSON.stringify({
+      type: 'geneticAlgorithm',
+      ShipmentID: shipmentId,
+      containerDimensions: [1200, 1380, 2800]
+    }),
     method: 'POST'
   })
 
@@ -95,7 +83,7 @@ const runPackingAlgo = async (shipmentId) => {
     console.log('PACKING API ERROR: ', error)
   } else {
     console.log('PACKING API SUCCESS')
-    router.push({ name: '3DTruck', params: { packingData: JSON.stringify(data) } })
+    emit('handle-json', data)
   }
 }
 const handleSelectShipment = (shipmentId) => {

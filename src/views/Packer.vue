@@ -1,30 +1,31 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import * as THREE from 'three'
 import PackerSidebar from '@/components/PackerSidebar.vue'
 import { supabase } from '../supabase'
-import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
+import { QrcodeStream } from 'vue-qrcode-reader'
 import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 const CONTAINER_SIZE = { width: 2000, height: 2000, depth: 2000 }
+const packingData = ref(null)
 
-const packingData = {
-  data: {
-    fitness: 0.014184397163120567,
-    boxes: [
-      { id: 43, width: 500, height: 500, length: 500, x: 0, y: 0, z: 0 },
-      { id: 53, width: 293, height: 149, length: 224, x: 500, y: 0, z: 0 },
-      { id: 49, width: 335, height: 255, length: 290, x: 0, y: 500, z: 0 },
-      { id: 44, width: 255, height: 300, length: 275, x: 0, y: 755, z: 0 },
-      { id: 47, width: 375, height: 255, length: 355, x: 0, y: 0, z: 500 },
-      { id: 62, width: 280, height: 75.5, length: 198.5, x: 793, y: 0, z: 0 },
-      { id: 58, width: 240.5, height: 165, length: 141.5, x: 793, y: 75.5, z: 0 }
-    ]
-  }
-}
+// const packingData = {
+//   data: {
+//     fitness: 0.014184397163120567,
+//     boxes: [
+//       { id: 43, width: 500, height: 500, length: 500, x: 0, y: 0, z: 0 },
+//       { id: 53, width: 293, height: 149, length: 224, x: 500, y: 0, z: 0 },
+//       { id: 49, width: 335, height: 255, length: 290, x: 0, y: 500, z: 0 },
+//       { id: 44, width: 255, height: 300, length: 275, x: 0, y: 755, z: 0 },
+//       { id: 47, width: 375, height: 255, length: 355, x: 0, y: 0, z: 500 },
+//       { id: 62, width: 280, height: 75.5, length: 198.5, x: 793, y: 0, z: 0 },
+//       { id: 58, width: 240.5, height: 165, length: 141.5, x: 793, y: 75.5, z: 0 }
+//     ]
+//   }
+// }
 
 const toast = useToast()
 const isDark = useDark()
@@ -36,21 +37,39 @@ async function getUsername() {
   userName = data.session.user.identities[0].identity_data.name
   console.log(userName)
 }
-onMounted(() => {
-  getUsername()
-  nextTick(() => {
-    initThreeJS('three-container-1', isDark.value)
-    initThreeJS('three-container-2', isDark.value)
-    initThreeJS('three-container-3', isDark.value)
-  })
-})
-const dialogVisible = ref(false)
 
+onMounted(() => {
+  watch(
+    packingData,
+    (newPackingData) => {
+      // console.log('MEWER : ', newPackingData)
+      // console.log('MEW STREAK : ', packingData)
+      if (newPackingData) {
+        // No need to parse if it's already an object
+        packingData.value = newPackingData
+        nextTick(() => {
+          initThreeJS('three-container-1', isDark.value)
+          initThreeJS('three-container-2', isDark.value)
+          initThreeJS('three-container-3', isDark.value)
+        })
+      }
+    },
+    { immediate: true }
+  )
+})
+
+const dialogVisible = ref(false)
+let containerSize = { width: 2000, height: 2000, depth: 2000 }
 function initThreeJS(containerId, isDark) {
   const container = document.getElementById(containerId)
   if (!container) {
     console.error(`No container found for Three.js scene: ${containerId}`)
     return
+  }
+  containerSize = packingData.value.containerDimensions || {
+    width: 2000,
+    height: 2000,
+    depth: 2000
   }
 
   const scene = new THREE.Scene()
@@ -83,13 +102,13 @@ function initThreeJS(containerId, isDark) {
   scene.add(directionalLight)
 
   // Create container
-  createContainer(scene)
+  createContainer(scene, containerSize)
 
   // Create boxes from packing data
-  createBoxesFromData(scene, packingData.data.boxes)
+  createBoxesFromData(scene, packingData.value.boxes)
 
   // Add scale
-  addScale(scene)
+  addScale(scene, containerSize)
 
   function animate() {
     requestAnimationFrame(animate)
@@ -109,9 +128,9 @@ function initThreeJS(containerId, isDark) {
 
 function createContainer(scene) {
   const geometry = new THREE.BoxGeometry(
-    CONTAINER_SIZE.width,
-    CONTAINER_SIZE.height,
-    CONTAINER_SIZE.depth
+    containerSize.width,
+    containerSize.height,
+    containerSize.depth
   )
   const material = new THREE.MeshPhongMaterial({
     color: 0xcccccc,
@@ -149,8 +168,8 @@ function createBoxesFromData(scene, boxesData) {
     mesh.add(wireframe)
   })
 }
-function addScale(scene) {
-  const axesHelper = new THREE.AxesHelper(CONTAINER_SIZE.width)
+function addScale(scene, containerSize) {
+  const axesHelper = new THREE.AxesHelper(containerSize.width)
   scene.add(axesHelper)
 
   // Add labels for each axis
@@ -267,6 +286,10 @@ const images = ref([
   { src: 'https://example.com/image2.jpg', alt: 'Image 2' },
   { src: 'https://example.com/image3.jpg', alt: 'Image 3' }
 ])
+
+const handleJsonData = (json) => {
+  packingData.value = json._isRef ? json.value : json.data
+}
 </script>
 
 <template>
@@ -276,7 +299,7 @@ const images = ref([
       ' h-full flex flex-col shadow-lg'
     ]"
   >
-    <PackerSidebar />
+    <PackerSidebar @handle-json="handleJsonData" />
 
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
