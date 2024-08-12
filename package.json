@@ -57,6 +57,7 @@
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.3",
     "three": "^0.165.0",
+    "typescript": "^5.5.4",
     "vite": "^5.3.4",
     "vite-plugin-vue-devtools": "^7.0.25",
     "vitest": "^1.6.0",
