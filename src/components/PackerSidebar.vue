@@ -41,28 +41,13 @@ const getAllProcessing = async () => {
 
 const items = [
   {
-    label: 'Current Shipments',
+    label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
       toggleDialog()
     }
   },
-  {
-    label: 'Messages',
-    icon: 'pi pi-fw pi-envelope',
-    severity: 'warning',
-    badge: '5',
-    command: () => {
-      router.push({ name: '/' })
-    }
-  },
-  {
-    label: 'Profile',
-    icon: 'pi pi-fw pi-user',
-    command: () => {
-      router.push({ name: '/' })
-    }
-  },
+
   {
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
