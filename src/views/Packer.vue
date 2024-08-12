@@ -7,6 +7,24 @@ import { supabase } from '../supabase'
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
 import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+
+const CONTAINER_SIZE = { width: 2000, height: 2000, depth: 2000 }
+
+const packingData = {
+  data: {
+    fitness: 0.014184397163120567,
+    boxes: [
+      { id: 43, width: 500, height: 500, length: 500, x: 0, y: 0, z: 0 },
+      { id: 53, width: 293, height: 149, length: 224, x: 500, y: 0, z: 0 },
+      { id: 49, width: 335, height: 255, length: 290, x: 0, y: 500, z: 0 },
+      { id: 44, width: 255, height: 300, length: 275, x: 0, y: 755, z: 0 },
+      { id: 47, width: 375, height: 255, length: 355, x: 0, y: 0, z: 500 },
+      { id: 62, width: 280, height: 75.5, length: 198.5, x: 793, y: 0, z: 0 },
+      { id: 58, width: 240.5, height: 165, length: 141.5, x: 793, y: 75.5, z: 0 }
+    ]
+  }
+}
 
 const toast = useToast()
 const isDark = useDark()
@@ -34,76 +52,49 @@ function initThreeJS(containerId, isDark) {
     console.error(`No container found for Three.js scene: ${containerId}`)
     return
   }
-  console.log(`Container found: ${containerId}`, container)
 
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(
     75,
     container.clientWidth / container.clientHeight,
     0.1,
-    1000
+    10000
   )
-  camera.position.z = 10
+  camera.position.set(CONTAINER_SIZE.width, CONTAINER_SIZE.height, CONTAINER_SIZE.depth)
 
-  const renderer = new THREE.WebGLRenderer()
+  const renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
   renderer.setClearColor(isDark ? 0x000000 : 0xffffff)
   container.appendChild(renderer.domElement)
-  console.log(`Renderer appended to container: ${containerId}`)
 
-  const geometry = new THREE.BoxGeometry(5, 3, 3)
-  const material = new THREE.MeshBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.1 })
-  const cube = new THREE.Mesh(geometry, material)
-  scene.add(cube)
-  console.log(`Cube added to scene: ${containerId}`, cube)
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = true
+  controls.dampingFactor = 0.25
+  controls.screenSpacePanning = false
+  controls.maxPolarAngle = Math.PI / 2
 
-  const edges = new THREE.EdgesGeometry(geometry)
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xa16207 })
-  const line = new THREE.LineSegments(edges, lineMaterial)
-  scene.add(line)
-  console.log(`Edges added to scene: ${containerId}`, line)
+  // Add ambient light
+  const ambientLight = new THREE.AmbientLight(0x404040)
+  scene.add(ambientLight)
 
-  let isDragging = false
-  let previousMousePosition = {
-    x: 0,
-    y: 0
-  }
+  // Add directional light
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+  directionalLight.position.set(1, 1, 1)
+  scene.add(directionalLight)
 
-  container.addEventListener('mousedown', (event) => {
-    isDragging = true
-  })
+  // Create container
+  createContainer(scene)
 
-  container.addEventListener('mousemove', (event) => {
-    if (!isDragging) {
-      return
-    }
+  // Create boxes from packing data
+  createBoxesFromData(scene, packingData.data.boxes)
 
-    const deltaMove = {
-      x: event.offsetX - previousMousePosition.x,
-      y: event.offsetY - previousMousePosition.y
-    }
-
-    const deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
-    )
-
-    cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion)
-    line.quaternion.multiplyQuaternions(deltaRotationQuaternion, line.quaternion)
-
-    previousMousePosition = {
-      x: event.offsetX,
-      y: event.offsetY
-    }
-  })
-
-  window.addEventListener('mouseup', () => {
-    isDragging = false
-  })
+  // Add scale
+  addScale(scene)
 
   function animate() {
     requestAnimationFrame(animate)
+    controls.update()
     renderer.render(scene, camera)
-    // console.log(`Rendering scene: ${containerId}`)
   }
   animate()
 
@@ -113,27 +104,86 @@ function initThreeJS(containerId, isDark) {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
-    console.log(`Window resized, updated renderer size: ${containerId}`)
+  })
+}
+
+function createContainer(scene) {
+  const geometry = new THREE.BoxGeometry(
+    CONTAINER_SIZE.width,
+    CONTAINER_SIZE.height,
+    CONTAINER_SIZE.depth
+  )
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xcccccc,
+    transparent: true,
+    opacity: 0.2,
+    side: THREE.BackSide
+  })
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.position.set(CONTAINER_SIZE.width / 2, CONTAINER_SIZE.height / 2, CONTAINER_SIZE.depth / 2)
+  scene.add(mesh)
+
+  // Add wireframe
+  const edgesGeometry = new THREE.EdgesGeometry(geometry)
+  const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+  const wireframe = new THREE.LineSegments(edgesGeometry, edgesMaterial)
+  mesh.add(wireframe)
+}
+
+function createBoxesFromData(scene, boxesData) {
+  boxesData.forEach((box) => {
+    const geometry = new THREE.BoxGeometry(box.width, box.height, box.length)
+    const material = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+      transparent: true,
+      opacity: 0.7
+    })
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.set(box.x + box.width / 2, box.y + box.height / 2, box.z + box.length / 2)
+    scene.add(mesh)
+
+    // Add wireframe
+    const edgesGeometry = new THREE.EdgesGeometry(geometry)
+    const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+    const wireframe = new THREE.LineSegments(edgesGeometry, edgesMaterial)
+    mesh.add(wireframe)
+  })
+}
+function addScale(scene) {
+  const axesHelper = new THREE.AxesHelper(CONTAINER_SIZE.width)
+  scene.add(axesHelper)
+
+  // Add labels for each axis
+  const labels = ['X', 'Y', 'Z']
+  const positions = [
+    [CONTAINER_SIZE.width, 0, 0],
+    [0, CONTAINER_SIZE.height, 0],
+    [0, 0, CONTAINER_SIZE.depth]
+  ]
+
+  labels.forEach((label, index) => {
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
+    const textMesh = new THREE.Mesh(new THREE.BufferGeometry(), textMaterial)
+    textMesh.position.set(...positions[index])
+    scene.add(textMesh)
   })
 
-  function toRadians(angle) {
-    return angle * (Math.PI / 180)
-  }
+  // Add scale markers
+  for (let i = 0; i <= CONTAINER_SIZE.width; i += 100) {
+    const markerGeometry = new THREE.BoxGeometry(5, 5, 5)
+    const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
+    const marker = new THREE.Mesh(markerGeometry, markerMaterial)
+    marker.position.set(i, 0, 0)
+    scene.add(marker)
 
-  function createTextSprite(message) {
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-    context.font = 'Bold 50px Arial'
-    context.fillStyle = 'rgba(255,255,255,0.95)'
-    context.fillText(message, 0, 50)
-
-    const texture = new THREE.CanvasTexture(canvas)
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
-    const sprite = new THREE.Sprite(spriteMaterial)
-    sprite.scale.set(5, 2.5, 1.0)
-    return sprite
+    // Add text label for the marker
+    const labelMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
+    const label = new THREE.Mesh(new THREE.BufferGeometry(), labelMaterial)
+    label.position.set(i, -50, 0)
+    scene.add(label)
   }
 }
+
 const userMediaSupported = ref(true)
 
 const onInit = (promise) => {
