@@ -2,6 +2,7 @@ from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 import math
 import os
+import subprocess
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -106,6 +107,80 @@ def handle_remaining_volume(volume_data):
             container["total_remaining_volume"] = volume_data["total_remaining_volume"]
             break
     emit('update_data', data, room='main_room', broadcast=True)
+
+@socketio.on('run_packing_algorithm')
+def handle_run_packing_algorithm(data):
+    print("Received 'run_packing_algorithm' event with dimensions:", data)
+
+    import subprocess
+    import sys
+    import os
+
+    python_executable = sys.executable  # This will get the current Python interpreter path
+
+    # Define the relative path to the packing.py script
+    script_path = os.path.join(os.path.dirname(__file__), 'packing.py')
+
+    # Extract the dimensions from the data received
+    container_width = data.get('width', 1200)  # Default to 1200 if not provided
+    container_height = data.get('height', 1380)  # Default to 1380 if not provided
+    container_length = data.get('length', 2800)  # Default to 2800 if not provided
+
+    print(f"Running packing.py with dimensions: width={container_width}, height={container_height}, length={container_length}")
+
+    try:
+        result = subprocess.run(
+            [python_executable, script_path, str(container_width), str(container_height), str(container_length)],
+            check=True, capture_output=True, text=True
+        )
+        print("Packing algorithm output:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("Error running packing.py:", e.stderr)
+
+# Global variable to store the updated container dimensions
+# Global variable to store the updated container dimensions
+# Global variables to store the dimensions
+current_width = 1200  # Default starting values
+current_height = 1380
+current_length = 2800
+
+@socketio.on('update_container_dimensions')
+def handle_update_container_dimensions(data):
+    global current_width, current_height, current_length
+    current_width = data['width']
+    current_height = data['height']
+    current_length = data['length']
+    print(f"Updated container dimensions received: {current_width}x{current_height}x{current_length}")
+
+@socketio.on('run_packing_algorithm')
+def handle_run_packing_algorithm(data):
+    print("Received 'run_packing_algorithm' event")
+    
+    global current_width, current_height, current_length
+    
+    print(f"Running packing algorithm with dimensions: {current_width}x{current_height}x{current_length}")
+    
+    import subprocess
+    import sys
+    import os
+
+    python_executable = sys.executable  # This will get the current Python interpreter path
+
+    # Define the relative path to the packing.py script
+    script_path = os.path.join(os.path.dirname(__file__), 'packing.py')
+
+    try:
+        # Pass the dimensions as command-line arguments to packing.py
+        result = subprocess.run(
+            [python_executable, script_path, str(current_width), str(current_height), str(current_length)], 
+            check=True, 
+            capture_output=True, 
+            text=True
+        )
+        print("Packing algorithm output:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("Error running packing.py:", e.stderr)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -45,6 +45,12 @@
         margin-bottom: 10px;
         width: 60px;
       }
+      /* Style for execute button */
+      #executeButtonContainer {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+      }
     </style>
   </head>
   <body>
@@ -61,17 +67,24 @@
       <button id="update-trailer">Update Trailer Size</button>
     </div>
 
+    <!-- Execute Packing Algorithm Button -->
+    <div id="executeButtonContainer">
+      <button id="runPackingButton" style="position: absolute; bottom: 10px; left: 10px;">Run Packing Algorithm</button>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script>
       let scene, camera, renderer, controls, truck, trailer, wheels;
-      // Global variables
       let containerGeometry, containerMaterial, containerMesh;
+      let updatedWidth = 1200; // Initial values
+      let updatedHeight = 1380;
+      let updatedLength = 2800;
 
       const socket = io();
-      const scale = 0.1; // Ensure this scale is consistent with the dimensions in Python
+      const scale = 0.1;
       let generations = [];
       let moveForward = false,
         moveBackward = false,
@@ -83,7 +96,7 @@
       const velocity = new THREE.Vector3();
       const direction = new THREE.Vector3();
       let lastBox;
-      let layerBoxes = []; // Ensure layerBoxes is defined
+      let layerBoxes = [];
 
       let currentSection = 0;
       let isShowingInstructions = false;
@@ -93,54 +106,57 @@
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(350, 75, 200);
         camera.lookAt(0, 0, 100);
-
-        // Change the background color to gray for better visibility
         scene.background = new THREE.Color(0x808080);
 
-        // Add Ambient Light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // Increased intensity for better visibility
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity for better visibility
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(50, 50, 50);
-        directionalLight.castShadow = true; // Enable shadows
+        directionalLight.castShadow = true;
         scene.add(directionalLight);
 
-        // Initialize Renderer
         renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Initialize Controls
         controls = new THREE.PointerLockControls(camera, document.body);
-
         const instructions = document.getElementById('instructions');
-        instructions.addEventListener('click', () => {
-          controls.lock();
-        });
+        instructions.addEventListener('click', () => controls.lock());
 
-        controls.addEventListener('lock', () => {
-          instructions.style.display = 'none';
-        });
+        document.getElementById('runPackingButton').addEventListener('click', function() {
+    console.log("Button clicked, emitting 'run_packing_algorithm' event");
 
-        controls.addEventListener('unlock', () => {
-          instructions.style.display = '';
-        });
+    // Use the updated dimensions for the algorithm
+    socket.emit('run_packing_algorithm', {
+        width: updatedWidth,
+        height: updatedHeight,
+        length: updatedLength
+    });
+});
+
+
+
+
+      socket.on('algorithm_started', function(data) {
+        console.log(data.status);  // This will print "Algorithm started running" when the server responds
+      });
+
+        controls.addEventListener('lock', () => instructions.style.display = 'none');
+        controls.addEventListener('unlock', () => instructions.style.display = '');
 
         scene.add(controls.getObject());
 
-        // Event Listeners
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keydown', onKeyDown);
         window.addEventListener('keyup', onKeyUp);
         onWindowResize();
 
         createAxesHelper();
-        socket.emit('get_data'); // Request initial data
+        socket.emit('get_data');
         socket.on('update_data', updateData);
         animate();
 
-        // Add UI Buttons
         const showInstructionsButton = document.createElement('button');
         showInstructionsButton.id = 'showInstructionsButton';
         showInstructionsButton.textContent = 'Show Instructions';
@@ -180,29 +196,22 @@
         document.getElementById('nextButton').style.display = 'none';
         document.getElementById('layerInfo').style.display = 'none';
 
-        // Add a grid helper for better scene visualization
         const gridHelper = new THREE.GridHelper(200, 50);
         scene.add(gridHelper);
 
-        // Load the truck model
         const loader = new THREE.GLTFLoader();
         loader.load(
           '/truck/finalTruck.glb',
           function (gltf) {
             truck = gltf.scene;
             scene.add(truck);
-
-            // Correctly scale the entire truck (including the trailer)
             truck.scale.set(20, 20, 20);
 
             trailer = truck.getObjectByName('Trailer');
             wheels = truck.getObjectByName('Wheels');
 
             if (trailer) {
-              // Scale the trailer to the correct initial size
               trailer.scale.set(3, 3, 3);
-
-              // Set the initial values in the input boxes to match the trailer's scale
               document.getElementById('trailer-width').value = trailer.scale.x * 20;
               document.getElementById('trailer-height').value = trailer.scale.z * 20;
               document.getElementById('trailer-length').value = trailer.scale.y * 20;
@@ -227,47 +236,47 @@
           }
         );
 
-        // Event listener for updating trailer size
         document.getElementById('update-trailer').addEventListener('click', updateTrailerSize);
       }
-  
+
       function displayFullSolution() {
     if (truck) {
-        // Clean up existing objects
+        // Filter the scene to retain only essential objects
         scene.children = scene.children.filter(
             (child) =>
-                child === controls.getObject() || child === truck || child.name === 'axesHelper'
+                child === controls.getObject() || 
+                child === truck || 
+                child.name === 'axesHelper' || 
+                child.name === 'containerMesh' // Retain the white box
         );
 
-        if (layerBoxes && layerBoxes.length > 0) {
-            // Define default dimensions or use variables
+        // If the white box doesn't exist yet, create it
+        if (!containerMesh) {
             const containerWidth = 1200 * scale;
             const containerHeight = 1380 * scale;
             const containerLength = 2800 * scale;
 
-            // Initialize container geometry and material
             containerGeometry = new THREE.BoxGeometry(containerWidth, containerHeight, containerLength);
             containerMaterial = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
                 wireframe: true
             });
 
-            // Create and add the container mesh
             containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
             containerMesh.name = 'containerMesh';
 
-            // Position the container
+            // Initial position for the container
             containerMesh.position.set(
                 containerWidth / 2,
                 containerHeight / 2,
                 containerLength / 2
             );
+
             scene.add(containerMesh);
+        }
 
-            // Debugging
-            console.log('Initial container added with dimensions:', containerWidth, containerHeight, containerLength);
-            console.log('Container Mesh:', containerMesh);
-
+        // Add the boxes to the scene
+        if (layerBoxes && layerBoxes.length > 0) {
             layerBoxes.flat().forEach((box) => {
                 addBoxToScene(box, box.container, 0, box.minWeight, box.maxWeight, true);
             });
@@ -319,19 +328,17 @@
         scene.children = scene.children.filter(
           (child) => child === controls.getObject() || child === truck
         );
-        // Add container visualization
         const containerGeometry = new THREE.BoxGeometry(
           layerBoxes[0][0].container.width * scale,
           layerBoxes[0][0].container.height * scale,
           layerBoxes[0][0].container.length * scale
         );
         const containerMaterial = new THREE.MeshBasicMaterial({
-          color: 0xffffff, // White color for the container wireframe
+          color: 0xffffff,
           wireframe: true
         });
         const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
 
-        // Position the container so its back left corner is at (0, containerHeight * scale / 2, 0)
         containerMesh.position.set(
           (layerBoxes[0][0].container.width * scale) / 2,
           (layerBoxes[0][0].container.height * scale) / 2,
@@ -348,7 +355,7 @@
 
       function getColorForWeight(weight, minWeight, maxWeight) {
         if (minWeight === maxWeight) {
-          return 'rgb(128, 0, 128)'; // Purple color when all boxes have the same weight
+          return 'rgb(128, 0, 128)';
         }
         const normalizedWeight = (weight - minWeight) / (maxWeight - minWeight);
         const red = 255;
@@ -417,33 +424,39 @@
       }
 
       function updateData(data) {
-        generations = data.generations;
-        if (generations.length > 0) {
-          const lastGeneration = generations[generations.length - 1];
-          const container = lastGeneration.containers[0];
-          layerBoxes = container.layers;
+    generations = data.generations;
+    if (generations.length > 0) {
+        const lastGeneration = generations[generations.length - 1];
+        const container = lastGeneration.containers[0];
+        layerBoxes = container.layers;
 
-          const allBoxes = layerBoxes.flat();
-          const weights = allBoxes.map((box) => box.weight);
-          const minWeight = Math.min(...weights);
-          const maxWeight = Math.max(...weights);
+        const allBoxes = layerBoxes.flat();
+        const weights = allBoxes.map((box) => box.weight);
+        const minWeight = Math.min(...weights);
+        const maxWeight = Math.max(...weights);
 
-          layerBoxes = layerBoxes.map((layer) =>
+        layerBoxes = layerBoxes.map((layer) =>
             layer.map((box) => ({ ...box, container, minWeight, maxWeight }))
-          );
+        );
 
-          if (isShowingInstructions) {
+        if (isShowingInstructions) {
             displayLayer(currentSection);
             updateLayerInfo();
-          } else {
-            displayFullSolution();
-          }
-        } else if (data.containers && data.containers.length > 0) {
-          displayEmptyContainers(data.containers);
         } else {
-          console.error('No container data available.');
+            displayFullSolution();
         }
-      }
+    } else if (data.containers && data.containers.length > 0) {
+        displayEmptyContainers(data.containers);
+    } else {
+        console.error('No container data available.');
+    }
+
+    // Ensure the white box remains in the scene
+    if (containerMesh && !scene.children.includes(containerMesh)) {
+        scene.add(containerMesh);
+    }
+}
+
 
       function createTextSprite(message, parameters = {}) {
         const fontface = parameters.fontface || 'Arial';
@@ -498,7 +511,7 @@
           scene.getObjectByName('yLabel') ||
           scene.getObjectByName('zLabel')
         ) {
-          return; // Labels already exist, don't add them again
+          return;
         }
 
         const xLabel = createTextSprite('X', {
@@ -506,7 +519,7 @@
           backgroundColor: { r: 255, g: 0, b: 0, a: 1 }
         });
         xLabel.position.set(10, 0, 0);
-        xLabel.name = 'xLabel'; // Give it a name so we can identify it later
+        xLabel.name = 'xLabel';
         scene.add(xLabel);
 
         const yLabel = createTextSprite('Y', {
@@ -514,7 +527,7 @@
           backgroundColor: { r: 0, g: 255, b: 0, a: 1 }
         });
         yLabel.position.set(0, 10, 0);
-        yLabel.name = 'yLabel'; // Give it a name so we can identify it later
+        yLabel.name = 'yLabel';
         scene.add(yLabel);
 
         const zLabel = createTextSprite('Z', {
@@ -522,16 +535,16 @@
           backgroundColor: { r: 0, g: 0, b: 255, a: 1 }
         });
         zLabel.position.set(0, 0, 10);
-        zLabel.name = 'zLabel'; // Give it a name so we can identify it later
+        zLabel.name = 'zLabel';
         scene.add(zLabel);
       }
 
       function createAxesHelper() {
-        const axesHelper = new THREE.AxesHelper(10); // Length of the axes lines
-        axesHelper.name = 'axesHelper'; // Give it a name so we can identify it later
+        const axesHelper = new THREE.AxesHelper(10);
+        axesHelper.name = 'axesHelper';
         scene.add(axesHelper);
 
-        addAxisLabels(); // Add this line to add the axis labels
+        addAxisLabels();
       }
 
       function displayGeneration(index, minWeight, maxWeight) {
@@ -556,11 +569,11 @@
             containerData.length * scale
           );
           const containerMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff, // White color for the container wireframe
+            color: 0xffffff,
             wireframe: true
           });
           const container = new THREE.Mesh(containerGeometry, containerMaterial);
-          container.position.set(containerIndex * 0, (containerData.height * scale) / 2, 0); // Offset containers for better visibility
+          container.position.set(containerIndex * 0, (containerData.height * scale) / 2, 0);
           scene.add(container);
 
           containerData.boxes.forEach((box) => {
@@ -610,7 +623,6 @@
         });
         const line = new THREE.LineSegments(edges, lineMaterial);
 
-        // Adjust the position so the back left corner remains fixed
         mesh.position.set(
           (box.x + box.width / 2) * scale,
           (box.y + box.height / 2) * scale,
@@ -646,77 +658,53 @@
             containerData.length * scale
           );
           const containerMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff, // White color for the container wireframe
+            color: 0xffffff,
             wireframe: true
           });
           const container = new THREE.Mesh(containerGeometry, containerMaterial);
-          container.position.set(containerIndex * 30, (containerData.height * scale) / 2, 0); // Offset containers for better visibility
+          container.position.set(containerIndex * 30, (containerData.height * scale) / 2, 0);
           scene.add(container);
         });
       }
 
       function updateTrailerSize() {
-    const width = parseFloat(document.getElementById('trailer-width').value);
-    const height = parseFloat(document.getElementById('trailer-height').value);
-    const length = parseFloat(document.getElementById('trailer-length').value);
+        const width = parseFloat(document.getElementById('trailer-width').value);
+        const height = parseFloat(document.getElementById('trailer-height').value);
+        const length = parseFloat(document.getElementById('trailer-length').value);
 
-    if (trailer) {
-        // Store the original scale
-        const originalScaleY = trailer.scale.y;
-        const originalLength = originalScaleY * 20;
-        const originalScaleZ = trailer.scale.z;
-        const originalHeight = originalScaleZ * 20;
-        const originalScaleX = trailer.scale.x;
-        const originalWidth = originalScaleX * 20;
+        if (trailer) {
+          const originalScaleY = trailer.scale.y;
+          const originalLength = originalScaleY * 20;
+          const originalScaleZ = trailer.scale.z;
+          const originalHeight = originalScaleZ * 20;
+          const originalScaleX = trailer.scale.x;
+          const originalWidth = originalScaleX * 20;
 
-        // Calculate new scales
-        const newScaleX = width / 20;
-        const newScaleY = length / 20;
-        const newScaleZ = height / 20;
+          const newScaleX = width / 20;
+          const newScaleY = length / 20;
+          const newScaleZ = height / 20;
 
-        // Calculate the scaling ratios
-        const lengthRatio = newScaleY / originalScaleY;
-        const heightRatio = newScaleZ / originalScaleZ;
-        const widthRatio = newScaleX / originalScaleX;
+          const lengthRatio = newScaleY / originalScaleY;
+          const heightRatio = newScaleZ / originalScaleZ;
+          const widthRatio = newScaleX / originalScaleX;
 
-        // Apply the new scale
-        trailer.scale.set(newScaleX, newScaleY, newScaleZ);
-        
-        // Reset the trailer's position to the origin after scaling
-        trailer.position.set(0, 0, 0);
+          trailer.scale.set(newScaleX, newScaleY, newScaleZ);
+          trailer.position.set(0, 0, 0);
 
-        // Update the white box dimensions
-        adjustWhiteBox(widthRatio, heightRatio, lengthRatio);
+          adjustWhiteBox(widthRatio, heightRatio, lengthRatio);
 
-        // Log values for debugging
-        console.log('Original Length:', originalLength);
-        console.log('New Length:', newScaleY * 20);
-        console.log('Length Ratio:', lengthRatio);
-        console.log('Original Height:', originalHeight);
-        console.log('New Height:', newScaleZ * 20);
-        console.log('Height Ratio:', heightRatio);
-        console.log('Original Width:', originalWidth);
-        console.log('New Width:', newScaleX * 20);
-        console.log('Width Ratio:', widthRatio);
-
-        // Adjust the wheels' position based on the length ratio
-        if (wheels) {
+          if (wheels) {
             const lengthDifference = (newScaleY - originalScaleY) * 20;
-            console.log('Current Wheels Position:', wheels.position); // Log before update
-            wheels.position.z += lengthDifference / 10; // Adjust wheels' z position based on the ratio
-            console.log('Updated Wheels Position:', wheels.position); // Log after update
-        } else {
+            wheels.position.z += lengthDifference / 10;
+          } else {
             console.error('Wheels object is not loaded or not available');
+          }
+        } else {
+          console.error('Trailer model is not loaded yet');
         }
+      }
 
-        // Log for debugging
-        console.log('New trailer scale:', trailer.scale);
-        console.log('New trailer position:', trailer.position);
-    } else {
-        console.error('Trailer model is not loaded yet');
-    }
-}
-function adjustWhiteBox(widthRatio, heightRatio, lengthRatio) {
+      function adjustWhiteBox(widthRatio, heightRatio, lengthRatio) {
     if (containerMesh) {
         // Get the current dimensions of the white box
         const currentWidth = containerMesh.scale.x * 120; // Original width
@@ -728,7 +716,7 @@ function adjustWhiteBox(widthRatio, heightRatio, lengthRatio) {
         const newHeight = currentHeight * heightRatio;
         const newLength = currentLength * lengthRatio;
 
-        // Calculate the offsets to keep the front left corner in place
+        // Calculate the offsets to keep the box centered as it was originally
         const offsetX = (newWidth - currentWidth) / 2;
         const offsetY = (newHeight - currentHeight) / 2;
         const offsetZ = (newLength - currentLength) / 2;
@@ -740,14 +728,20 @@ function adjustWhiteBox(widthRatio, heightRatio, lengthRatio) {
             containerMesh.scale.z * lengthRatio
         );
 
-        // Adjust the position to keep the front left corner in place
+        // Adjust the position to keep the box centered as it was originally
         containerMesh.position.set(
             containerMesh.position.x + offsetX,
             containerMesh.position.y + offsetY,
             containerMesh.position.z + offsetZ
         );
 
-        console.log(`Updated container with new dimensions: ${containerMesh.scale.x * 120} ${containerMesh.scale.y * 138} ${containerMesh.scale.z * 280}`);
+        console.log(`Updated container with new dimensions: ${newWidth * 10} ${newHeight * 10} ${newLength * 10}`);
+
+        socket.emit('update_container_dimensions', {
+            width: Math.round(newWidth * 10),
+            height: Math.round(newHeight * 10),
+            length: Math.round(newLength * 10)
+        });
     } else {
         console.error('Container mesh is not defined');
     }
@@ -785,3 +779,4 @@ function adjustWhiteBox(widthRatio, heightRatio, lengthRatio) {
     </script>
   </body>
 </html>
+

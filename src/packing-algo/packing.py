@@ -469,7 +469,18 @@ def emit_local_solution(sio, container, generation, fitness):
     }
     sio.emit('update_generation', generation_data)
 
+import sys
+
 def main():
+    # Retrieve the dimensions from command-line arguments
+    container_width = int(sys.argv[1])
+    container_height = int(sys.argv[2])
+    container_length = int(sys.argv[3])
+
+    # Your existing code...
+ 
+
+    # Initialize SocketIO client
     sio = socketio.Client()
 
     @sio.event
@@ -483,12 +494,8 @@ def main():
     sio.connect('http://localhost:5000')
     sio.emit('get_data')
 
-    container_width = 1200
-    container_depth = 2800
-    container_height = 1380
-
-    container_dimensions = (container_width, container_height, container_depth)
-
+    # Use the received dimensions in the algorithm
+    container_dimensions = (container_width, container_height, container_length)
     best_individual, best_container = genetic_algorithm('products.csv', container_dimensions, sio)
 
     print(f"Final Best Container:")
@@ -498,3 +505,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
