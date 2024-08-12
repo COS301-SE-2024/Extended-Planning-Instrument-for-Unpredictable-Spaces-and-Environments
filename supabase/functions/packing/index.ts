@@ -1,10 +1,16 @@
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Expose-Headers': 'Content-Length, X-JSON',
-  'Access-Control-Allow-Headers':
-    'apikey,X-Client-Info, Content-Type, Authorization, Accept, Accept-Language, X-Authorization'
-}
+/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.7'
+
+const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
+const supabaseKey =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnaXNhemVmYWtoZGllaWdyeWxiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNjMxMzE1MSwiZXhwIjoyMDMxODg5MTUxfQ.ctQmfWfRjY77afjwWuynIL4lRdjrtBD7Xqh75SxQBeo'
+
+const supabaseUser = createClient(supabaseUrl, supabaseKey)
+
+
+//ALGO
+import { geneticAlgorithm } from './algorithm.ts'
+
 
 function defaultResponse() {
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
@@ -33,19 +39,24 @@ Deno.serve(async (req) => {
     }
     if (req.method === 'POST') {
       const requestBody = await req.json()
-      console.log(requestBody)
-
-      // Perform the genetic algorithm
-      const result = await genetic_algorithm(
-        requestBody.boxes_data,
-        requestBody.container_dimensions
-      )
-
-      return responseBuilder(result)
+      if (requestBody.type == 'geneticAlgorithm') {
+        return responseBuilder(
+          await geneticAlgorithm(
+            requestBody.boxesData,
+            requestBody.containerDimensions,
+            150,
+            300,
+            0.01
+          )
+        )
+      }
+      else {
+        return defaultResponse()
+      }
     }
-
-    return new Response(JSON.stringify({ error: 'Invalid request method' }), {
-      headers: { 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 404
     })
   } catch (error) {
     console.error('Error processing request:', error.message)
@@ -58,3 +69,11 @@ Deno.serve(async (req) => {
     )
   }
 })
+
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST',
+  'Access-Control-Expose-Headers': 'Content-Length, X-JSON',
+  'Access-Control-Allow-Headers':
+    'apikey,X-Client-Info, Content-Type, Authorization, Accept, Accept-Language, X-Authorization'
+}

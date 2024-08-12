@@ -318,13 +318,15 @@ function mutate(individual: Box[], mutationRate: number): void {
   }
 }
 let bestFitness = Number.NEGATIVE_INFINITY
-function geneticAlgorithm(
+
+
+export function geneticAlgorithm(
   boxesData: BoxData[],
   containerDimensions: [number, number, number],
   popSize: number = 150,
   numGenerations: number = 300,
   mutationRate: number = 0.01
-): [Box[], Container] {
+): { data: { fitness: number; boxes: any[] } }  {
   const boxes = boxesData.map((data) => new Box(data))
   let population = initializePopulation(popSize, boxes)
 
@@ -367,89 +369,7 @@ function geneticAlgorithm(
     population = nextPopulation
   }
 
-  return [bestIndividual!, bestContainer!]
-}
-
-// Example usage
-const boxesData: BoxData[] = [
-  {
-    id: 43,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:46:58.970506',
-    Width: 500,
-    Length: 500,
-    Height: 500,
-    Weight: 25,
-    Volume: 125000000
-  },
-  {
-    id: 44,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:46:59.612438',
-    Width: 255,
-    Length: 300,
-    Height: 275,
-    Weight: 35,
-    Volume: 21037500
-  },
-  {
-    id: 47,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:47:01.882107',
-    Width: 375,
-    Length: 355,
-    Height: 255,
-    Weight: 50,
-    Volume: 33946875
-  },
-  {
-    id: 49,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:47:03.204701',
-    Width: 335,
-    Length: 290,
-    Height: 255,
-    Weight: 59.5,
-    Volume: 24773250
-  },
-  {
-    id: 53,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:47:06.737724',
-    Width: 293,
-    Length: 224,
-    Height: 149,
-    Weight: 80.5,
-    Volume: 9779168
-  },
-  {
-    id: 58,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:47:09.873742',
-    Width: 240.5,
-    Length: 141.5,
-    Height: 165,
-    Weight: 106.75,
-    Volume: 5615073.75
-  },
-  {
-    id: 62,
-    Shipment_id: 12,
-    Packed_time: '2024-08-05T08:47:13.21654',
-    Width: 198.5,
-    Length: 75.5,
-    Height: 280,
-    Weight: 127.75,
-    Volume: 4196290
-  }
-]
-
-const containerDimensions: [number, number, number] = [1200, 1380, 2800] // width, height, length
-
-const [bestIndividual, bestContainer] = geneticAlgorithm(boxesData, containerDimensions)
-
-// Prepare the final solution as JSON
-const finalSolution = {
+  const finalSolution = {
   fitness: bestFitness,
   boxes: bestContainer.boxes.map(([box, x, y, z]) => ({
     id: box.id,
@@ -462,4 +382,99 @@ const finalSolution = {
   }))
 }
 
-console.log(JSON.stringify(finalSolution, null, 2))
+  return {data: finalSolution}
+}
+
+// Example usage
+// const boxesData: BoxData[] = [
+//   {
+//     id: 43,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:46:58.970506',
+//     Width: 500,
+//     Length: 500,
+//     Height: 500,
+//     Weight: 25,
+//     Volume: 125000000
+//   },
+//   {
+//     id: 44,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:46:59.612438',
+//     Width: 255,
+//     Length: 300,
+//     Height: 275,
+//     Weight: 35,
+//     Volume: 21037500
+//   },
+//   {
+//     id: 47,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:47:01.882107',
+//     Width: 375,
+//     Length: 355,
+//     Height: 255,
+//     Weight: 50,
+//     Volume: 33946875
+//   },
+//   {
+//     id: 49,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:47:03.204701',
+//     Width: 335,
+//     Length: 290,
+//     Height: 255,
+//     Weight: 59.5,
+//     Volume: 24773250
+//   },
+//   {
+//     id: 53,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:47:06.737724',
+//     Width: 293,
+//     Length: 224,
+//     Height: 149,
+//     Weight: 80.5,
+//     Volume: 9779168
+//   },
+//   {
+//     id: 58,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:47:09.873742',
+//     Width: 240.5,
+//     Length: 141.5,
+//     Height: 165,
+//     Weight: 106.75,
+//     Volume: 5615073.75
+//   },
+//   {
+//     id: 62,
+//     Shipment_id: 12,
+//     Packed_time: '2024-08-05T08:47:13.21654',
+//     Width: 198.5,
+//     Length: 75.5,
+//     Height: 280,
+//     Weight: 127.75,
+//     Volume: 4196290
+//   }
+// ]
+
+// const containerDimensions: [number, number, number] = [1200, 1380, 2800] // width, height, length
+
+// const [bestIndividual, bestContainer] = geneticAlgorithm(boxesData, containerDimensions)
+
+// // Prepare the final solution as JSON
+// const finalSolution = {
+//   fitness: bestFitness,
+//   boxes: bestContainer.boxes.map(([box, x, y, z]) => ({
+//     id: box.id,
+//     width: box.width,
+//     height: box.height,
+//     length: box.length,
+//     x,
+//     y,
+//     z
+//   }))
+// }
+
+// console.log(JSON.stringify(finalSolution, null, 2))
