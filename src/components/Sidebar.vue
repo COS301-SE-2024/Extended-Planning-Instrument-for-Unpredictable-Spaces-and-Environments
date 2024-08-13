@@ -500,7 +500,7 @@ const processShipment = async () => {
                 throw new Error('Failed to insert package')
               }
             }
-            console.log('All shipments and packages inserted successfully')
+            alert('All shipments and packages inserted successfully')
           }
         }
       }
