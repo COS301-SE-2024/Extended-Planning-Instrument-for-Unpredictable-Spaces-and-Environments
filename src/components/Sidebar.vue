@@ -128,7 +128,7 @@
   >
     <div class="flex flex-col items-center justify-center m-8">
       <p class="mb-4 text-3xl">New Shipment</p>
-
+<!-- 
       <FileUpload
         name="demo[]"
         url="/api/upload"
@@ -143,9 +143,8 @@
             <span class="text-center">Drag and drop files here to upload.</span>
           </div>
         </template>
-      </FileUpload>
-
-      <!-- <input type="file" accept=".csv" @change="onFileChange" class="mb-4" /> -->
+      </FileUpload> -->
+      <input type="file" accept=".csv" @change="onFileChange" />
       <Button @click="processShipment" class="mt-4 text-white py-2 px-6 bg-green-800"
         >Process Shipment</Button
       >
@@ -482,7 +481,6 @@ const processShipment = async () => {
               }
             }
             console.log('All shipments and packages inserted successfully')
-            show()
             toggleDialog()
           }
         }

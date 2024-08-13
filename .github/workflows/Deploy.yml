@@ -26,7 +26,17 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm run build
+        run: 
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}"
+          echo "VITE_SUPABASE_KEY=${{ secrets.VITE_SUPABASE_KEY }}"
+          npm run build
+        env:
+          VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
+          VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.VITE_GOOGLE_CLIENT_SECRET }}
+          VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
       - name: Deploy to Netlify
         id: netlify_deploy
