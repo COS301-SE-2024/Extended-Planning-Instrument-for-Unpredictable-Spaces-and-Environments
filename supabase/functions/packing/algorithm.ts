@@ -71,7 +71,7 @@ class Container {
   }
 
   addBox(box: Box): boolean {
-    for (const space of this.remainingSpace.sort((a, b) => a[2] - b[2] || a[1] - b[1])) {
+    for (const space of this.remainingSpace.sort((a) => a[2] || a[1])) {
       for (const orientation of this.generateOrientations(box)) {
         if (this.canFit(orientation, space)) {
           const [x, y, z, , ,] = space
@@ -207,7 +207,7 @@ class Container {
 function initializePopulation(popSize: number, boxes: Box[]): Box[][] {
   const population: Box[][] = []
   for (let i = 0; i < popSize; i++) {
-    const individual = [...boxes].sort((a, b) => b.volume - a.volume)
+    const individual = [...boxes].sort((a) => a.volume)
     population.push(individual)
   }
   return population
@@ -274,7 +274,7 @@ function evaluateFitness(
 function selectParents(population: Box[][], fitness: number[], numParents: number): Box[][] {
   const ranks = fitness
     .map((_, i) => ({ index: i, value: fitness[i] }))
-    .sort((a, b) => b.value - a.value)
+    .sort((a) => a.value)
     .map((item, index) => ({ ...item, rank: index + 1 }))
 
   const rankSum = ranks.reduce((sum, item) => sum + item.rank, 0)
@@ -319,14 +319,13 @@ function mutate(individual: Box[], mutationRate: number): void {
 }
 let bestFitness = Number.NEGATIVE_INFINITY
 
-
 export function geneticAlgorithm(
   boxesData: BoxData[],
   containerDimensions: [number, number, number],
   popSize: number = 150,
   numGenerations: number = 300,
   mutationRate: number = 0.01
-): { data: { fitness: number; boxes: any[] } }  {
+): { data: { fitness: number; boxes: any[] } } {
   const boxes = boxesData.map((data) => new Box(data))
   let population = initializePopulation(popSize, boxes)
 
@@ -370,94 +369,22 @@ export function geneticAlgorithm(
   }
 
   const finalSolution = {
-  fitness: bestFitness,
-  boxes: bestContainer.boxes.map(([box, x, y, z]) => ({
-    id: box.id,
-    width: box.width,
-    height: box.height,
-    length: box.length,
-    x,
-    y,
-    z
-  }))
-}
+    fitness: bestFitness,
+    boxes: bestContainer.boxes.map(([box, x, y, z]) => ({
+      id: box.id,
+      width: box.width,
+      height: box.height,
+      length: box.length,
+      weight: box.weight,
+      volume: box.volume,
+      x,
+      y,
+      z
+    }))
+  }
 
-  return {data: finalSolution}
+  return { data: finalSolution }
 }
-
-// Example usage
-// const boxesData: BoxData[] = [
-//   {
-//     id: 43,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:46:58.970506',
-//     Width: 500,
-//     Length: 500,
-//     Height: 500,
-//     Weight: 25,
-//     Volume: 125000000
-//   },
-//   {
-//     id: 44,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:46:59.612438',
-//     Width: 255,
-//     Length: 300,
-//     Height: 275,
-//     Weight: 35,
-//     Volume: 21037500
-//   },
-//   {
-//     id: 47,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:47:01.882107',
-//     Width: 375,
-//     Length: 355,
-//     Height: 255,
-//     Weight: 50,
-//     Volume: 33946875
-//   },
-//   {
-//     id: 49,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:47:03.204701',
-//     Width: 335,
-//     Length: 290,
-//     Height: 255,
-//     Weight: 59.5,
-//     Volume: 24773250
-//   },
-//   {
-//     id: 53,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:47:06.737724',
-//     Width: 293,
-//     Length: 224,
-//     Height: 149,
-//     Weight: 80.5,
-//     Volume: 9779168
-//   },
-//   {
-//     id: 58,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:47:09.873742',
-//     Width: 240.5,
-//     Length: 141.5,
-//     Height: 165,
-//     Weight: 106.75,
-//     Volume: 5615073.75
-//   },
-//   {
-//     id: 62,
-//     Shipment_id: 12,
-//     Packed_time: '2024-08-05T08:47:13.21654',
-//     Width: 198.5,
-//     Length: 75.5,
-//     Height: 280,
-//     Weight: 127.75,
-//     Volume: 4196290
-//   }
-// ]
 
 // const containerDimensions: [number, number, number] = [1200, 1380, 2800] // width, height, length
 

@@ -3,6 +3,7 @@ import { useDark, useToggle } from '@vueuse/core'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
@@ -67,23 +68,38 @@ const items = [
   }
 ]
 
+const containerDimensions = [1200, 1380, 2800]
+
 const packingResults = ref(null)
+
 const runPackingAlgo = async (shipmentId) => {
-  console.log('Shipment Id:', shipmentId)
+  toggleDialog()
   const { data, error } = await supabase.functions.invoke('packing', {
     body: JSON.stringify({
-      type: 'geneticAlgorithm',
-      ShipmentID: shipmentId,
-      containerDimensions: [1200, 1380, 2800]
+      type: 'getPackages',
+      ShipmentID: shipmentId
     }),
     method: 'POST'
   })
-
+  const result = await data.data
   if (error) {
     console.log('PACKING API ERROR: ', error)
   } else {
-    console.log('PACKING API SUCCESS')
-    emit('handle-json', data)
+    packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
+    emit('handle-json', packingResults.value)
+    console.log('PACKING FITNESS: ', packingResults.value.data.fitness)
+    const { data, error2 } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'updateFitnessValue',
+        ShipmentId: shipmentId,
+        newFitnessValue: parseFloat(packingResults.value.data.fitness)
+      }),
+      method: 'POST'
+    })
+    if (error2) {
+      console.log('ERROR UPDATING FINTESS VALUE: ', error)
+    }
+    console.log('DATA FROM UPDATE', data)
   }
 }
 const handleSelectShipment = (shipmentId) => {

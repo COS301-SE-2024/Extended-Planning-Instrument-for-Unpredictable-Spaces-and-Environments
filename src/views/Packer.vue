@@ -9,9 +9,7 @@ import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
-const CONTAINER_SIZE = { width: 2000, height: 2000, depth: 2000 }
 const packingData = ref(null)
-
 // const packingData = {
 //   data: {
 //     fitness: 0.014184397163120567,
@@ -58,18 +56,30 @@ onMounted(() => {
   )
 })
 
+function getColorForWeight(weight, minWeight, maxWeight) {
+  if (minWeight === maxWeight) {
+    return 'rgb(128, 0, 128)' // Purple color when all boxes have the same weight
+  }
+
+  const normalizedWeight = (weight - minWeight) / (maxWeight - minWeight)
+  const red = 255
+  const green = Math.floor((1 - normalizedWeight) * 255)
+
+  return `rgb(${red}, ${green}, 0)`
+}
+
 const dialogVisible = ref(false)
-let containerSize = { width: 2000, height: 2000, depth: 2000 }
+let CONTAINER_SIZE
 function initThreeJS(containerId, isDark) {
   const container = document.getElementById(containerId)
   if (!container) {
     console.error(`No container found for Three.js scene: ${containerId}`)
     return
   }
-  containerSize = packingData.value.containerDimensions || {
-    width: 2000,
-    height: 2000,
-    depth: 2000
+  CONTAINER_SIZE = packingData.value.containerDimensions || {
+    width: 1200,
+    height: 1380,
+    depth: 2800
   }
 
   const scene = new THREE.Scene()
@@ -102,13 +112,13 @@ function initThreeJS(containerId, isDark) {
   scene.add(directionalLight)
 
   // Create container
-  createContainer(scene, containerSize)
+  createContainer(scene, CONTAINER_SIZE)
 
   // Create boxes from packing data
   createBoxesFromData(scene, packingData.value.boxes)
 
   // Add scale
-  addScale(scene, containerSize)
+  addScale(scene, CONTAINER_SIZE)
 
   function animate() {
     requestAnimationFrame(animate)
@@ -128,9 +138,9 @@ function initThreeJS(containerId, isDark) {
 
 function createContainer(scene) {
   const geometry = new THREE.BoxGeometry(
-    containerSize.width,
-    containerSize.height,
-    containerSize.depth
+    CONTAINER_SIZE.width,
+    CONTAINER_SIZE.height,
+    CONTAINER_SIZE.depth
   )
   const material = new THREE.MeshPhongMaterial({
     color: 0xcccccc,
@@ -150,10 +160,14 @@ function createContainer(scene) {
 }
 
 function createBoxesFromData(scene, boxesData) {
+  const weights = boxesData.map((box) => box.weight)
+  const minWeight = Math.min(...weights)
+  const maxWeight = Math.max(...weights)
+
   boxesData.forEach((box) => {
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.length)
     const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+      color: new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight)),
       transparent: true,
       opacity: 0.7
     })
@@ -168,8 +182,8 @@ function createBoxesFromData(scene, boxesData) {
     mesh.add(wireframe)
   })
 }
-function addScale(scene, containerSize) {
-  const axesHelper = new THREE.AxesHelper(containerSize.width)
+function addScale(scene, CONTAINER_SIZE) {
+  const axesHelper = new THREE.AxesHelper(CONTAINER_SIZE.width)
   scene.add(axesHelper)
 
   // Add labels for each axis
