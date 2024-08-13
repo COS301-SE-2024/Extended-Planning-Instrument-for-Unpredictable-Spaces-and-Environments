@@ -248,7 +248,7 @@ const validateCSV = (file) => {
           return
         }
 
-        // Check number of columns and data types
+        // Check number of columns, data types, and dimension restrictions
         for (let i = 1; i < results.data.length; i++) {
           const row = results.data[i]
           if (row.length !== 7) {
@@ -256,19 +256,32 @@ const validateCSV = (file) => {
             return
           }
 
-          // Check data types
+          // Check data types and dimension restrictions
+          const [id, width, length, height, weight, volume, location] = row.map(Number)
+          
           if (
-            isNaN(Number(row[0])) || // ID
-            isNaN(Number(row[1])) || // Width
-            isNaN(Number(row[2])) || // Length
-            isNaN(Number(row[3])) || // Height
-            isNaN(Number(row[4])) || // Weight
-            isNaN(Number(row[5])) || // Volume
+            isNaN(id) || // ID
+            isNaN(width) || // Width
+            isNaN(length) || // Length
+            isNaN(height) || // Height
+            isNaN(weight) || // Weight
+            isNaN(volume) || // Volume
             !row[6] ||
             typeof row[6] !== 'string' // Location
           ) {
             reject(
               `Invalid data in row ${i + 1}: All columns except Location must be numbers, and Location must be a non-empty string`
+            )
+            return
+          }
+
+          // Check dimension restrictions
+          if (width < 200 || width > 1200 ||
+              length < 200 || length > 1200 ||
+              height < 200 || height > 1200 ||
+              weight < 200 || weight > 1200) {
+            reject(
+              `Invalid dimensions in row ${i + 1}: Width, Length, Height, and Weight must be between 200 and 1200 cm`
             )
             return
           }
