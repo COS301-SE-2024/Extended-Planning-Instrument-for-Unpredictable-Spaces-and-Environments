@@ -128,7 +128,7 @@
   >
     <div class="flex flex-col items-center justify-center m-8">
       <p class="mb-4 text-3xl">New Shipment</p>
-<!-- 
+      <!-- 
       <FileUpload
         name="demo[]"
         url="/api/upload"
@@ -258,7 +258,7 @@ const validateCSV = (file) => {
 
           // Check data types and dimension restrictions
           const [id, width, length, height, weight, volume, location] = row.map(Number)
-          
+
           if (
             isNaN(id) || // ID
             isNaN(width) || // Width
@@ -276,10 +276,16 @@ const validateCSV = (file) => {
           }
 
           // Check dimension restrictions
-          if (width < 200 || width > 1200 ||
-              length < 200 || length > 1200 ||
-              height < 200 || height > 1200 ||
-              weight < 200 || weight > 1200) {
+          if (
+            width < 200 ||
+            width > 1200 ||
+            length < 200 ||
+            length > 1200 ||
+            height < 200 ||
+            height > 1200 ||
+            weight < 0 ||
+            weight > 2500
+          ) {
             reject(
               `Invalid dimensions in row ${i + 1}: Width, Length, Height, and Weight must be between 200 and 1200 cm`
             )
@@ -427,6 +433,7 @@ const processShipment = async () => {
     if (error) {
       console.log('API Error downloadingFile:', error)
     } else {
+      toggleShipment()
       const jsonData = convertCSVToJSON(CSVText.data)
 
       JSONText = jsonData
@@ -494,7 +501,6 @@ const processShipment = async () => {
               }
             }
             console.log('All shipments and packages inserted successfully')
-            toggleDialog()
           }
         }
       }
