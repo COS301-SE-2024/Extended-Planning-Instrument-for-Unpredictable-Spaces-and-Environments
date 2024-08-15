@@ -285,13 +285,20 @@ const onDetect = (result) => {
   console.log('QR code detected:', result)
 
   try {
-    const parsedData = JSON.parse(result)
+    // Parse the rawValue field which contains the actual JSON data
+    console.log(result[0])
+    console.log(result[0].rawValue.id)
 
-    // Assume `packingData.value` contains the current boxes in the scene
+    const parsedData = JSON.parse(result[0].rawValue)
+
+    // Now parsedData contains the JSON object, and you can access the id
+
+    // Assume packingData.value contains the current boxes in the scene
     if (packingData.value && Array.isArray(packingData.value.boxes)) {
       packingData.value.boxes.forEach((box) => {
         // Find the box in the Three.js scene with the matching ID
         const matchingBox = scene.getObjectByName(`box-${box.id}`)
+        console.log(box.id === parsedData.id)
         if (matchingBox) {
           if (box.id === parsedData.id) {
             // Set the color to purple for the matching box
@@ -300,7 +307,7 @@ const onDetect = (result) => {
           } else {
             // Set the color to white and lower opacity for other boxes
             matchingBox.material.color.set(0xffffff) // White color
-            matchingBox.material.opacity = 0.5 // Lower opacity
+            matchingBox.material.opacity = 0.1 // Lower opacity
           }
         }
       })
