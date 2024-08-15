@@ -4,6 +4,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { useToast } from 'primevue/usetoast'
 
 const dialogVisible = ref(false)
 const isDark = useDark()
@@ -19,6 +20,7 @@ const passwordError = ref(false)
 const emailSent = ref(false)
 const userEmail = ref('')
 const userToken = ref('')
+const toast = useToast()
 
 const passwordsMatch = computed(() => password1.value === password2.value)
 
@@ -27,39 +29,27 @@ const isValidPassword = computed(() => {
   return passwordRegex.test(password1.value)
 })
 
-// Function to handle password recovery request
-const requestPasswordReset = async () => {
-  if (!passwordsMatch.value) {
-    passwordError.value = true
-    alert('Passwords do not match. Please try again.')
-    return
-  }
-
-  passwordError.value = false
-
-  try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/forgot-password`
-    })
-
-    if (error) {
-      console.error('Error sending password recovery email:', error)
-      alert('Error sending password recovery email: ' + error.message)
-    } else {
-      alert('Password recovery email sent. Please check your inbox.')
-      emailSent.value = true
-    }
-  } catch (error) {
-    console.error('Unexpected error:', error)
-    alert('Unexpected error occurred: ' + error.message)
-  }
-}
-
 // Function to handle password update
 const resetPassword = async () => {
   if (!passwordsMatch.value) {
     passwordError.value = true
-    alert('Passwords do not match. Please try again.')
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Passwords do not match. Please try again.',
+      life: 3000
+    })
+    return
+  }
+
+  if (!isValidPassword.value) {
+    passwordError.value = true
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.',
+      life: 3000
+    })
     return
   }
 
@@ -73,13 +63,29 @@ const resetPassword = async () => {
 
     if (error) {
       console.error('Error updating password:', error)
-      alert('Error updating password: ' + error.message)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error updating password: ' + error.message,
+        life: 3000
+      })
     } else {
-      alert('Password updated successfully.')
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Password updated successfully.',
+        life: 3000
+      })
+      router.push('/')
     }
   } catch (error) {
     console.error('Unexpected error:', error)
-    alert('Unexpected error occurred: ' + error.message)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Unexpected error occurred: ' + error.message,
+      life: 3000
+    })
   }
 }
 
@@ -89,7 +95,6 @@ onMounted(() => {
   if (email && token) {
     userEmail.value = email
     userToken.value = token
-    resetPassword()
   }
 })
 </script>
@@ -134,7 +139,7 @@ onMounted(() => {
       <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">
         Please enter your new password
       </h2>
-      <form @submit.prevent="requestPasswordReset" class="flex flex-col">
+      <form @submit.prevent="resetPassword" class="flex flex-col">
         <label
           for="password1"
           :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
@@ -168,8 +173,7 @@ onMounted(() => {
           </template>
         </Password>
         <p v-if="passwordError" class="text-red-500 text-sm mt-2 mb-4">
-          Password must be at least 8 characters long and include one lowercase, one uppercase, and
-          one numeric character.
+          Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.
         </p>
         <label
           for="password2"
@@ -271,7 +275,6 @@ onMounted(() => {
       :images="[
         { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
-        // Add more images as needed
       ]"
       title="Contact Support"
       :contacts="[

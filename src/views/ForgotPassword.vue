@@ -52,7 +52,7 @@ const requestPasswordReset = async () => {
 
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/forgot-password`
+      redirectTo: `${window.location.origin}/confirm-password`
     })
 
     if (error) {
