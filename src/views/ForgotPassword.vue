@@ -131,7 +131,9 @@ onMounted(() => {
       >
         Forgot Password?
       </p>
-      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">Enter your email address and new password</h2>
+      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">
+        Enter your email address and new password
+      </h2>
       <form @submit.prevent="requestPasswordReset" class="flex flex-col">
         <div class="form-group mb-6">
           <label

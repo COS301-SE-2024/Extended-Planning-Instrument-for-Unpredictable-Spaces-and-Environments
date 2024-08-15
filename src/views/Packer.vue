@@ -281,11 +281,19 @@ const onDetect = (result) => {
   setTimeout(() => {
     dialogVisible.value = false
   }, 750)
-  toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
+
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'QR code detected!',
+    life: 3000
+  })
+
   console.log('QR code detected:', result)
 
   try {
-    const parsedData = JSON.parse(result)
+    // Check if the result is a string before parsing
+    const parsedData = typeof result === 'string' ? JSON.parse(result) : result
 
     // Assume `packingData.value` contains the current boxes in the scene
     if (packingData.value && Array.isArray(packingData.value.boxes)) {
@@ -307,7 +315,12 @@ const onDetect = (result) => {
     }
   } catch (error) {
     console.error('Failed to parse QR code:', error)
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Invalid QR code format', life: 3000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Invalid QR code format',
+      life: 3000
+    })
   }
 }
 
