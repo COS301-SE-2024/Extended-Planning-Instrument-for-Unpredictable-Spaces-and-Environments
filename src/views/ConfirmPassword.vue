@@ -70,6 +70,7 @@ const resetPassword = async () => {
         life: 3000
       })
     } else {
+      await supabase.auth.signOut();
       toast.add({
         severity: 'success',
         summary: 'Success',
