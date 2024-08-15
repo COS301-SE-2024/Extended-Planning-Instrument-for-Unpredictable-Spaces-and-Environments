@@ -21,6 +21,7 @@ export async function createPDF(jsonData: any) {
   let yPosition = 10 * 72 // Start from the top of the page
 
   for (const item of jsonData) {
+    // Generate a QR code for each JSON object
     const qrCodeDataUrl = await createQRCode(item)
     const qrImage = await pdfDoc.embedPng(qrCodeDataUrl)
 

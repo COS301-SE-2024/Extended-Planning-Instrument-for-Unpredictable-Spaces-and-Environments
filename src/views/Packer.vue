@@ -280,19 +280,26 @@ const onDetect = (result) => {
   toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
   console.log('QR code detected:', result)
 
-  const parsedData = JSON.parse(result)
+  try {
+    const parsedData = JSON.parse(result)
 
-  // Assume `packingData.value` contains the current boxes in the scene
-  if (packingData.value && Array.isArray(packingData.value.boxes)) {
-    packingData.value.boxes.forEach((box) => {
-      if (box.id === parsedData.id) {
-        box.material.color.set('rgb(128, 0, 128)')
-        box.material.opacity = 1.0
-      } else {
-        box.material.color.set(0xffffff)
-        box.material.opacity = 0.5
-      }
-    })
+    // Assume `packingData.value` contains the current boxes in the scene
+    if (packingData.value && Array.isArray(packingData.value.boxes)) {
+      packingData.value.boxes.forEach((box) => {
+        if (box.id === parsedData.id) {
+          // Set the color to purple for the matching box
+          box.material.color.set('rgb(128, 0, 128)')
+          box.material.opacity = 1.0 // Fully opaque
+        } else {
+          // Set the color to white and lower opacity for other boxes
+          box.material.color.set(0xffffff) // White color
+          box.material.opacity = 0.5 // Lower opacity
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Failed to parse QR code:', error)
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Invalid QR code format', life: 3000 })
   }
 }
 
