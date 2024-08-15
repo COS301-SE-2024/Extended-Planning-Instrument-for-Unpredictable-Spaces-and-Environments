@@ -212,6 +212,10 @@ function createBoxesFromData(scene, boxesData) {
     })
     const mesh = new THREE.Mesh(geometry, material)
     mesh.position.set(box.x + box.width / 2, box.y + box.height / 2, box.z + box.length / 2)
+
+    // Set the name of the mesh to identify it later
+    mesh.name = `box-${box.id}`
+
     scene.add(mesh)
 
     // Add wireframe
@@ -286,14 +290,18 @@ const onDetect = (result) => {
     // Assume `packingData.value` contains the current boxes in the scene
     if (packingData.value && Array.isArray(packingData.value.boxes)) {
       packingData.value.boxes.forEach((box) => {
-        if (box.id === parsedData.id) {
-          // Set the color to purple for the matching box
-          box.material.color.set('rgb(128, 0, 128)')
-          box.material.opacity = 1.0 // Fully opaque
-        } else {
-          // Set the color to white and lower opacity for other boxes
-          box.material.color.set(0xffffff) // White color
-          box.material.opacity = 0.5 // Lower opacity
+        // Find the box in the Three.js scene with the matching ID
+        const matchingBox = scene.getObjectByName(`box-${box.id}`)
+        if (matchingBox) {
+          if (box.id === parsedData.id) {
+            // Set the color to purple for the matching box
+            matchingBox.material.color.set('rgb(128, 0, 128)')
+            matchingBox.material.opacity = 1.0 // Fully opaque
+          } else {
+            // Set the color to white and lower opacity for other boxes
+            matchingBox.material.color.set(0xffffff) // White color
+            matchingBox.material.opacity = 0.5 // Lower opacity
+          }
         }
       })
     }
