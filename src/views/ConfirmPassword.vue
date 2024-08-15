@@ -4,7 +4,6 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
-import { useToast } from 'primevue/usetoast'
 
 const dialogVisible = ref(false)
 const isDark = useDark()
@@ -20,7 +19,6 @@ const passwordError = ref(false)
 const emailSent = ref(false)
 const userEmail = ref('')
 const userToken = ref('')
-const toast = useToast() // <-- Use the toast hook
 
 const passwordsMatch = computed(() => password1.value === password2.value)
 
@@ -29,18 +27,7 @@ const isValidPassword = computed(() => {
   return passwordRegex.test(password1.value)
 })
 
-const showSuccess = () => {
-  toast.add({ severity: 'success', summary: 'Success', detail: 'Recovery email sent', life: 3000 })
-}
-
-const showError = () => {
-  toast.add({
-    severity: 'error',
-    summary: 'Error',
-    detail: 'Error sending password recovery email',
-    life: 3000
-  })
-}
+// Function to handle password recovery request
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
     passwordError.value = true
@@ -56,12 +43,10 @@ const requestPasswordReset = async () => {
     })
 
     if (error) {
-      showError()
       console.error('Error sending password recovery email:', error)
       alert('Error sending password recovery email: ' + error.message)
     } else {
-      showSuccess()
-      // alert('Password recovery email sent. Please check your inbox.')
+      alert('Password recovery email sent. Please check your inbox.')
       emailSent.value = true
     }
   } catch (error) {
@@ -144,43 +129,93 @@ onMounted(() => {
           'text-3xl flex items-center font-bold mb-2 '
         ]"
       >
-        Forgot Password?
+        Change Password
       </p>
       <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">
-        Enter you email to receive a recovery link
+        Please enter your new password
       </h2>
       <form @submit.prevent="requestPasswordReset" class="flex flex-col">
-        <div class="form-group mb-6">
-          <label
-            for="email"
-            :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
-            >Email</label
-          >
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            required
-            :class="[
-              isDark
-                ? 'text-white  bg-neutral-900'
-                : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
-            ]"
-          />
-        </div>
-        <button
-          type="submit"
+        <label
+          for="password1"
+          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
+          >Password</label
+        >
+
+        <Password
+          inputId="password1"
+          id="password1"
+          v-model="password1"
+          toggleMask
+          :invalid="password1 === ''"
+          required
           :class="[
-            'mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition duration-300',
-            'hover:transform hover:-translate-y-1'
+            !isDark ? 'text-white' : 'text-neutral-800',
+            'focus:ring-0 hover:ring-0 mb-6 mt-2'
           ]"
         >
-          Recover Account
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="rounded-lg mt-2">Suggestions</p>
+            <ul class="rounded-lg pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>Minimum 8 characters</li>
+            </ul>
+          </template>
+        </Password>
+        <p v-if="passwordError" class="text-red-500 text-sm mt-2 mb-4">
+          Password must be at least 8 characters long and include one lowercase, one uppercase, and
+          one numeric character.
+        </p>
+        <label
+          for="password2"
+          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold ']"
+          >Confirm Password</label
+        >
+        <Password
+          inputId="password2"
+          id="password2"
+          v-model="password2"
+          toggleMask
+          :invalid="!passwordsMatch && password2 !== ''"
+          required
+          :class="[
+            !isDark ? 'text-white' : 'text-neutral-800',
+            'focus:ring-0 hover:ring-0 mt-2 mb-8 '
+          ]"
+        >
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="rounded-lg mt-2">Suggestions</p>
+            <ul class="rounded-lg pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>Minimum 8 characters</li>
+            </ul>
+          </template>
+        </Password>
+
+        <p v-if="!passwordsMatch && password2" class="text-red-500 mb-4">Passwords do not match</p>
+        <button
+          type="submit"
+          :disabled="!passwordsMatch || !isValidPassword"
+          :class="[
+            'mb-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition duration-300',
+            passwordsMatch && isValidPassword
+              ? 'hover:transform hover:-translate-y-1'
+              : 'opacity-50 cursor-not-allowed'
+          ]"
+        >
+          Change Password
         </button>
-
-        <Toast />
-
         <p
           :class="[
             isDark ? 'text-white' : ' text-neutral-800 mx-2',
@@ -267,6 +302,39 @@ body {
 
 .custom-icon-width {
   width: 50px; /* Adjust the width as needed */
+}
+
+/* Define specific styles for the Password component */
+/* LIGHT MODE INPUT */
+
+.p-password input {
+  background-color: #262626;
+  margin-top: 2px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  width: 90%;
+  border-radius: 0.5rem;
+  color: #000000;
+  border: 1px solid #262626;
+  background-color: white;
+}
+.p-password input:focus {
+  outline: none;
+  border-color: rgb(161 98 7);
+  box-shadow: none;
+}
+
+.p-password .p-password-toggle-icon {
+  color: rgb(161 98 7);
+  cursor: pointer;
+}
+
+.dark .p-password input {
+  background-color: #171717;
+  color: white;
+  border: 1px solid #171717;
 }
 
 .specific-container .dark h1 {
