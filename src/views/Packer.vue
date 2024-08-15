@@ -8,26 +8,20 @@ import { QrcodeStream } from 'vue-qrcode-reader'
 import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
 const packingData = ref(null)
-// const packingData = {
-//   data: {
-//     fitness: 0.014184397163120567,
-//     boxes: [
-//       { id: 43, width: 500, height: 500, length: 500, x: 0, y: 0, z: 0 },
-//       { id: 53, width: 293, height: 149, length: 224, x: 500, y: 0, z: 0 },
-//       { id: 49, width: 335, height: 255, length: 290, x: 0, y: 500, z: 0 },
-//       { id: 44, width: 255, height: 300, length: 275, x: 0, y: 755, z: 0 },
-//       { id: 47, width: 375, height: 255, length: 355, x: 0, y: 0, z: 500 },
-//       { id: 62, width: 280, height: 75.5, length: 198.5, x: 793, y: 0, z: 0 },
-//       { id: 58, width: 240.5, height: 165, length: 141.5, x: 793, y: 75.5, z: 0 }
-//     ]
-//   }
-// }
+const truckpackingData = ref(null)
+let CONTAINER_SIZE = [1200, 1930, 1000]
+const dialogVisible = ref(false)
 
 const toast = useToast()
 const isDark = useDark()
 const activeIndex = ref(0)
+
+const numberShipments = ref(null)
+const truckSize = [2350, 2390, 5898]
+const isNewSceneVisible = ref(false)
 
 let userName
 async function getUsername() {
@@ -43,18 +37,69 @@ onMounted(() => {
       // console.log('MEWER : ', newPackingData)
       // console.log('MEW STREAK : ', packingData)
       if (newPackingData) {
+        CONTAINER_SIZE = [1000, 1930, 1200]
         // No need to parse if it's already an object
         packingData.value = newPackingData
+        console.log('PackingData : ', packingData.value)
         nextTick(() => {
-          initThreeJS('three-container-1', isDark.value)
-          initThreeJS('three-container-2', isDark.value)
-          initThreeJS('three-container-3', isDark.value)
+          initThreeJS('three-container-1', isDark.value, packingData)
+          initThreeJS('three-container-2', isDark.value, packingData)
+          initThreeJS('three-container-3', isDark.value, packingData)
         })
       }
     },
     { immediate: true }
   )
 })
+
+async function getShipmentByID() {
+  const { data, error2 } = await supabase.functions.invoke('core', {
+    body: JSON.stringify({
+      type: 'getShipmentByDeliveryID',
+      deliveryID: 1
+    }),
+    method: 'POST'
+  })
+
+  if (error2) {
+    console.log('Error fetching shipments by ID: ', error2)
+  } else {
+    if (data && Array.isArray(data.data)) {
+      numberShipments.value = data.data.length
+
+      console.log('Number of shipments: ', numberShipments.value)
+
+      isNewSceneVisible.value = true
+
+      CONTAINER_SIZE[0] = truckSize[0]
+      CONTAINER_SIZE[1] = truckSize[1]
+      CONTAINER_SIZE[2] = truckSize[2]
+
+      await CreateJSONBoxes(data.data, CONTAINER_SIZE)
+
+      nextTick(() => {
+        initThreeJS('new-three-container', isDark.value, truckpackingData)
+      })
+    }
+  }
+}
+async function CreateJSONBoxes(data, CONTAINER_SIZE) {
+  const width = 1000
+  const height = 1930
+  const length = 1200
+  const volume = width * height * length
+
+  // Generate the JSON object
+  const shipmentJson = data.map((shipment, index) => ({
+    id: shipment.id,
+    Width: width,
+    Height: height,
+    Length: length,
+    Volume: volume,
+    Weight: 10000
+  }))
+  truckpackingData.value = await geneticAlgorithm(shipmentJson, CONTAINER_SIZE, 150, 300, 0.01).data
+}
 
 function getColorForWeight(weight, minWeight, maxWeight) {
   if (minWeight === maxWeight) {
@@ -68,18 +113,11 @@ function getColorForWeight(weight, minWeight, maxWeight) {
   return `rgb(${red}, ${green}, 0)`
 }
 
-const dialogVisible = ref(false)
-let CONTAINER_SIZE
-function initThreeJS(containerId, isDark) {
+function initThreeJS(containerId, isDark, packingDataType) {
   const container = document.getElementById(containerId)
   if (!container) {
     console.error(`No container found for Three.js scene: ${containerId}`)
     return
-  }
-  CONTAINER_SIZE = packingData.value.containerDimensions || {
-    width: 1200,
-    height: 1380,
-    depth: 2800
   }
 
   const scene = new THREE.Scene()
@@ -89,7 +127,7 @@ function initThreeJS(containerId, isDark) {
     0.1,
     10000
   )
-  camera.position.set(CONTAINER_SIZE.width, CONTAINER_SIZE.height, CONTAINER_SIZE.depth)
+  camera.position.set(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
 
   const renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
@@ -115,7 +153,7 @@ function initThreeJS(containerId, isDark) {
   createContainer(scene, CONTAINER_SIZE)
 
   // Create boxes from packing data
-  createBoxesFromData(scene, packingData.value.boxes)
+  createBoxesFromData(scene, packingDataType.value.boxes)
 
   // Add scale
   addScale(scene, CONTAINER_SIZE)
@@ -136,12 +174,9 @@ function initThreeJS(containerId, isDark) {
   })
 }
 
-function createContainer(scene) {
-  const geometry = new THREE.BoxGeometry(
-    CONTAINER_SIZE.width,
-    CONTAINER_SIZE.height,
-    CONTAINER_SIZE.depth
-  )
+function createContainer(scene, CONTAINER_SIZE) {
+  console.log('Creating container', CONTAINER_SIZE)
+  const geometry = new THREE.BoxGeometry(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
   const material = new THREE.MeshPhongMaterial({
     color: 0xcccccc,
     transparent: true,
@@ -149,7 +184,7 @@ function createContainer(scene) {
     side: THREE.BackSide
   })
   const mesh = new THREE.Mesh(geometry, material)
-  mesh.position.set(CONTAINER_SIZE.width / 2, CONTAINER_SIZE.height / 2, CONTAINER_SIZE.depth / 2)
+  mesh.position.set(CONTAINER_SIZE[0] / 2, CONTAINER_SIZE[1] / 2, CONTAINER_SIZE[2] / 2)
   scene.add(mesh)
 
   // Add wireframe
@@ -160,6 +195,10 @@ function createContainer(scene) {
 }
 
 function createBoxesFromData(scene, boxesData) {
+  if (!boxesData || !Array.isArray(boxesData)) {
+    console.error('Invalid boxes data:', boxesData)
+    return
+  }
   const weights = boxesData.map((box) => box.weight)
   const minWeight = Math.min(...weights)
   const maxWeight = Math.max(...weights)
@@ -182,16 +221,17 @@ function createBoxesFromData(scene, boxesData) {
     mesh.add(wireframe)
   })
 }
+
 function addScale(scene, CONTAINER_SIZE) {
-  const axesHelper = new THREE.AxesHelper(CONTAINER_SIZE.width)
+  const axesHelper = new THREE.AxesHelper(CONTAINER_SIZE[0])
   scene.add(axesHelper)
 
   // Add labels for each axis
   const labels = ['X', 'Y', 'Z']
   const positions = [
-    [CONTAINER_SIZE.width, 0, 0],
-    [0, CONTAINER_SIZE.height, 0],
-    [0, 0, CONTAINER_SIZE.depth]
+    [CONTAINER_SIZE[0], 0, 0],
+    [0, CONTAINER_SIZE[1], 0],
+    [0, 0, CONTAINER_SIZE[2]]
   ]
 
   labels.forEach((label, index) => {
@@ -202,7 +242,7 @@ function addScale(scene, CONTAINER_SIZE) {
   })
 
   // Add scale markers
-  for (let i = 0; i <= CONTAINER_SIZE.width; i += 100) {
+  for (let i = 0; i <= CONTAINER_SIZE[0]; i += 100) {
     const markerGeometry = new THREE.BoxGeometry(5, 5, 5)
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
     const marker = new THREE.Mesh(markerGeometry, markerMaterial)
@@ -340,6 +380,30 @@ const handleJsonData = (json) => {
           </Button>
         </AccordionTab>
       </Accordion>
+      <div class="flex justify-center">
+        <Button
+          class="w-[98%] mt-4 bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
+          @click="getShipmentByID"
+        >
+          Confirm Shipment
+        </Button>
+      </div>
+      <div
+        v-if="isNewSceneVisible"
+        :class="[
+          isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-100 text-black',
+          ' h-full flex flex-col shadow-lg'
+        ]"
+      >
+        <div
+          :id="'new-three-container'"
+          :class="[
+            'w-full mb-4',
+            { 'h-[80vh]': isNewSceneVisible, 'h-[300px]': !isNewSceneVisible }
+          ]"
+        ></div>
+      </div>
+
       <p
         @click="toggleDialog"
         class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"

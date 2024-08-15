@@ -68,7 +68,7 @@ const items = [
   }
 ]
 
-const containerDimensions = [1200, 1380, 2800]
+const containerDimensions = [1000, 1930, 1200]
 
 const packingResults = ref(null)
 
