@@ -112,7 +112,7 @@ function getColorForWeight(weight, minWeight, maxWeight) {
 
   return `rgb(${red}, ${green}, 0)`
 }
-
+let scene
 function initThreeJS(containerId, isDark, packingDataType) {
   const container = document.getElementById(containerId)
   if (!container) {
@@ -120,7 +120,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
     return
   }
 
-  const scene = new THREE.Scene()
+  scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(
     75,
     container.clientWidth / container.clientHeight,
@@ -281,19 +281,11 @@ const onDetect = (result) => {
   setTimeout(() => {
     dialogVisible.value = false
   }, 750)
-
-  toast.add({
-    severity: 'success',
-    summary: 'Success',
-    detail: 'QR code detected!',
-    life: 3000
-  })
-
+  toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
   console.log('QR code detected:', result)
 
   try {
-    // Check if the result is a string before parsing
-    const parsedData = typeof result === 'string' ? JSON.parse(result) : result
+    const parsedData = JSON.parse(result)
 
     // Assume `packingData.value` contains the current boxes in the scene
     if (packingData.value && Array.isArray(packingData.value.boxes)) {
@@ -315,12 +307,7 @@ const onDetect = (result) => {
     }
   } catch (error) {
     console.error('Failed to parse QR code:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Invalid QR code format',
-      life: 3000
-    })
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Invalid QR code format', life: 3000 })
   }
 }
 
