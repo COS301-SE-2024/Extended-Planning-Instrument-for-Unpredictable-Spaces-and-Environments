@@ -279,7 +279,23 @@ const onDetect = (result) => {
   }, 750)
   toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
   console.log('QR code detected:', result)
+
+  const parsedData = JSON.parse(result)
+
+  // Assume `packingData.value` contains the current boxes in the scene
+  if (packingData.value && Array.isArray(packingData.value.boxes)) {
+    packingData.value.boxes.forEach((box) => {
+      if (box.id === parsedData.id) {
+        box.material.color.set('rgb(128, 0, 128)')
+        box.material.opacity = 1.0
+      } else {
+        box.material.color.set(0xffffff)
+        box.material.opacity = 0.5
+      }
+    })
+  }
 }
+
 function paintOutline(detectedCodes, ctx) {
   for (const detectedCode of detectedCodes) {
     const [firstPoint, ...otherPoints] = detectedCode.cornerPoints
@@ -297,6 +313,7 @@ function paintOutline(detectedCodes, ctx) {
     ctx.stroke()
   }
 }
+
 function paintBoundingBox(detectedCodes, ctx) {
   for (const detectedCode of detectedCodes) {
     const {

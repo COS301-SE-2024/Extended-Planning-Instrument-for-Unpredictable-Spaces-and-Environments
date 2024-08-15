@@ -4,6 +4,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import { createPDF } from '@/QRcodeGenerator'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
@@ -59,6 +60,13 @@ const items = [
     }
   },
   {
+    label: 'Print Shipment list',
+    icon: 'pi pi-fw pi-qrcode',
+    command: () => {
+      printQRcode()
+    }
+  },
+  {
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
@@ -67,6 +75,15 @@ const items = [
     }
   }
 ]
+
+async function printQRcode() {
+  if (!packingResults.value) {
+    alert('Please select a Shipment to pack first')
+  } else {
+    console.log(packingResults.value)
+    await createPDF(packingResults.value.data.boxes)
+  }
+}
 
 const containerDimensions = [1000, 1930, 1200]
 
