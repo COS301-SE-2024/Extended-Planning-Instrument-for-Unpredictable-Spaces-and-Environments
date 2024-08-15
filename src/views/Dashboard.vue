@@ -52,6 +52,7 @@ async function setupSubscription() {
     handleError(error, 'setupSubscription')
   }
 }
+//
 const getAllShipments = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
