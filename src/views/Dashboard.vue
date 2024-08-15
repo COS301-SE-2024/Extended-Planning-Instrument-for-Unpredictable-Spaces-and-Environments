@@ -34,7 +34,25 @@ async function getUsername() {
   const { data } = await supabase.auth.getSession()
   userName = data.session.user.identities[0].identity_data.name
 }
-
+async function setupSubscription() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Deliveries' }, (payload) => {
+        getAllDeliveries()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
+        getAllShipments()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Packages' }, (payload) => {
+        getAllPackages()
+      })
+      .subscribe()
+  } catch (error) {
+    handleError(error, 'setupSubscription')
+  }
+}
+//
 const getAllShipments = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -215,6 +233,7 @@ onMounted(() => {
   getAllShipments()
   getAllPackages()
   getAllDeliveries()
+  setupSubscription()
 })
 </script>
 
