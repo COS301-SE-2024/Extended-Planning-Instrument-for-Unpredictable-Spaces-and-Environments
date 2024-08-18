@@ -26,10 +26,7 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: 
-          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}"
-          echo "VITE_SUPABASE_KEY=${{ secrets.VITE_SUPABASE_KEY }}"
-          npm run build
+        run: npm run build
         env:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
           VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
