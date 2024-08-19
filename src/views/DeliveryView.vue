@@ -416,7 +416,7 @@ export default {
           label="Back"
           class="font-semibold w-auto p-button-text text-orange-500 p-2"
           @click="dialogVisible = false"
-        />
+        ></Button>
       </div>
     </Dialog>
   </div>
