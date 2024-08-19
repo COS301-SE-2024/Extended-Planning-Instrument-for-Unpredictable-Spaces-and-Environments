@@ -6,7 +6,7 @@ export async function updateShipmentEndTime(supabase: any, shipmentId: number, n
   
     if (error) {
       console.error('Error updating shipment end time:', error);
-      alert('Failed to update shipment end time');
+      
       return { error: 'Failed to update shipment end time' };
     }
   
