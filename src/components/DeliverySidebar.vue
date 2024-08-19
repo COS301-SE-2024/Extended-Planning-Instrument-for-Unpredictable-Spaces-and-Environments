@@ -10,6 +10,8 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
 
+const emit = defineEmits(['handle-delivery', 'start-new-delivery'])
+
 // Use a single state variable for the dialog
 const dialogVisible = ref(false)
 const driverID = ref(false)
@@ -72,7 +74,6 @@ const getDeliveriesByStatus = async () => {
   }
 }
 
-const emit = defineEmits(['handle-delivery'])
 
 const updateDriverID = async (delivery) => {
   await getSession('Driver ID : ', driverID.value)
@@ -125,6 +126,7 @@ const items = [
     icon: 'pi pi-fw pi-truck',
     command: () => {
       toggleDialog()
+      emit('start-new-delivery')
     }
   },
   // {

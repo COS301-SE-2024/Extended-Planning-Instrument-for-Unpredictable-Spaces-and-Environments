@@ -16,6 +16,8 @@ import Dialog from 'primevue/dialog'
 // import Map from '@/components/Map.vue';
 const isDark = useDark()
 
+const showStartNewDeliveryOverlay = ref(true)
+
 const currentShipmentDetails = ref(null)
 
 // const toggleDark = () => {
@@ -25,13 +27,19 @@ const currentShipmentDetails = ref(null)
 
 // const showDialog = ref(false)
 const dialogVisible = ref(false)
-
+const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
 
 const toggleDialog = () => {
   console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
+
+const togglePopUpDialog = () => {
+  console.log('Toggling dialog')
+  dialogPopUpVisible.value = !dialogPopUpVisible.value
+}
+
 const shipmentsByDelivery = ref([])
 const pendingLocations = ref([])
 
@@ -206,6 +214,18 @@ const updateTimelineEvent = (updatedShipment) => {
   }
 }
 
+const startNewDelivery = () => {
+  showStartNewDeliveryOverlay.value = false
+  // Reset other necessary state variables
+  currentDelivery.value = null
+  shipmentsByDelivery.value = []
+  pendingLocations.value = []
+  currentDestination.value = ''
+  timelineEvents.value = []
+  confirmedShipments.value = new Set()
+  mapDestination.value = null
+}
+
 const updateTimeline = () => {
   if (currentDelivery.value) {
     deliveries.value = [
@@ -278,7 +298,10 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
-    <DeliverySidebar @handle-delivery="handleDeliveryFromSidebar" />
+    <DeliverySidebar 
+      @handle-delivery="handleDeliveryFromSidebar" 
+      @start-new-delivery="startNewDelivery"
+    />
     <div
       :class="[
         isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
@@ -441,6 +464,64 @@ export default {
           class="font-semibold w-auto p-button-text text-orange-500 p-2"
           @click="dialogVisible = false"
         ></Button>
+      </div>
+    </Dialog>
+  </div>
+
+  <div v-if="showStartNewDeliveryOverlay" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+    <div class="relative z-10 bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-lg text-center">
+      <h2 class="text-2xl font-bold mb-4">Start a New Delivery</h2>
+      <p class="mb-6">Please start a new delivery to begin.</p>
+      <button 
+        @click="togglePopUpDialog()"
+        class="px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300"
+      >
+        Start New Delivery
+      </button>
+    </div>
+    <Dialog
+      header="Edit User Profile"
+      v-model:visible="dialogPopUpVisible"
+      :modal="true"
+      :closable="false"
+      class="z-10000000000 w-[auto] p-4 relative"
+    >
+      <div
+        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+        class="mb-4"
+      >
+        <p class="text-3xl mb-2">Current Deliveries:</p>
+      </div>
+      <div v-if="isLoading">Loading deliveries...</div>
+      <div v-else-if="errorMessage">{{ errorMessage }}</div>
+      <div v-else class="pb-12">
+        <!-- Adjust padding to avoid overlap -->
+        <div v-for="delivery in deliveriesByStatus" :key="delivery.id" class="mb-8">
+          <p class="text-neutral-400 text-lg">Delivery Status:</p>
+          <p class="text-lg">{{ delivery.Status }}</p>
+          <p class="text-neutral-500 text-lg">Delivery ID:</p>
+          <p class="mb-2 text-lg">{{ delivery.id }}</p>
+
+          <Button
+            @click="handleDelivery(delivery)"
+            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
+            >Start Delivery</Button
+          >
+        </div>
+        <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
+      </div>
+      <div
+        :class="[
+          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+          'focus:outline-none focus:ring-0'
+        ]"
+        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+      >
+        <Button @click="togglePopUpDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+          >Close</Button
+        >
       </div>
     </Dialog>
   </div>
