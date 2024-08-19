@@ -1,8 +1,10 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router' // Import the router
+import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import { createPDF } from '@/QRcodeGenerator'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
@@ -19,6 +21,8 @@ async function logout() {
     router.push({ name: 'login' })
   }
 }
+const emit = defineEmits(['handle-json'])
+
 //API CALLS FOR SHIPMENTS
 const shipmentsByProcessing = ref([])
 const getAllProcessing = async () => {
@@ -41,33 +45,25 @@ const getAllProcessing = async () => {
 
 const items = [
   {
-    label: 'Current Shipments',
+    label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
       toggleDialog()
     }
   },
-  {
-    label: 'Messages',
-    icon: 'pi pi-fw pi-envelope',
-    severity: 'warning',
-    badge: '5',
-    command: () => {
-      router.push({ name: '/' })
-    }
-  },
-  {
-    label: 'Profile',
-    icon: 'pi pi-fw pi-user',
-    command: () => {
-      router.push({ name: '/' })
-    }
-  },
+
   {
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
       toggleDark() // Correctly call the toggle function
+    }
+  },
+  {
+    label: 'Print Shipment list',
+    icon: 'pi pi-fw pi-qrcode',
+    command: () => {
+      printQRcode()
     }
   },
   {
@@ -80,37 +76,47 @@ const items = [
   }
 ]
 
-const packages = ref([])
-const getPackagesById = async (shipmentId) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'getPackagesById', ShipmentID: shipmentId }),
-      method: 'POST'
-    })
-
-    if (error) {
-      console.log('API Error:', error)
-    } else {
-      console.log(data.data)
-      // packages.value = data.data
-      return data.data
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error)
+async function printQRcode() {
+  if (!packingResults.value) {
+    alert('Please select a Shipment to pack first')
+  } else {
+    console.log(packingResults.value)
+    await createPDF(packingResults.value.data.boxes)
   }
 }
+
+const containerDimensions = [1000, 1930, 1200]
+
+const packingResults = ref(null)
+
 const runPackingAlgo = async (shipmentId) => {
-  const result = await getPackagesById(shipmentId)
+  toggleDialog()
   const { data, error } = await supabase.functions.invoke('packing', {
-    body: JSON.stringify({ boxes_data: result, container_dimensions: [1200, 1380, 2800] }),
+    body: JSON.stringify({
+      type: 'getPackages',
+      ShipmentID: shipmentId
+    }),
     method: 'POST'
   })
-
+  const result = await data.data
   if (error) {
     console.log('PACKING API ERROR: ', error)
   } else {
-    console.log('PACKING API SUCCESS')
-    router.push({ name: '3DTruck', params: { packingData: JSON.stringify(data) } })
+    packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
+    emit('handle-json', packingResults.value)
+    console.log('PACKING FITNESS: ', packingResults.value.data.fitness)
+    const { data, error2 } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'updateFitnessValue',
+        ShipmentId: shipmentId,
+        newFitnessValue: parseFloat(packingResults.value.data.fitness)
+      }),
+      method: 'POST'
+    })
+    if (error2) {
+      console.log('ERROR UPDATING FINTESS VALUE: ', error)
+    }
+    console.log('DATA FROM UPDATE', data)
   }
 }
 const handleSelectShipment = (shipmentId) => {
