@@ -43,6 +43,7 @@ import { insertDelivery } from './Deliveries/insertDelivery.ts'
 import { getMaxShipmentID } from './Shipments/getMaxShipmentID.ts'
 import { insertShipment } from './Shipments/insertShipment.ts'
 import { deleteCSV } from './Storage/deleteCSV.ts'
+import { uploadSignature } from './Deliveries/uploadSignature.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -109,6 +110,9 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'getShipmentByDeliveryID') {
         return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
+      }
+      if (requestBody.type == 'uploadSignature') {
+        return responseBuilder(await uploadSignature(supabaseUser, requestBody.dataURL))
       }
       if (requestBody.type == 'getNameByEmail') {
         return responseBuilder(await getNameByEmail(supabaseUser, requestBody.email))

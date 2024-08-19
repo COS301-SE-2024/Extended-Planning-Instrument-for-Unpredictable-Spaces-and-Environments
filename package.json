@@ -23,6 +23,7 @@
     "@vueuse/core": "^10.10.0",
     "chart.js": "^4.4.3",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "date-fns": "^3.6.0",
     "file-saver": "^2.0.5",
     "papaparse": "^5.4.1",
