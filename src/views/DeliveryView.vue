@@ -62,6 +62,7 @@ const getShipmentByDeliveryId = async () => {
 
       if (data.data.length > 0 && data.data[0].Destination) {
         mapDestination.value = data.data[0].Destination
+        console.log('HERE IS THE NEXT MAP', mapDestination.value)
       }
       identifyPendingLocations()
       updateTimelineEvents()
@@ -143,11 +144,15 @@ function save(shipmentid) {
   if (pendingLocations.value.length > 0) {
     pendingLocations.value.shift() // Remove the first (current) destination
     if (pendingLocations.value.length > 0) {
+      console.log('PENDING LOCATIONS', pendingLocations.value)
       currentDestination.value = pendingLocations.value[0]
+      mapDestination.value = pendingLocations.value[0]
       upDateShipmentStatus(shipmentid)
     } else {
       currentDestination.value = ''
-      console.log('All destinations visited')
+      upDateShipmentStatus(shipmentid)
+      mapDestination.value = 'University of Pretoria'
+      alert('All destinations visited')
     }
   }
 

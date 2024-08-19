@@ -49,6 +49,7 @@ export default {
     const errorMessage = ref('')
     const isNavigating = ref(false)
     const currentStep = ref('')
+    const currentDirectionsRenderer = ref(null);
     const directionsRenderer = ref(null)
     const steps = ref([])
     const currentStepIndex = ref(0)
@@ -180,7 +181,7 @@ export default {
           travelMode: google.maps.TravelMode.DRIVING
         }
         const result = await directionsService.route(request)
-        directionsRenderer.value.setDirections(result)
+        currentDirectionsRenderer.value.setDirections(result)
         steps.value = result.routes[0].legs[0].steps
         currentStep.value = steps.value[0].instructions
         isNavigating.value = true
@@ -208,6 +209,43 @@ export default {
       }
     }
 
+    // const updateMap = async () => {
+    //   if (!map || !google) {
+    //     console.error('Map or Google API not initialized')
+    //     return
+    //   }
+
+    //   // Remove existing markers
+    //   markers.forEach((marker) => marker.setMap(null))
+    //   markers = []
+
+    //   // Add marker for starting position
+    //   const startMarker = new google.maps.Marker({
+    //     position: { lat: coordinates.value.lat, lng: coordinates.value.long },
+    //     map: map,
+    //     title: 'Starting Position'
+    //   })
+    //   markers.push(startMarker)
+
+    //   // Add marker for new destination
+    //   if (destinationCoords.value.lat && destinationCoords.value.long) {
+    //     const destinationMarker = new google.maps.Marker({
+    //       position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
+    //       map: map,
+    //       title: 'Destination'
+    //     })
+    //     markers.push(destinationMarker)
+    //   }
+
+    //   // Fit the map to show both markers
+    //   const bounds = new google.maps.LatLngBounds()
+    //   bounds.extend({ lat: coordinates.value.lat, lng: coordinates.value.long })
+    //   bounds.extend({ lat: destinationCoords.value.lat, lng: destinationCoords.value.long })
+    //   map.fitBounds(bounds)
+
+    //   // Recalculate route
+    //   await calculateRoute()
+    // }
     const updateMap = async () => {
       if (!map || !google) {
         console.error('Map or Google API not initialized')
@@ -218,7 +256,15 @@ export default {
       markers.forEach((marker) => marker.setMap(null))
       markers = []
 
-      // Add marker for starting position
+      if (currentDirectionsRenderer.value) {
+        currentDirectionsRenderer.value.setMap(null);
+        currentDirectionsRenderer.value = null;
+      }
+
+      const { DirectionsRenderer } = await loader.importLibrary('routes')
+      currentDirectionsRenderer.value = new DirectionsRenderer()
+      currentDirectionsRenderer.value.setMap(map)
+
       const startMarker = new google.maps.Marker({
         position: { lat: coordinates.value.lat, lng: coordinates.value.long },
         map: map,
@@ -226,7 +272,6 @@ export default {
       })
       markers.push(startMarker)
 
-      // Add marker for new destination
       if (destinationCoords.value.lat && destinationCoords.value.long) {
         const destinationMarker = new google.maps.Marker({
           position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
@@ -236,13 +281,11 @@ export default {
         markers.push(destinationMarker)
       }
 
-      // Fit the map to show both markers
       const bounds = new google.maps.LatLngBounds()
       bounds.extend({ lat: coordinates.value.lat, lng: coordinates.value.long })
       bounds.extend({ lat: destinationCoords.value.lat, lng: destinationCoords.value.long })
       map.fitBounds(bounds)
 
-      // Recalculate route
       await calculateRoute()
     }
 
