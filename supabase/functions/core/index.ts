@@ -26,13 +26,15 @@ import { getPublicURL } from './Storage/getPublicURL.ts'
 import { getAllProcessing } from './Shipments/getAllProcessing.ts'
 import { deleteShipment } from './Shipments/deleteShipment.ts'
 import { updateShipmentStatus } from './Shipments/updateShipmentStatus.ts'
-
+import { updateShipmentStartTime } from './Shipments/updateShipmentStartTime.ts'
+import { updateShipmentEndTime } from './Shipments/updateShipmentEndTime.ts'
 // Deliveries
 import { getAllDeliveries } from './Deliveries/getAllDeliveries.ts'
 import { setFitnessValue } from './Shipments/setFitnessValue.ts'
 import { getDeliveriesByDriverID } from './Deliveries/getDeliveriesByDriverID.ts'
 import { getDeliveriesByStatus } from './Deliveries/getDeliveriesByStatus.ts'
-
+import { updateDeliveryStartTime } from './Deliveries/updateDeliveryStartTime.ts'
+import { updateDeliveryEndTime } from './Deliveries/updateDeliveryEndTime.ts'
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -121,6 +123,26 @@ Deno.serve(async (req) => {
         return responseBuilder(
           await updateShipmentStatus(supabaseUser, requestBody.shipmentId, requestBody.newStatus)
         )
+      }
+      if (requestBody.type == 'updateDeliveryStartTime') {
+        return responseBuilder(
+          await updateDeliveryStartTime(supabaseUser, requestBody.deliveryId, new Date(requestBody.newStartTime))
+        );
+      }
+      if (requestBody.type == 'updateDeliveryEndTime') {
+        return responseBuilder(
+          await updateDeliveryEndTime(supabaseUser, requestBody.deliveryId, new Date(requestBody.newEndTime))
+        );
+      }
+      if (requestBody.type == 'updateShipmentStartTime') {
+        return responseBuilder(
+          await updateShipmentStartTime(supabaseUser, requestBody.shipmentId, new Date(requestBody.newStartTime))
+        );
+      }
+      if (requestBody.type == 'updateShipmentEndTime') {
+        return responseBuilder(
+          await updateShipmentEndTime(supabaseUser, requestBody.shipmentId, new Date(requestBody.newEndTime))
+        );
       }
       if (requestBody.type == 'deleteShipment') {
         return responseBuilder(await deleteShipment(supabaseUser, requestBody.fileName))
