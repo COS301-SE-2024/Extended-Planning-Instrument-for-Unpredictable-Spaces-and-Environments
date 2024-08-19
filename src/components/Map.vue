@@ -25,17 +25,17 @@
 <script>
 import { ref, onMounted, watch } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import { useDark } from '@vueuse/core'
+// import { useDark } from '@vueuse/core'
 
 const startingPosition = ref(null)
 
 let markers = []
 
-const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  // console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
+// const isDark = useDark()
+// const toggleDark = () => {
+//   isDark.value = !isDark.value
+//   // console.log('Dark mode:', isDark.value ? 'on' : 'off')
+// }
 export default {
   props: {
     destination: {
