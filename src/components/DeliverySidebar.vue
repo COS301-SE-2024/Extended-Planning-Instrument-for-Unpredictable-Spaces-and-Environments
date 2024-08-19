@@ -210,7 +210,7 @@ const items = [
       </template>
       <template #end>
         <div class="flex items-center gap-2">
-          <div
+          <!-- <div
             :class="[
               isDark
                 ? 'border-neutral-500 bg-neutral-950 text-white'
@@ -226,7 +226,7 @@ const items = [
                 'focus:outline-none focus:ring-0 w-32 sm:w-auto'
               ]"
             />
-          </div>
+          </div> -->
         </div>
       </template>
     </Menubar>
