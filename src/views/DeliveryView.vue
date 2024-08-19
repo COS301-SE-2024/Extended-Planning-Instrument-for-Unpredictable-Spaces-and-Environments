@@ -16,6 +16,8 @@ import Dialog from 'primevue/dialog'
 // import Map from '@/components/Map.vue';
 const isDark = useDark()
 
+const currentShipmentDetails = ref(null)
+
 // const toggleDark = () => {
 //   isDark.value = !isDark.value
 //   console.log('Dark mode:', isDark.value ? 'on' : 'off')
@@ -195,6 +197,12 @@ const updateTimelineEvent = (updatedShipment) => {
 
     // Force Vue to react to the change
     timelineEvents.value = [...timelineEvents.value]
+
+    currentShipmentDetails.value = {
+      id: updatedShipment.id,
+      destination: updatedShipment.Destination,
+      status: newStatus
+    }
   }
 }
 
@@ -342,8 +350,15 @@ export default {
                         </div>
                         <Button
                           @click="
-                            (dialogVisible = true),
-                            (selectedShipmentId = slotProps.item.shipment_id)
+                            () => {
+                              dialogVisible = true;
+                              selectedShipmentId = slotProps.item.shipment_id;
+                              currentShipmentDetails = {
+                                id: slotProps.item.shipment_id,
+                                destination: slotProps.item.destination,
+                                status: slotProps.item.status
+                              };
+                            }
                           "
                           :disabled="confirmedShipments.has(slotProps.item.shipment_id)"
                           class="mt-4 py-2 px-4 w-full justify-center"
@@ -383,6 +398,13 @@ export default {
         ]"
         class="flex flex-col"
       >
+        <h2 class="text-xl font-bold mb-4 text-center">
+          Confirm Delivery for Shipment ID: {{ selectedShipmentId }}
+        </h2>
+        <p v-if="currentShipmentDetails" class="mb-4 text-center">
+          Destination: {{ currentShipmentDetails.destination }}
+        </p>
+
         <div id="app" class="text-white">
           <VueSignaturePad
             width="100%"
