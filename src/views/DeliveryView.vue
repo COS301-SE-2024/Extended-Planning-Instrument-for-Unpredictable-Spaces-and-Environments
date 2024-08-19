@@ -8,19 +8,20 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, computed, onMounted, toRaw } from 'vue'
+import { ref, /*computed,*/ onMounted/*, toRaw*/ } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
-import FileUpload from 'primevue/fileupload'
+// import FileUpload from 'primevue/fileupload'
 // import Map from '@/components/Map.vue';
 const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
 
-const showDialog = ref(false)
+// const toggleDark = () => {
+//   isDark.value = !isDark.value
+//   console.log('Dark mode:', isDark.value ? 'on' : 'off')
+// }
+
+// const showDialog = ref(false)
 const dialogVisible = ref(false)
 
 const mapDestination = ref(null)
@@ -33,9 +34,9 @@ const shipmentsByDelivery = ref([])
 const pendingLocations = ref([])
 
 const currentDestination = ref('')
-const deliveriesByDriverID = ref([])
+// const deliveriesByDriverID = ref([])
 const deliveries = ref([])
-const visible = ref(true)
+// const visible = ref(true)
 
 const timelineEvents = ref([])
 
@@ -98,10 +99,11 @@ const getStatusColor = (status) => {
   }
 }
 
-function formattedDateTime(slotProps) {
-  const options = { dateStyle: 'medium', timeStyle: 'short' }
-  return new Date(slotProps.item.time).toLocaleString('en-US', options)
-}
+//function formattedDateTime(slotProps) {
+  //const options = { dateStyle: 'medium', timeStyle: 'short' }
+  //return new Date(slotProps.item.time).toLocaleString('en-US', options)
+//}
+
 const currentDelivery = ref(null)
 
 const handleDeliveryFromSidebar = (delivery) => {
@@ -116,7 +118,7 @@ const handleDeliveryFromSidebar = (delivery) => {
 
 const upDateShipmentStatus = async (shipmentId) => {
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateShipmentStatus',
         shipmentId: shipmentId,
@@ -283,7 +285,7 @@ export default {
       >
         <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
         <div class="mb-4">
-          <Map :destination="mapDestination" />
+          <Map :destination="mapDestination"></Map>
         </div>
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
@@ -341,15 +343,15 @@ export default {
                         <Button
                           @click="
                             (dialogVisible = true),
-                              (selectedShipmentId = slotProps.item.shipment_id)
+                            (selectedShipmentId = slotProps.item.shipment_id)
                           "
                           :disabled="confirmedShipments.has(slotProps.item.shipment_id)"
-                          class="text-white mt-4 bg-orange-600 py-2 px-4 w-full justify-center"
-                          :class="{
-                            'opacity-50 cursor-not-allowed': confirmedShipments.has(
-                              slotProps.item.shipment_id
-                            )
-                          }"
+                          class="mt-4 py-2 px-4 w-full justify-center"
+                          :class="[
+                            confirmedShipments.has(slotProps.item.shipment_id) ? 
+                            'bg-orange-600 text-white opacity-70 cursor-not-allowed' : 
+                            isDark ? 'bg-orange-600 text-white' : 'bg-black text-white hover:bg-orange-600',
+                          ]"
                         >
                           {{
                             confirmedShipments.has(slotProps.item.shipment_id)

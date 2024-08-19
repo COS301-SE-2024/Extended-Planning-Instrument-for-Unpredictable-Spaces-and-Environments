@@ -1,7 +1,7 @@
 <!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted/*, onUnmounted*/ } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -78,7 +78,7 @@ const updateDriverID = async (delivery) => {
   await getSession('Driver ID : ', driverID.value)
   console.log('Driver iD : ', driverID.value)
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateDriverID',
         deliveryID: delivery.id,
@@ -111,9 +111,9 @@ async function logout() {
     console.log('Log out successful')
   }
 }
-components: {
-  DialogComponent
-}
+// components: {
+//   DialogComponent
+// }
 
 onMounted(() => {
   getDeliveriesByStatus()
@@ -127,24 +127,24 @@ const items = [
       toggleDialog()
     }
   },
-  {
-    label: 'Updates',
-    icon: 'pi pi-fw pi-envelope',
-    severity: 'warning',
-    badge: '5',
-    command: () => {
-      console.log('Navigating to Messages')
-      router.push({ name: '/' })
-    }
-  },
-  {
-    label: 'Profile',
-    icon: 'pi pi-fw pi-user',
-    command: () => {
-      console.log('Navigating to Profile')
-      router.push({ name: '/' })
-    }
-  },
+  // {
+  //   label: 'Updates',
+  //   icon: 'pi pi-fw pi-envelope',
+  //   severity: 'warning',
+  //   badge: '5',
+  //   command: () => {
+  //     console.log('Navigating to Messages')
+  //     router.push({ name: '/' })
+  //   }
+  // },
+  // {
+  //   label: 'Profile',
+  //   icon: 'pi pi-fw pi-user',
+  //   command: () => {
+  //     console.log('Navigating to Profile')
+  //     router.push({ name: '/' })
+  //   }
+  // },
   {
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
