@@ -6,17 +6,39 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
+import { toLower } from 'lodash'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
 
 const filters = ref({
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  deliveryId: { value: null, matchMode: FilterMatchMode.CONTAINS }
 })
-const onGlobalFilterChange = (e) => {
-  filters.value.global.value = e.target.value
+
+const onFilterChange = (type, value) => {
+  console.log('Searching for delivery id ', value, ' and type is ', type)
+  filters.value[type].value = value
+  console.log('FILTERS: ', filters)
+  console.log('filters.value: ', filters.value)
+  console.log('filters.value[type]: ', filters.value[type])
+  console.log(' filters.value[type].value  ', filters.value[type].value)
 }
+
+const filteredDeliveries = computed(() => {
+  return deliveriesByStatus.value.filter((delivery) => {
+    const globalMatch =
+      !filters.value.global.value ||
+      (typeof delivery.id === 'number' && String(delivery.id).includes(filters.value.global.value))
+    const deliveryIdMatch =
+      !filters.value.deliveryId.value ||
+      (typeof delivery.id === 'number' &&
+        String(delivery.id).includes(filters.value.deliveryId.value))
+    return globalMatch && deliveryIdMatch
+  })
+})
+
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
 const dialogPopUpVisible = ref(false)
@@ -269,14 +291,15 @@ const items = [
               isDark
                 ? 'border-neutral-500 bg-neutral-900 text-white'
                 : 'border-gray-500 bg-white text-black',
-              'border flex items-center px-4 py-2 rounded-xl mt-4  '
+              'border flex items-center px-4 py-2 rounded-xl mt-4'
             ]"
           >
             <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
             <InputText
-              v-model="filters['global'].value"
-              placeholder="Search"
-              @input="onGlobalFilterChange"
+              v-model="filters.deliveryId.value"
+              placeholder="Search by Delivery ID"
+              @input="onFilterChange('deliveryId', $event.target.value)"
+              type="number"
               :class="[
                 isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
                 'focus:outline-none focus:ring-0'
@@ -290,7 +313,7 @@ const items = [
       <div v-else-if="errorMessage">{{ errorMessage }}</div>
       <div v-else class="pb-12">
         <!-- Adjust padding to avoid overlap -->
-        <div v-for="delivery in deliveriesByStatus" :key="delivery.id" class="mb-8">
+        <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
           <p class="text-neutral-400 text-lg">Delivery Status:</p>
           <p class="text-lg">{{ delivery.Status }}</p>
           <p class="text-neutral-500 text-lg">Delivery ID:</p>
