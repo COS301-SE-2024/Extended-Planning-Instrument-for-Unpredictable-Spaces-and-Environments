@@ -519,8 +519,5 @@ const items = [
   }
 }
 
-.dark .p-dialog-mask {
-  background-color: rgba(0, 0, 1, 0.5) !important;
-  backdrop-filter: blur(4px);
-}
+
 </style>

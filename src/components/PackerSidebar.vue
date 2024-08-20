@@ -130,7 +130,7 @@ onMounted(() => {
 
 <template>
   <div :class="[isDark ? 'dark' : 'light', 'h-full']">
-    <Menubar :model="items" class="w-full">
+    <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
           width="35"
@@ -239,28 +239,26 @@ onMounted(() => {
 
 <style>
 /* General styles */
-.mobile-icon {
+.packer-sidebar .mobile-icon {
   display: none;
 }
-.light {
+.packer-sidebar .light {
   background-color: white;
   color: black;
 }
 
-/* Update styles for hovered menu item link */
-.dark .p-menu {
+.packer-sidebar.dark .p-menu {
   background-color: #0a0a0a;
+  color: rgba(255, 255, 255, 0.87);
 }
 
-.dark .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #262626 !important;
-    }
+.packer-sidebar.dark .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #262626 !important;
   }
 }
 
-.dark .p-menuitem:hover > .p-menuitem-content {
+.packer-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
 }
 
@@ -273,55 +271,54 @@ onMounted(() => {
   height: auto;
 }
 
-.transition-opacity {
+.packer-sidebar .transition-opacity {
   transition: opacity 0.3s ease-in-out;
 }
-
-/* Additional media query for sidebar collapse */
-
-.light .p-menu {
+.packer-sidebar.light .p-menu {
   color: black;
-  background-color: #0a0a0a;
-  background: #0a0a0a;
+  background-color: #f3f4f6;
 }
-.light .p-menuitem {
+
+.packer-sidebar.light .p-menuitem {
   color: black;
 }
 
-.dark .p-menubar {
+.packer-sidebar.dark .p-menubar {
   padding: 1rem;
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-menubar {
+
+.packer-sidebar .p-menubar {
   padding: 1rem;
   background: #ffffff;
-  color: rgba(255, 255, 255, 0.87);
+  color: rgba(0, 0, 0, 0.87);
 }
-.p-icon {
+
+.packer-sidebar .p-icon {
   display: inline-block;
   color: #0a0a0a;
 }
 
-.light .p-menu-list {
+.packer-sidebar.light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
-  stroke: black !important;
-  fill: black !important;
   background-color: white;
   background: transparent;
 }
-.light a {
+
+/* Light mode links */
+.packer-sidebar.light a {
   color: rgb(0, 0, 0) !important;
 }
-.p-menu {
-  padding: 0.5rem 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.87);
-}
-.dark .p-menu {
-  padding: 0.5rem 0;
+
+.packer-sidebar .p-menu {
   background: transparent;
 }
+
+.packer-sidebar.dark .p-menu {
+  background: transparent;
+}
+
 .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: #171717;

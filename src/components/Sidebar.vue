@@ -1,134 +1,135 @@
 <template>
   <!-- Sidebar -->
-  <div
-    class="h-[100vh] p-4 flex flex-col justify-between transition-all duration-300 ease-in-out"
-    :class="[
-      isMobileSidebarCollapsed ? 'w-[80px]' : 'w-[300px]',
-      isDark ? 'bg-neutral-950' : 'bg-white'
-    ]"
-  >
-    <div>
-      <div
-        :class="[
-          'flex',
-          isMobileSidebarCollapsed ? 'flex-col' : 'flex-row',
-          'items-baseline',
-          { 'justify-center': isMobileSidebarCollapsed }
-        ]"
-      >
-        <div class="logo-container">
-          <img
-            v-if="isMobileSidebarCollapsed"
-            :src="
-              isDark
-                ? '/Members/Photos/Logos/Logo-Icon-Dark.svg'
-                : '/Members/Photos/Logos/Logo-Icon-Light.svg'
-            "
-            alt="JS Logo"
-            class="mr-4 mb-4 mt-2"
-            style="width: 5rem; height: auto"
-          />
-          <img
-            v-else
-            :src="
-              isDark
-                ? '/Members/Photos/Logos/Wording-Thin-Dark.svg'
-                : '/Members/Photos/Logos/Wording-Thin-Light.svg'
-            "
-            alt="Janeeb Solutions Logo"
-            class="mr-4 mb-4 mt-2 ml-2"
-            style="width: 10rem; height: auto"
-          />
+  <div class="main-sidebar">
+    <div
+      class="h-[100vh] p-4 flex flex-col justify-between transition-all duration-300 ease-in-out"
+      :class="[
+        isMobileSidebarCollapsed ? 'w-[80px]' : 'w-[300px]',
+        isDark ? 'bg-neutral-950' : 'bg-white'
+      ]"
+    >
+      <div>
+        <div
+          :class="[
+            'flex',
+            isMobileSidebarCollapsed ? 'flex-col' : 'flex-row',
+            'items-baseline',
+            { 'justify-center': isMobileSidebarCollapsed }
+          ]"
+        >
+          <div class="logo-container">
+            <img
+              v-if="isMobileSidebarCollapsed"
+              :src="
+                isDark
+                  ? '/Members/Photos/Logos/Logo-Icon-Dark.svg'
+                  : '/Members/Photos/Logos/Logo-Icon-Light.svg'
+              "
+              alt="JS Logo"
+              class="mr-4 mb-4 mt-2"
+              style="width: 5rem; height: auto"
+            />
+            <img
+              v-else
+              :src="
+                isDark
+                  ? '/Members/Photos/Logos/Wording-Thin-Dark.svg'
+                  : '/Members/Photos/Logos/Wording-Thin-Light.svg'
+              "
+              alt="Janeeb Solutions Logo"
+              class="mr-4 mb-4 mt-2 ml-2"
+              style="width: 10rem; height: auto"
+            />
+          </div>
         </div>
-      </div>
 
-      <button
-        @click="toggleShipment"
-        class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-orange-600 text-white mb-4 flex items-center"
-        :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
-      >
-        <i
-          class="pi pi-box text-white"
-          :class="{
-            'm-0 ': isMobileSidebarCollapsed,
-            'mr-4': !isMobileSidebarCollapsed
-          }"
-        ></i>
-        <p :class="{ 'opacity-0': isMobileSidebarCollapsed }" class="justify-center ml-2">
-          New Shipment
-        </p>
-      </button>
+        <button
+          @click="toggleShipment"
+          class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-orange-600 text-white mb-4 flex items-center"
+          :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
+        >
+          <i
+            class="pi pi-box text-white"
+            :class="{
+              'm-0 ': isMobileSidebarCollapsed,
+              'mr-4': !isMobileSidebarCollapsed
+            }"
+          ></i>
+          <p :class="{ 'opacity-0': isMobileSidebarCollapsed }" class="justify-center ml-2">
+            New Shipment
+          </p>
+        </button>
 
-      <!-- Menu -->
-      <Menu
-        :class="[isDark ? 'dark' : 'light', 'specific-container']"
-        :model="items"
-        :router="router"
-        class="w-full md:w-[15rem] p-menu-custom specific-container"
-        :exact="false"
-      >
-        <template #item="{ item, props }">
-          <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
+        <!-- Menu -->
+        <Menu
+          :class="[isDark ? 'dark' : 'light', 'specific-container']"
+          :model="items"
+          :router="router"
+          class="w-full md:w-[15rem] p-menu-custom specific-container"
+          :exact="false"
+        >
+          <template #item="{ item, props }">
+            <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
+              <a
+                :class="[
+                  'h-[45px] flex align-items-center mb-2',
+                  item.active ? 'active-menu-item' : ''
+                ]"
+                v-bind="props.action"
+                @click="navigate(item.route)"
+              >
+                <i class="mr-2" :class="item.icon"></i>
+                <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
+                <Badge severity="contrast" v-if="item.badge" class="ml-auto" :value="item.badge" />
+              </a>
+            </router-link>
             <a
+              v-else
               :class="[
-                'h-[45px] flex align-items-center mb-2',
+                'h-[45px] flex align-items-center mb-2 ',
                 item.active ? 'active-menu-item' : ''
               ]"
               v-bind="props.action"
-              @click="navigate(item.route)"
+              :target="item.target"
+              :href="item.url"
+              @click="item.command"
             >
-              <i class="mr-2" :class="item.icon"></i>
+              <span class="mr-2" :class="item.icon"></span>
               <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
-              <Badge severity="contrast" v-if="item.badge" class="ml-auto" :value="item.badge" />
             </a>
-          </router-link>
-          <a
-            v-else
-            :class="[
-              'h-[45px] flex align-items-center mb-2 ',
-              item.active ? 'active-menu-item' : ''
-            ]"
-            v-bind="props.action"
-            :target="item.target"
-            :href="item.url"
-            @click="item.command"
-          >
-            <span class="mr-2" :class="item.icon"></span>
-            <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
-          </a>
-        </template>
-      </Menu>
-    </div>
-    <button
-      class="relative overflow-hidden w-full p-link flex align-items-center text-color hover:surface-200 border-noround"
-    >
-      <div class="flex-shrink-0">
-        <Avatar
-          :label="avatarLabel"
-          class="mr-2 border border-neutral-900"
-          size="large"
-          shape="circle"
-        />
+          </template>
+        </Menu>
       </div>
-      <span
-        class="inline-flex flex-col transition-opacity duration-300 ease-in-out"
-        :class="{ 'opacity-0': isMobileSidebarCollapsed }"
+      <button
+        class="relative overflow-hidden w-full p-link flex align-items-center text-color hover:surface-200 border-noround"
       >
-        <span class="font-bold">{{ userFullName }}</span>
-        <span class="text-sm">{{ userRole }}</span>
-      </span>
-    </button>
-  </div>
+        <div class="flex-shrink-0">
+          <Avatar
+            :label="avatarLabel"
+            class="mr-2 border border-neutral-900"
+            size="large"
+            shape="circle"
+          />
+        </div>
+        <span
+          class="inline-flex flex-col transition-opacity duration-300 ease-in-out"
+          :class="{ 'opacity-0': isMobileSidebarCollapsed }"
+        >
+          <span class="font-bold">{{ userFullName }}</span>
+          <span class="text-sm">{{ userRole }}</span>
+        </span>
+      </button>
+    </div>
 
-  <Dialog
-    v-model:visible="showShipment"
-    :class="[isDark ? 'dark' : 'light', 'w-[50%] rounded-lg']"
-    :modal="true"
-    @close-dialog="toggleShipment"
-  >
-    <div class="flex flex-col items-center justify-center m-8">
-      <p class="mb-4 text-3xl">New Shipment</p>
-      <!-- 
+    <Dialog
+      v-model:visible="showShipment"
+      :class="[isDark ? 'dark' : 'light', 'w-[50%] rounded-lg']"
+      :modal="true"
+      @close-dialog="toggleShipment"
+    >
+      <div class="flex flex-col items-center justify-center m-8">
+        <p class="mb-4 text-3xl">New Shipment</p>
+        <!-- 
       <FileUpload
         name="demo[]"
         url="/api/upload"
@@ -144,31 +145,38 @@
           </div>
         </template>
       </FileUpload> -->
-      <input type="file" accept=".csv" @change="onFileChange" />
-      <Button @click="processShipment" class="mt-4 text-white py-2 px-6 bg-green-800"
-        >Process Shipment</Button
-      >
-      <Button @click="toggleShipment" class="mt-4 text-white py-2 px-6 bg-red-800">Cancel</Button>
-    </div>
-  </Dialog>
-  <Toast />
-  <DialogComponent
-    v-if="showDialog"
-    :images="[
-      { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
-      { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
-      { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
-      { src: '/Members/Photos/manager dashboard (Tracking page).png', alt: 'Alternative Image 4' },
-      { src: '/Members/Photos/manager dashboard (Shipments page).png', alt: 'Alternative Image 5' }
-    ]"
-    title="Contact Support"
-    :contacts="[
-      { name: 'Call', phone: '+27 12 345 6789', underline: true },
-      { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
-    ]"
-    :dialogVisible="showDialog"
-    @close-dialog="toggleDialog"
-  />
+        <input type="file" accept=".csv" @change="onFileChange" />
+        <Button @click="processShipment" class="mt-4 text-white py-2 px-6 bg-green-800"
+          >Process Shipment</Button
+        >
+        <Button @click="toggleShipment" class="mt-4 text-white py-2 px-6 bg-red-800">Cancel</Button>
+      </div>
+    </Dialog>
+    <Toast />
+    <DialogComponent
+      v-if="showDialog"
+      :images="[
+        { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
+        { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
+        { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
+        {
+          src: '/Members/Photos/manager dashboard (Tracking page).png',
+          alt: 'Alternative Image 4'
+        },
+        {
+          src: '/Members/Photos/manager dashboard (Shipments page).png',
+          alt: 'Alternative Image 5'
+        }
+      ]"
+      title="Contact Support"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -679,11 +687,21 @@ const items = computed(() => [
   color: rgba(0, 0, 0, 0.87) !important;
   stroke: black !important;
   fill: black !important;
-  background-color: white;
+  background-color: transparent !important;
 }
 
 .light a {
   color: black !important;
+}
+
+.light .p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+}
+
+.main-sidebar .light {
+  background-color: transparent !important;
+  color: black;
 }
 
 .p-menu {
@@ -691,6 +709,15 @@ const items = computed(() => [
   color: rgba(255, 255, 255, 0.87);
   border-radius: 4px;
   min-width: 12.5rem;
+}
+.dark .p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+}
+
+.p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
 }
 
 .light .p-menuitem:hover > .p-menuitem-content {
