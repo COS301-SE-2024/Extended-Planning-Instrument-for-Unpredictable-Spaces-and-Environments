@@ -560,11 +560,21 @@ export default {
   >
     <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
     <div class="relative z-10 bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-lg text-center">
-      <h2 class="text-2xl font-bold mb-4">Start a New Delivery</h2>
-      <p class="mb-6">Please start a new delivery to begin.</p>
+      <h2
+        :class="[isDark ? 'dark  text-white ' : 'light  text-black']"
+        class="text-2xl font-bold mb-4"
+      >
+        Start a New Delivery
+      </h2>
+      <p :class="[isDark ? 'dark  text-white ' : 'light  text-black']" class="mb-6">
+        Please start a new delivery to begin.
+      </p>
       <button
         @click="togglePopUpDialog()"
-        class="px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300"
+        :class="[
+          isDark ? ' text-white ' : 'text-black',
+          'px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300'
+        ]"
       >
         Start New Delivery
       </button>
