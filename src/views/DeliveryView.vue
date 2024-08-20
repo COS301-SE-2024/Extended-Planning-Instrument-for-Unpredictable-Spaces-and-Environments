@@ -6,7 +6,7 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, /*computed,*/ onMounted /*, toRaw*/ } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -40,6 +40,14 @@ const deliveries = ref([])
 const activeShipmentIndex = ref(0)
 
 const timelineEvents = ref([])
+
+const isSmallScreen = ref(window.innerWidth < 768)
+const layoutClass = computed(() => (isSmallScreen.value ? 'vertical' : 'horizontal'))
+
+const updateScreenSize = () => {
+  isSmallScreen.value = window.innerWidth < 768
+}
+
 const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
 const signaturePad = ref(null)
@@ -352,8 +360,11 @@ const openInGoogleMaps = () => {
   }
 }
 onMounted(() => {
-  // console.log('DeliveryView: Component mounted')
+  window.addEventListener('resize', updateScreenSize)
   setupSubscription()
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenSize)
 })
 </script>
 <script>
@@ -409,7 +420,7 @@ export default {
           <Map :destination="mapDestination"></Map>
           <button
             @click="openInGoogleMaps"
-            class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out"
+            class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out mt-4"
           >
             Open Route in Google Maps
           </button>
@@ -421,7 +432,7 @@ export default {
           <div class="flex flex-row">
             <Timeline
               :value="timelineEvents"
-              layout="horizontal"
+              :layout="layoutClass"
               class="customized-timeline w-full"
             >
               <template #marker="slotProps">
