@@ -1,5 +1,4 @@
 <!-- DELIVERYVIEW.VUE -->
-
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
