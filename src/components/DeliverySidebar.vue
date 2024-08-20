@@ -1,13 +1,11 @@
-
 <!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted/*, computed */} from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
-import { toLower } from 'lodash'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
@@ -273,74 +271,76 @@ const items = [
         </div>
       </template>
     </Menubar>
-    <Dialog
-      header="Select Delivery to Start"
-      :visible="props.dialogPopUpVisible"
-      @update:visible="(value) => emit('update:dialogPopUpVisible', value)"
-      :modal="true"
-      :closable="false"
-      class="z-10000000000 w-[auto] p-4 relative"
-    >
-      <div
-        @open-delivery-dialog="handleOpenDeliveryDialog"
-        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
-        class="mb-4"
+    <div class="bg-black opacity-50 backdrop-blur-lg">
+      <Dialog
+        header="Select Delivery to Start"
+        :visible="props.dialogPopUpVisible"
+        @update:visible="(value) => emit('update:dialogPopUpVisible', value)"
+        :modal="true"
+        :closable="false"
+        class="z-10000000000 w-[auto] p-4 relative"
       >
-        <div class="w-full md:w-[300px] mb-4">
-          <div
-            :class="[
-              isDark
-                ? 'border-neutral-500 bg-neutral-900 text-white'
-                : 'border-gray-500 bg-white text-black',
-              'border flex items-center px-4 py-2 rounded-xl mt-4'
-            ]"
-          >
-            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-            <InputText
-              v-model="filters.deliveryId.value"
-              placeholder="Search by Delivery ID"
-              @input="onFilterChange('deliveryId', $event.target.value)"
-              type="number"
-              :class="[
-                isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
-                'focus:outline-none focus:ring-0'
-              ]"
-            />
-          </div>
-        </div>
-        <p class="text-3xl mb-2">Current Deliveries:</p>
-      </div>
-      <div v-if="isLoading">Loading deliveries...</div>
-      <div v-else-if="errorMessage">{{ errorMessage }}</div>
-      <div v-else class="pb-12">
-        <!-- Adjust padding to avoid overlap -->
-        <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
-          <p class="text-neutral-400 text-lg">Delivery Status:</p>
-          <p class="text-lg">{{ delivery.Status }}</p>
-          <p class="text-neutral-500 text-lg">Delivery ID:</p>
-          <p class="mb-2 text-lg">{{ delivery.id }}</p>
-
-          <Button
-            @click="handleDelivery(delivery)"
-            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
-            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
-            >Start Delivery</Button
-          >
-        </div>
-        <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
-      </div>
-      <div
-        :class="[
-          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
-          'focus:outline-none focus:ring-0'
-        ]"
-        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
-      >
-        <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
-          >Close</Button
+        <div
+          @open-delivery-dialog="handleOpenDeliveryDialog"
+          :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+          class="mb-4"
         >
-      </div>
-    </Dialog>
+          <div class="w-full md:w-[300px] mb-4 sm">
+            <div
+              :class="[
+                isDark
+                  ? 'border-neutral-500 bg-neutral-900 text-white'
+                  : 'border-gray-500 bg-white text-black',
+                'border flex items-center px-4 py-2 rounded-xl mt-4'
+              ]"
+            >
+              <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+              <InputText
+                v-model="filters.deliveryId.value"
+                placeholder="Search by Delivery ID"
+                @input="onFilterChange('deliveryId', $event.target.value)"
+                type="number"
+                :class="[
+                  isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
+                  'focus:outline-none focus:ring-0'
+                ]"
+              />
+            </div>
+          </div>
+          <p class="text-3xl mb-2">Current Deliveries:</p>
+        </div>
+        <div v-if="isLoading">Loading deliveries...</div>
+        <div v-else-if="errorMessage">{{ errorMessage }}</div>
+        <div v-else class="pb-12">
+          <!-- Adjust padding to avoid overlap -->
+          <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
+            <p class="text-neutral-400 text-lg">Delivery Status:</p>
+            <p class="text-lg">{{ delivery.Status }}</p>
+            <p class="text-neutral-500 text-lg">Delivery ID:</p>
+            <p class="mb-2 text-lg">{{ delivery.id }}</p>
+
+            <Button
+              @click="handleDelivery(delivery)"
+              :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+              class="text-lg justify-center px-4 py-2 w-full bg-green-800"
+              >Start Delivery</Button
+            >
+          </div>
+          <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
+        </div>
+        <div
+          :class="[
+            isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+            'focus:outline-none focus:ring-0'
+          ]"
+          class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+        >
+          <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+            >Close</Button
+          >
+        </div>
+      </Dialog>
+    </div>
     <div>
       <DialogComponent
         v-if="showDialog"
@@ -413,7 +413,6 @@ const items = [
     background-color: #262626 !important;
   }
 }
-
 .delivery-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #262626 !important;
 }
@@ -518,5 +517,10 @@ const items = [
   span {
     color: white !important;
   }
+}
+
+.dark .p-dialog-mask {
+  background-color: rgba(0, 0, 1, 0.5) !important;
+  backdrop-filter: blur(4px);
 }
 </style>

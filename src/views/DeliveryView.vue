@@ -571,7 +571,10 @@ export default {
     v-if="showStartNewDeliveryOverlay"
     class="fixed inset-0 z-50 flex items-center justify-center"
   >
-    <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+    <div
+      class="absolute inset-0 backdrop-blur-sm"
+      style="background-color: rgba(0, 0, 1, 0.5)"
+    ></div>
     <div
       class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
       :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
@@ -666,13 +669,16 @@ export default {
 .p-timeline {
   gap: 0.5rem;
 }
-.p-dialog-mask {
-  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 9998 !important; /* Ensure it is above other elements */
-}
+
 .p-timeline-left .p-timeline-event-opposite {
   text-align: left;
   padding: 0;
   flex-grow: 0;
+}
+
+.p-dialog-mask {
+  background-color: rgba(0, 0, 1, 0.5) !important;
+  backdrop-filter: blur(4px);
+  z-index: 9998 !important; /* Ensure it is above other elements */
 }
 </style>
