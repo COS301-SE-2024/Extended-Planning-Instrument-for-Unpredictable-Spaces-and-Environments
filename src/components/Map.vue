@@ -1,8 +1,6 @@
 <template>
   <div :class="[' h-[auto] flex flex-col rounded-md ']">
     <div id="map" style="width: 100%; height: 400px"></div>
-
-    <div v-if="isNavigating" class="mt-4"></div>
     <p v-if="errorMessage" class="error-message mt-4">{{ errorMessage }}</p>
   </div>
 </template>

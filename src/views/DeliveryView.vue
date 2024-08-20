@@ -409,7 +409,7 @@ export default {
           <Map :destination="mapDestination"></Map>
           <button
             @click="openInGoogleMaps"
-            class="mt-4 py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out"
+            class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out"
           >
             Open Route in Google Maps
           </button>

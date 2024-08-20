@@ -10,6 +10,7 @@ import { FilterMatchMode } from 'primevue/api'
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
+
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 })
@@ -262,13 +263,13 @@ const items = [
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
         class="mb-4"
       >
-        <div class="w-full md:w-[300px] mb-4 mt-4">
+        <div class="w-full md:w-[300px] mb-4">
           <div
             :class="[
               isDark
                 ? 'border-neutral-500 bg-neutral-900 text-white'
                 : 'border-gray-500 bg-white text-black',
-              'border flex items-center px-4 py-2 rounded-xl '
+              'border flex items-center px-4 py-2 rounded-xl mt-4  '
             ]"
           >
             <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
