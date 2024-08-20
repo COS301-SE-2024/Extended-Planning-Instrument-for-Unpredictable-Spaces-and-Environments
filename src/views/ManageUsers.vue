@@ -59,7 +59,7 @@ async function fetchCurrentUser() {
           handleError(error, 'fetchCurrentUser')
         } else {
           currentUser.value = data.data
-          // console.log('Current user fetched:', currentUser.value)
+          console.log('Current user:', currentUser.value) // Debugging statement
         }
       } else {
         console.log('User does not have permission')
@@ -200,7 +200,8 @@ const saveChanges = async () => {
 }
 
 const nameWithYou = (user) => {
-  if (currentUser.value.email === user.Email) {
+  console.log('Function called for user:', user) // Debugging statement
+  if (currentUser.value && currentUser.value.email === user.email) {
     return `${user.FullName} (You)`
   }
   return user.FullName

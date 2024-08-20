@@ -151,13 +151,17 @@
 
         <Button
           @click="processShipment"
-          :disabled="!selectedFile"
+          :disabled="!selectedFile || loading"
+          :loading="loading"
           :class="[
             'w-full max-w-xs mt-4 items-center justify-center text-white py-2 px-6',
             selectedFile ? 'bg-green-800 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'
           ]"
         >
-          Process Shipment
+          <template v-if="loading">
+            <i class="pi pi-spin pi-spinner mr-2"></i> Processing...
+          </template>
+          <template v-else> Process Shipment </template>
         </Button>
 
         <Button
@@ -332,6 +336,9 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
+const loading = ref(false)
+const loadingDel = ref(false)
+
 const logout = async () => {
   const { error } = await supabase.auth.signOut()
 
@@ -435,6 +442,7 @@ const processShipment = async () => {
     alert('Please select a file')
     return
   }
+  loading.value = true
 
   try {
     await validateCSV(selectedFile.value)
@@ -457,7 +465,14 @@ const processShipment = async () => {
     if (error) {
       console.log('API Error downloadingFile:', error)
     } else {
+      loading.value = false
       toggleShipment()
+      toast.add({
+        severity: 'info',
+        summary: 'Please note:',
+        detail: 'Order is being processed, please wait',
+        life: 4000
+      })
       const jsonData = convertCSVToJSON(CSVText.data)
 
       JSONText = jsonData
@@ -524,7 +539,6 @@ const processShipment = async () => {
                 throw new Error('Failed to insert package')
               }
             }
-            alert('All shipments and packages inserted successfully')
             toast.add({
               severity: 'success',
               summary: 'Success',
@@ -545,6 +559,8 @@ const processShipment = async () => {
     })
     selectedFile.value = null
     return
+  } finally {
+    loading.value = false
   }
 }
 const activeRoute = ref(router.currentRoute.value.name)

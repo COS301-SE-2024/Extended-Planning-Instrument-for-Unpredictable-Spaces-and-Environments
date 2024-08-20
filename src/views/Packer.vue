@@ -565,6 +565,13 @@ const toggleDialog = () => {
   border: 2px solid #555;
 }
 
+.dark .p-accordion .p-accordion-header .p-accordion-header-link {
+  background: #0a0a0a !important;
+}
+.light .p-accordion .p-accordion-header .p-accordion-header-link {
+  background: white !important;
+}
+
 /* General styles for AccordionTab */
 .light-mode-accordion-tab {
   background-color: white;
