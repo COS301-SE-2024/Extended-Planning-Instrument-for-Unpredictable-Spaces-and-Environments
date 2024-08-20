@@ -7,7 +7,7 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, /*computed,*/ onMounted /*, toRaw*/ } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -41,6 +41,14 @@ const deliveries = ref([])
 const activeShipmentIndex = ref(0)
 
 const timelineEvents = ref([])
+
+const isSmallScreen = ref(window.innerWidth < 768)
+const layoutClass = computed(() => (isSmallScreen.value ? 'vertical' : 'horizontal'))
+
+const updateScreenSize = () => {
+  isSmallScreen.value = window.innerWidth < 768
+}
+
 const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
 const signaturePad = ref(null)
@@ -268,8 +276,8 @@ const updateTimelineEvent = (updatedShipment) => {
 
     // Update the next event's line_colour if it exists
     if (index < timelineEvents.value.length - 1) {
-      timelineEvents.value[index + 1] = {
-        ...timelineEvents.value[index + 1],
+      timelineEvents.value[index] = {
+        ...timelineEvents.value[index],
         line_colour: newColor
       }
     }
@@ -339,9 +347,25 @@ const updateTimelineEvents = () => {
   }
   timelineEvents.value = events
 }
+
+//OPEN IN GOOGLE MAPS FUNCTONALITY
+const openInGoogleMaps = () => {
+  if (mapDestination.value) {
+    const destination = encodeURIComponent(mapDestination.value)
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`
+
+    // Check if the user is on a mobile device and try to open the native app
+    window.open(googleMapsUrl, '_blank')
+  } else {
+    alert('Destination is not set')
+  }
+}
 onMounted(() => {
-  // console.log('DeliveryView: Component mounted')
+  window.addEventListener('resize', updateScreenSize)
   setupSubscription()
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenSize)
 })
 </script>
 <script>
@@ -371,7 +395,7 @@ export default {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-500 text-black',
       ' h-[auto] flex flex-col '
     ]"
   >
@@ -395,6 +419,12 @@ export default {
         <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
         <div class="mb-4">
           <Map :destination="mapDestination"></Map>
+          <button
+            @click="openInGoogleMaps"
+            class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out mt-4"
+          >
+            Open Route in Google Maps
+          </button>
         </div>
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
@@ -403,7 +433,7 @@ export default {
           <div class="flex flex-row">
             <Timeline
               :value="timelineEvents"
-              layout="horizontal"
+              :layout="layoutClass"
               class="customized-timeline w-full"
             >
               <template #marker="slotProps">
@@ -419,7 +449,10 @@ export default {
                   <Card
                     :class="[
                       isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
-                      'rounded-xl border border-neutral-500 h-full'
+                      'rounded-xl border border-neutral-500 h-full',
+                      slotProps.index !== activeShipmentIndex
+                        ? 'bg-gray-900 bg-opacity-50 text-gray-500 cursor-not-allowed'
+                        : 'bg-orange-600 text-white hover:transform hover:-translate-y-1 transition duration-300 hover:shadow-xl'
                     ]"
                   >
                     <template #title>
@@ -449,22 +482,20 @@ export default {
                             {{ slotProps.item.destination }}
                           </div>
                         </div>
-                        <Button
-                          @click="openDialog(slotProps.item)"
-                          :disabled="slotProps.index !== activeShipmentIndex"
-                          class="mt-4 py-2 px-4 w-full justify-center"
+                        <button
+                          class="p-button p-component mt-4 py-2 px-4 w-full justify-center"
                           :class="[
                             slotProps.index !== activeShipmentIndex
-                              ? 'bg-orange-600 text-white opacity-70 cursor-not-allowed'
-                              : isDark
-                                ? 'bg-orange-600 text-white'
-                                : 'bg-black text-white hover:bg-orange-600'
+                              ? 'bg-gray-900 text-gray-500 opacity-0 cursor-not-allowed'
+                              : 'bg-orange-600 text-white hover:bg-orange-500'
                           ]"
+                          :disabled="slotProps.index !== activeShipmentIndex"
+                          @click="openDialog(slotProps.item)"
                         >
                           {{
                             slotProps.index < activeShipmentIndex ? 'Delivered' : 'Confirm Delivery'
                           }}
-                        </Button>
+                        </button>
                       </div>
                     </template>
                   </Card>
@@ -489,7 +520,7 @@ export default {
         ]"
         class="flex flex-col"
       >
-        <h2 class="text-xl font-bold mb-4 text-center">
+        <h2 class="text-xl font-bold mb-4 mt-4 text-center">
           Confirm Delivery for Shipment ID: {{ selectedShipmentId }}
         </h2>
         <p v-if="currentShipmentDetails" class="mb-4 text-center">
@@ -541,12 +572,25 @@ export default {
     class="fixed inset-0 z-50 flex items-center justify-center"
   >
     <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
-    <div class="relative z-10 bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-lg text-center">
-      <h2 class="text-2xl font-bold mb-4">Start a New Delivery</h2>
-      <p class="mb-6">Please start a new delivery to begin.</p>
+    <div
+      class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
+      :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+    >
+      <h2
+        :class="[isDark ? 'bg-neutral-800 text-white ' : '  text-black']"
+        class="text-2xl font-bold mb-4"
+      >
+        Start a New Delivery
+      </h2>
+      <p :class="[isDark ? '  text-white ' : '  text-black']" class="mb-6">
+        Please start a new delivery to begin.
+      </p>
       <button
         @click="togglePopUpDialog()"
-        class="px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300"
+        :class="[
+          isDark ? ' text-white ' : 'text-black',
+          'px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300'
+        ]"
       >
         Start New Delivery
       </button>
