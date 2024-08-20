@@ -1,23 +1,8 @@
 <template>
   <div :class="[' h-[auto] flex flex-col rounded-md ']">
     <div id="map" style="width: 100%; height: 400px"></div>
-    <button
-      v-if="!isNavigating"
-      @click="startNavigation"
-      class="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-    >
-      Start Navigation
-    </button>
-    <div v-if="isNavigating" class="mt-4">
-      <!-- <h2 class="text-xl font-bold mb-2">Current Step:</h2>
-      <p v-html="currentStep"></p>
-      <button
-        @click="nextStep"
-        class="w-full mt-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-600"
-      >
-        Next Step
-      </button> -->
-    </div>
+
+    <div v-if="isNavigating" class="mt-4"></div>
     <p v-if="errorMessage" class="error-message mt-4">{{ errorMessage }}</p>
   </div>
 </template>

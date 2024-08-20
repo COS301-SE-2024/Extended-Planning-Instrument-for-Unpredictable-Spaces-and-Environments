@@ -267,8 +267,8 @@ const updateTimelineEvent = (updatedShipment) => {
 
     // Update the next event's line_colour if it exists
     if (index < timelineEvents.value.length - 1) {
-      timelineEvents.value[index + 1] = {
-        ...timelineEvents.value[index + 1],
+      timelineEvents.value[index] = {
+        ...timelineEvents.value[index],
         line_colour: newColor
       }
     }
@@ -559,14 +559,17 @@ export default {
     class="fixed inset-0 z-50 flex items-center justify-center"
   >
     <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
-    <div class="relative z-10 bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-lg text-center">
+    <div
+      class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
+      :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+    >
       <h2
-        :class="[isDark ? 'dark  text-white ' : 'light  text-black']"
+        :class="[isDark ? 'bg-neutral-800 text-white ' : '  text-black']"
         class="text-2xl font-bold mb-4"
       >
         Start a New Delivery
       </h2>
-      <p :class="[isDark ? 'dark  text-white ' : 'light  text-black']" class="mb-6">
+      <p :class="[isDark ? '  text-white ' : '  text-black']" class="mb-6">
         Please start a new delivery to begin.
       </p>
       <button
