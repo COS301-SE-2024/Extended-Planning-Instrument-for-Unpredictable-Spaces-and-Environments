@@ -1,10 +1,33 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { createPDF } from '@/QRcodeGenerator'
+import { FilterMatchMode } from 'primevue/api'
+
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  shipmentId: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+
+const onFilterChange = (type, value) => {
+  filters.value[type].value = value
+}
+
+const filteredShipments = computed(() => {
+  return shipmentsByProcessing.value.filter((shipment) => {
+    const globalMatch =
+      !filters.value.global.value ||
+      (typeof shipment.id === 'number' && String(shipment.id).includes(filters.value.global.value))
+    const shipmentIdMatch =
+      !filters.value.shipmentId.value ||
+      (typeof shipment.id === 'number' &&
+        String(shipment.id).includes(filters.value.shipmentId.value))
+    return globalMatch && shipmentIdMatch
+  })
+})
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
@@ -21,6 +44,7 @@ async function logout() {
     router.push({ name: 'login' })
   }
 }
+
 const emit = defineEmits(['handle-json'])
 
 //API CALLS FOR SHIPMENTS
@@ -129,7 +153,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="[isDark ? 'dark' : 'light', 'h-full']">
+  <div :class="[isDark ? 'dark packer-sidebar' : 'light packer-sidebar', 'h-full']">
     <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
@@ -200,13 +224,35 @@ onMounted(() => {
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
         class="mb-4"
       >
+        <div class="w-full md:w-[300px] mb-4 sm">
+          <div
+            :class="[
+              isDark
+                ? 'border-neutral-500 bg-neutral-900 text-white'
+                : 'border-gray-500 bg-white text-black',
+              'border flex items-center px-4 py-2 rounded-xl mt-4'
+            ]"
+          >
+            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+            <InputText
+              v-model="filters.shipmentId.value"
+              placeholder="Search by Shipment ID"
+              @input="onFilterChange('deliveryId', $event.target.value)"
+              type="number"
+              :class="[
+                isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
+                'focus:outline-none focus:ring-0'
+              ]"
+            />
+          </div>
+        </div>
         <p class="text-3xl mb-2">Current Shipments:</p>
       </div>
       <div v-if="isLoading">Loading shipments...</div>
       <div v-else-if="errorMessage">{{ errorMessage }}</div>
       <div v-else class="pb-12">
         <!-- Adjust padding to avoid overlap -->
-        <div v-for="shipment in shipmentsByProcessing" :key="shipment.id" class="mb-8">
+        <div v-for="shipment in filteredShipments" :key="shipment.id" class="mb-8">
           <p class="text-neutral-400 text-lg">Shipment Status:</p>
           <p class="text-lg">{{ shipment.Status }}</p>
           <p class="text-neutral-500 text-lg">Shipment ID:</p>
@@ -239,51 +285,72 @@ onMounted(() => {
 
 <style>
 /* General styles */
-.packer-sidebar .mobile-icon {
+.mobile-icon {
   display: none;
 }
-.packer-sidebar .light {
+.light {
   background-color: white;
   color: black;
+}
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  border-radius: 0;
+  color: white;
 }
 
 .packer-sidebar.dark .p-menu {
   background-color: #0a0a0a;
-  color: rgba(255, 255, 255, 0.87);
+  border-radius: 0;
 }
 
+.packer-sidebar.dark .p-menubar {
+  background-color: #000000 !important; /* Ensure dark background */
+  color: rgb(0, 0, 0) !important; /* Ensure text color is white */
+}
+
+.packer-sidebar.light .p-menubar {
+  background-color: #ffffff !important; /* Ensure light background */
+}
+.packer-sidebar.dark .p-icon {
+  color: white !important; /* Ensure icon color is white in dark mode */
+}
+
+.packer-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  background-color: #0a0a0a !important; /* Dark background for menu items */
+  color: white !important; /* Ensure text color is white */
+}
+.packer-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: #262626 !important; /* Darker background on hover */
+  color: white !important;
+}
 .packer-sidebar.dark .p-menuitem {
   &.p-focus > .p-menuitem-content {
     background-color: #262626 !important;
   }
 }
-
 .packer-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
-  background-color: #a16207 !important;
+  background-color: #262626 !important;
 }
 
-.p-calendar {
+/* Additional styles scoped to the packer-sidebar component */
+.packer-sidebar .p-calendar {
   width: 100%; /* Take up full width of parent */
   height: auto;
 }
 
-.p-chart {
+.packer-sidebar .p-chart {
   height: auto;
 }
 
-.packer-sidebar .transition-opacity {
-  transition: opacity 0.3s ease-in-out;
-}
-.packer-sidebar.light .p-menu {
+.packer-sidebar .light .p-menu {
   color: black;
-  background-color: #f3f4f6;
+  background-color: #0a0a0a;
 }
 
-.packer-sidebar.light .p-menuitem {
+.packer-sidebar .light .p-menuitem {
   color: black;
 }
 
-.packer-sidebar.dark .p-menubar {
+.packer-sidebar .dark .p-menubar {
   padding: 1rem;
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.87);
@@ -292,7 +359,7 @@ onMounted(() => {
 .packer-sidebar .p-menubar {
   padding: 1rem;
   background: #ffffff;
-  color: rgba(0, 0, 0, 0.87);
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .packer-sidebar .p-icon {
@@ -300,53 +367,67 @@ onMounted(() => {
   color: #0a0a0a;
 }
 
-.packer-sidebar.light .p-menu-list {
+.packer-sidebar .light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
+  stroke: black !important;
+  fill: black !important;
   background-color: white;
   background: transparent;
 }
 
-/* Light mode links */
-.packer-sidebar.light a {
-  color: rgb(0, 0, 0) !important;
+.packer-sidebar .dark .a {
+  color: white !important;
+}
+
+.packer-sidebar .a {
+  color: white !important;
 }
 
 .packer-sidebar .p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.packer-sidebar .dark .p-menu {
+  padding: 0.5rem 0;
   background: transparent;
 }
 
-.packer-sidebar.dark .p-menu {
-  background: transparent;
-}
-
-.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+.packer-sidebar .light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
-  background: #171717;
-  border-radius: 0;
+  background: white;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
+  color: black;
 }
 
-.dark .p-icon {
+.packer-sidebar .dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  transition: none;
+  background: #0a0a0a;
+  border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
+  color: white;
+}
+
+.packer-sidebar .dark .p-icon {
   display: inline-block;
   color: #ffffff;
 }
-.light .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #f3f4f6 !important;
 
-      /* Explicitly set color for spans inside */
-      span {
-        color: black !important;
-      }
+.packer-sidebar .light .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #f3f4f6 !important;
+    color: black;
+
+    span {
+      color: black !important;
     }
   }
 }
 
-.light .p-menuitem:hover > .p-menuitem-content {
+.packer-sidebar .light .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
+  color: white !important;
 
-  /* Explicitly set color for spans inside */
   span {
     color: white !important;
   }

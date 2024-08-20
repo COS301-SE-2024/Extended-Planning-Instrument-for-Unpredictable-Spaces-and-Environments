@@ -17,12 +17,7 @@ const filters = ref({
 })
 
 const onFilterChange = (type, value) => {
-  console.log('Searching for delivery id ', value, ' and type is ', type)
   filters.value[type].value = value
-  console.log('FILTERS: ', filters)
-  console.log('filters.value: ', filters.value)
-  console.log('filters.value[type]: ', filters.value[type])
-  console.log(' filters.value[type].value  ', filters.value[type].value)
 }
 
 const filteredDeliveries = computed(() => {
@@ -518,6 +513,4 @@ const items = [
     color: white !important;
   }
 }
-
-
 </style>
