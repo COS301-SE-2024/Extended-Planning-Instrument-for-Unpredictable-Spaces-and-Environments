@@ -22,8 +22,10 @@ const props = defineProps({
 })
 
 const toggleDialog = () => {
-  emit('update:dialogPopUpVisible', !props.dialogPopUpVisible)
-}
+  const newVisibilityState = !props.dialogPopUpVisible;
+  emit('update:dialogPopUpVisible', newVisibilityState);
+  localStorage.setItem('dialogPopUpVisible', newVisibilityState);
+};
 
 const toggleDialog2 = () => {
   showDialog.value = !showDialog.value
@@ -145,9 +147,22 @@ async function logout() {
   }
 }
 
+const handleStartNewDelivery = () => {
+  toggleDialog();
+  emit('start-new-delivery');
+  localStorage.removeItem('dialogPopUpVisible');
+};
+
+items[0].command = handleStartNewDelivery;
+
 onMounted(() => {
-  getDeliveriesByStatus()
-})
+  const storedVisibility = localStorage.getItem('dialogPopUpVisible');
+  if (storedVisibility !== null) {
+    emit('update:dialogPopUpVisible', storedVisibility === 'true');
+  } else {
+    getDeliveriesByStatus();  // Fetch deliveries only if not stored in localStorage
+  }
+});
 
 const items = [
   {
