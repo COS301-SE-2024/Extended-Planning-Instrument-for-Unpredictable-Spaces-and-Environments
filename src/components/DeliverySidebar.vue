@@ -1,7 +1,7 @@
 <!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted/*, onUnmounted*/ } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -10,15 +10,29 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
 
-const emit = defineEmits(['handle-delivery', 'start-new-delivery'])
-
+const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
-const dialogVisible = ref(false)
+const dialogPopUpVisible = ref(false)
+const showDialog = ref(false)
+
 const driverID = ref(false)
 
+const props = defineProps({
+  dialogPopUpVisible: Boolean
+})
+
 const toggleDialog = () => {
-  console.log('Toggling Dialog Visibility', dialogVisible.value)
-  dialogVisible.value = !dialogVisible.value
+  emit('update:dialogPopUpVisible', !props.dialogPopUpVisible)
+}
+
+const toggleDialog2 = () => {
+  showDialog.value = !showDialog.value
+  console.log('Toggling showDialog:', showDialog.value)
+}
+
+const handleOpenDeliveryDialog = () => {
+  toggleDialog()
+  console.log('Emmit has been recieved and dialog has been toggled')
 }
 
 async function getSession() {
@@ -74,7 +88,6 @@ const getDeliveriesByStatus = async () => {
   }
 }
 
-
 const updateDriverID = async (delivery) => {
   await getSession('Driver ID : ', driverID.value)
   console.log('Driver iD : ', driverID.value)
@@ -95,10 +108,29 @@ const updateDriverID = async (delivery) => {
   }
 }
 
+const addDeliveryStartTime = async (delivery) => {
+  try {
+    const currentDate = new Date().toISOString()
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryStartTime',
+        deliveryId: delivery.id,
+        newStartTime: currentDate
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error Adding start time to delivery:', error)
+    }
+  } catch (error) {
+    console.error('Error fetching data from updateDeliveryStartTime:', error)
+  }
+}
+
 const handleDelivery = (delivery) => {
-  console.log('Delivery:', delivery)
   updateDriverID(delivery)
-  // Emit an event to be caught by the parent component (DeliveryView)
+  addDeliveryStartTime(delivery)
+
   emit('handle-delivery', delivery)
   toggleDialog()
 }
@@ -112,9 +144,6 @@ async function logout() {
     console.log('Log out successful')
   }
 }
-// components: {
-//   DialogComponent
-// }
 
 onMounted(() => {
   getDeliveriesByStatus()
@@ -129,24 +158,6 @@ const items = [
       emit('start-new-delivery')
     }
   },
-  // {
-  //   label: 'Updates',
-  //   icon: 'pi pi-fw pi-envelope',
-  //   severity: 'warning',
-  //   badge: '5',
-  //   command: () => {
-  //     console.log('Navigating to Messages')
-  //     router.push({ name: '/' })
-  //   }
-  // },
-  // {
-  //   label: 'Profile',
-  //   icon: 'pi pi-fw pi-user',
-  //   command: () => {
-  //     console.log('Navigating to Profile')
-  //     router.push({ name: '/' })
-  //   }
-  // },
   {
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
@@ -233,13 +244,15 @@ const items = [
       </template>
     </Menubar>
     <Dialog
-      header="Edit User Profile"
-      v-model:visible="dialogVisible"
+      header="Select Delivery to Start"
+      :visible="props.dialogPopUpVisible"
+      @update:visible="(value) => emit('update:dialogPopUpVisible', value)"
       :modal="true"
       :closable="false"
       class="z-10000000000 w-[auto] p-4 relative"
     >
       <div
+        @open-delivery-dialog="handleOpenDeliveryDialog"
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
         class="mb-4"
       >
@@ -297,7 +310,7 @@ const items = [
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
         ]"
         :dialogVisible="showDialog"
-        @close-dialog="toggleDialog"
+        @close-dialog="toggleDialog2"
       />
     </div>
   </div>

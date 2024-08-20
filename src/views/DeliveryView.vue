@@ -7,24 +7,17 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, /*computed,*/ onMounted/*, toRaw*/ } from 'vue'
+import { ref, /*computed,*/ onMounted /*, toRaw*/ } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
-// import FileUpload from 'primevue/fileupload'
-// import Map from '@/components/Map.vue';
+
 const isDark = useDark()
 
 const showStartNewDeliveryOverlay = ref(true)
 
 const currentShipmentDetails = ref(null)
 
-// const toggleDark = () => {
-//   isDark.value = !isDark.value
-//   console.log('Dark mode:', isDark.value ? 'on' : 'off')
-// }
-
-// const showDialog = ref(false)
 const dialogVisible = ref(false)
 const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
@@ -35,23 +28,22 @@ const toggleDialog = () => {
 }
 
 const togglePopUpDialog = () => {
-  console.log('Toggling dialog')
   dialogPopUpVisible.value = !dialogPopUpVisible.value
+  showStartNewDeliveryOverlay.value = !showStartNewDeliveryOverlay.value
 }
 
 const shipmentsByDelivery = ref([])
 const pendingLocations = ref([])
 
 const currentDestination = ref('')
-// const deliveriesByDriverID = ref([])
 const deliveries = ref([])
-// const visible = ref(true)
+
+const activeShipmentIndex = ref(0)
 
 const timelineEvents = ref([])
-
 const confirmedShipments = ref(new Set())
-
 const selectedShipmentId = ref(null)
+const signaturePad = ref(null)
 
 const getShipmentByDeliveryId = async () => {
   try {
@@ -72,7 +64,6 @@ const getShipmentByDeliveryId = async () => {
 
       if (data.data.length > 0 && data.data[0].Destination) {
         mapDestination.value = data.data[0].Destination
-        console.log('HERE IS THE NEXT MAP', mapDestination.value)
       }
       identifyPendingLocations()
       updateTimelineEvents()
@@ -103,15 +94,9 @@ const getStatusColor = (status) => {
     case 'delivered':
       return '#14532d'
     default:
-      // console.log('Error fetching status: ' + status)
       return '#6b7280'
   }
 }
-
-//function formattedDateTime(slotProps) {
-  //const options = { dateStyle: 'medium', timeStyle: 'short' }
-  //return new Date(slotProps.item.time).toLocaleString('en-US', options)
-//}
 
 const currentDelivery = ref(null)
 
@@ -119,7 +104,6 @@ const handleDeliveryFromSidebar = (delivery) => {
   // If delivery is a ref, we need to access its value
   currentDelivery.value = delivery._isRef ? delivery.value : delivery
 
-  // console.log('Processed delivery data:', currentDelivery.id)
   getShipmentByDeliveryId()
   // Trigger timeline update
   updateTimeline()
@@ -145,31 +129,119 @@ const upDateShipmentStatus = async (shipmentId) => {
   }
 }
 
-function save(shipmentid) {
-  // const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-  // console.log(isEmpty)
-  // console.log(data)
+const updateShipmentStartTime = async (shipmentID) => {
+  const currentDate = new Date().toISOString()
 
-  console.log('SHIPEMENT ID HAS ARRIVED', shipmentid)
-
-  if (pendingLocations.value.length > 0) {
-    pendingLocations.value.shift() // Remove the first (current) destination
-    if (pendingLocations.value.length > 0) {
-      console.log('PENDING LOCATIONS', pendingLocations.value)
-      currentDestination.value = pendingLocations.value[0]
-      mapDestination.value = pendingLocations.value[0]
-      upDateShipmentStatus(shipmentid)
-    } else {
-      currentDestination.value = ''
-      upDateShipmentStatus(shipmentid)
-      mapDestination.value = 'University of Pretoria'
-      alert('All destinations visited')
-    }
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: JSON.stringify({
+      type: 'updateShipmentStartTime',
+      deliveryId: shipmentID,
+      newEndTime: currentDate
+    }),
+    method: 'POST'
+  })
+  if (error) {
+    console.error(`API Error for updating EndTime for delivery`, error)
+  } else {
+    console.log('Successfully updated EndTime and Uploaded')
   }
-
-  confirmedShipments.value.add(shipmentid)
-  toggleDialog()
 }
+
+const uploadSigntaure = async (signature, shipmentID) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'uploadSignature',
+        dataURL: signature
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.error(`API Error for uploading signature`, error)
+    } else {
+      const currentDate = new Date().toISOString()
+
+      const { data, error } = await supabase.functions.invoke('core', {
+        body: JSON.stringify({
+          type: 'updateShipmentEndTime',
+          deliveryId: shipmentID,
+          newEndTime: currentDate
+        }),
+        method: 'POST'
+      })
+      if (error) {
+        console.error(`API Error for updating EndTime for delivery`, error)
+      } else {
+        console.log('Successfully updated EndTime and Uploaded')
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+  }
+}
+
+const openDialog = (item) => {
+  dialogVisible.value = true
+  selectedShipmentId.value = item.shipment_id
+  currentShipmentDetails.value = {
+    id: item.shipment_id,
+    destination: item.destination,
+    status: item.status
+  }
+}
+
+const addDeliveryEndTime = async () => {
+  try {
+    const currentDate = new Date().toISOString()
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryEndTime',
+        deliveryId: currentDelivery.value.id,
+        newStartTime: currentDate
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error Adding start time to delivery:', error)
+    }
+  } catch (error) {
+    console.error('Error fetching data from updateDeliveryStartTime:', error)
+  }
+}
+
+function save(shipmentid) {
+  if (signaturePad.value) {
+    const { data } = signaturePad.value.saveSignature()
+    uploadSigntaure(data, shipmentid)
+    if (pendingLocations.value.length > 0) {
+      pendingLocations.value.shift() // Remove the first (current) destination
+      if (pendingLocations.value.length > 0) {
+        currentDestination.value = pendingLocations.value[0]
+        mapDestination.value = pendingLocations.value[0]
+        upDateShipmentStatus(shipmentid)
+
+        const nextShipmentIndex = activeShipmentIndex.value + 1
+        if (nextShipmentIndex < timelineEvents.value.length) {
+          const nextShipmentId = timelineEvents.value[nextShipmentIndex].shipment_id
+          updateShipmentStartTime(nextShipmentId)
+          console.log('UPDATING SHIPMENT ID: ', nextShipmentId)
+        }
+      } else {
+        currentDestination.value = ''
+        upDateShipmentStatus(shipmentid)
+        mapDestination.value = 'University of Pretoria'
+        alert('All destinations visited')
+        addDeliveryEndTime()
+      }
+    }
+    activeShipmentIndex.value++
+    confirmedShipments.value.add(shipmentid)
+    toggleDialog()
+  } else {
+    console.error('Signature pad ref is not available')
+  }
+}
+
 async function setupSubscription() {
   await supabase // Await for the subscription to be established
     .channel('*')
@@ -215,7 +287,6 @@ const updateTimelineEvent = (updatedShipment) => {
 
 const startNewDelivery = () => {
   showStartNewDeliveryOverlay.value = false
-  // Reset other necessary state variables
   currentDelivery.value = null
   shipmentsByDelivery.value = []
   pendingLocations.value = []
@@ -223,6 +294,12 @@ const startNewDelivery = () => {
   timelineEvents.value = []
   confirmedShipments.value = new Set()
   mapDestination.value = null
+
+  if (timelineEvents.value.length > 0) {
+    const firstShipmentId = timelineEvents.value[0].shipment_id
+    updateShipmentStartTime(firstShipmentId)
+    console.log('UPDATING SHIPMENT ID:', firstShipmentId)
+  }
 }
 
 const updateTimeline = () => {
@@ -255,7 +332,8 @@ const updateTimelineEvents = () => {
         end_time: shipment.End_time,
         icon: 'pi pi-box',
         color: color,
-        line_colour: index === shipments.length - 1 ? '#6b7280' : color
+        line_colour: index === shipments.length - 1 ? '#6b7280' : color,
+        index: events.length
       })
     })
   }
@@ -297,9 +375,10 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
-    <DeliverySidebar 
-      @handle-delivery="handleDeliveryFromSidebar" 
+    <DeliverySidebar
+      @handle-delivery="handleDeliveryFromSidebar"
       @start-new-delivery="startNewDelivery"
+      v-model:dialogPopUpVisible="dialogPopUpVisible"
     />
     <div
       :class="[
@@ -371,29 +450,19 @@ export default {
                           </div>
                         </div>
                         <Button
-                          @click="
-                            () => {
-                              dialogVisible = true;
-                              selectedShipmentId = slotProps.item.shipment_id;
-                              currentShipmentDetails = {
-                                id: slotProps.item.shipment_id,
-                                destination: slotProps.item.destination,
-                                status: slotProps.item.status
-                              };
-                            }
-                          "
-                          :disabled="confirmedShipments.has(slotProps.item.shipment_id)"
+                          @click="openDialog(slotProps.item)"
+                          :disabled="slotProps.index !== activeShipmentIndex"
                           class="mt-4 py-2 px-4 w-full justify-center"
                           :class="[
-                            confirmedShipments.has(slotProps.item.shipment_id) ? 
-                            'bg-orange-600 text-white opacity-70 cursor-not-allowed' : 
-                            isDark ? 'bg-orange-600 text-white' : 'bg-black text-white hover:bg-orange-600',
+                            slotProps.index !== activeShipmentIndex
+                              ? 'bg-orange-600 text-white opacity-70 cursor-not-allowed'
+                              : isDark
+                                ? 'bg-orange-600 text-white'
+                                : 'bg-black text-white hover:bg-orange-600'
                           ]"
                         >
                           {{
-                            confirmedShipments.has(slotProps.item.shipment_id)
-                              ? 'Delivered'
-                              : 'Confirm Delivery'
+                            slotProps.index < activeShipmentIndex ? 'Delivered' : 'Confirm Delivery'
                           }}
                         </Button>
                       </div>
@@ -467,62 +536,21 @@ export default {
     </Dialog>
   </div>
 
-  <div v-if="showStartNewDeliveryOverlay" class="fixed inset-0 z-50 flex items-center justify-center">
+  <div
+    v-if="showStartNewDeliveryOverlay"
+    class="fixed inset-0 z-50 flex items-center justify-center"
+  >
     <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
     <div class="relative z-10 bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-lg text-center">
       <h2 class="text-2xl font-bold mb-4">Start a New Delivery</h2>
       <p class="mb-6">Please start a new delivery to begin.</p>
-      <button 
+      <button
         @click="togglePopUpDialog()"
         class="px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300"
       >
         Start New Delivery
       </button>
     </div>
-    <Dialog
-      header="Edit User Profile"
-      v-model:visible="dialogPopUpVisible"
-      :modal="true"
-      :closable="false"
-      class="z-10000000000 w-[auto] p-4 relative"
-    >
-      <div
-        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
-        class="mb-4"
-      >
-        <p class="text-3xl mb-2">Current Deliveries:</p>
-      </div>
-      <div v-if="isLoading">Loading deliveries...</div>
-      <div v-else-if="errorMessage">{{ errorMessage }}</div>
-      <div v-else class="pb-12">
-        <!-- Adjust padding to avoid overlap -->
-        <div v-for="delivery in deliveriesByStatus" :key="delivery.id" class="mb-8">
-          <p class="text-neutral-400 text-lg">Delivery Status:</p>
-          <p class="text-lg">{{ delivery.Status }}</p>
-          <p class="text-neutral-500 text-lg">Delivery ID:</p>
-          <p class="mb-2 text-lg">{{ delivery.id }}</p>
-
-          <Button
-            @click="handleDelivery(delivery)"
-            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
-            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
-            >Start Delivery</Button
-          >
-        </div>
-        <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
-      </div>
-      <div
-        :class="[
-          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
-          'focus:outline-none focus:ring-0'
-        ]"
-        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
-      >
-        <Button @click="togglePopUpDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
-          >Close</Button
-        >
-      </div>
-    </Dialog>
   </div>
 </template>
 

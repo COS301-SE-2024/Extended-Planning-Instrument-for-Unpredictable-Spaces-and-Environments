@@ -49,7 +49,7 @@ export default {
     const errorMessage = ref('')
     const isNavigating = ref(false)
     const currentStep = ref('')
-    const currentDirectionsRenderer = ref(null);
+    const currentDirectionsRenderer = ref(null)
     const directionsRenderer = ref(null)
     const steps = ref([])
     const currentStepIndex = ref(0)
@@ -60,7 +60,7 @@ export default {
     // console.log('HERE IS PROPS FROM MAPS', props)
 
     const loader = new Loader({
-      apiKey: "AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g",
+      apiKey: 'AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g',
       version: 'weekly',
       libraries: ['places']
     })
@@ -209,43 +209,6 @@ export default {
       }
     }
 
-    // const updateMap = async () => {
-    //   if (!map || !google) {
-    //     console.error('Map or Google API not initialized')
-    //     return
-    //   }
-
-    //   // Remove existing markers
-    //   markers.forEach((marker) => marker.setMap(null))
-    //   markers = []
-
-    //   // Add marker for starting position
-    //   const startMarker = new google.maps.Marker({
-    //     position: { lat: coordinates.value.lat, lng: coordinates.value.long },
-    //     map: map,
-    //     title: 'Starting Position'
-    //   })
-    //   markers.push(startMarker)
-
-    //   // Add marker for new destination
-    //   if (destinationCoords.value.lat && destinationCoords.value.long) {
-    //     const destinationMarker = new google.maps.Marker({
-    //       position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
-    //       map: map,
-    //       title: 'Destination'
-    //     })
-    //     markers.push(destinationMarker)
-    //   }
-
-    //   // Fit the map to show both markers
-    //   const bounds = new google.maps.LatLngBounds()
-    //   bounds.extend({ lat: coordinates.value.lat, lng: coordinates.value.long })
-    //   bounds.extend({ lat: destinationCoords.value.lat, lng: destinationCoords.value.long })
-    //   map.fitBounds(bounds)
-
-    //   // Recalculate route
-    //   await calculateRoute()
-    // }
     const updateMap = async () => {
       if (!map || !google) {
         console.error('Map or Google API not initialized')
@@ -257,8 +220,8 @@ export default {
       markers = []
 
       if (currentDirectionsRenderer.value) {
-        currentDirectionsRenderer.value.setMap(null);
-        currentDirectionsRenderer.value = null;
+        currentDirectionsRenderer.value.setMap(null)
+        currentDirectionsRenderer.value = null
       }
 
       const { DirectionsRenderer } = await loader.importLibrary('routes')
@@ -308,7 +271,6 @@ export default {
     watch(
       () => props.destination,
       async (newDestination) => {
-        console.log('WE GOT THE NEW DESTINATION', newDestination)
         if (newDestination) {
           if (startingPosition.value) {
             // Make the old destination the new starting position
