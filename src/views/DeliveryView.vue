@@ -338,6 +338,19 @@ const updateTimelineEvents = () => {
   }
   timelineEvents.value = events
 }
+
+//OPEN IN GOOGLE MAPS FUNCTONALITY
+const openInGoogleMaps = () => {
+  if (mapDestination.value) {
+    const destination = encodeURIComponent(mapDestination.value)
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`
+
+    // Check if the user is on a mobile device and try to open the native app
+    window.open(googleMapsUrl, '_blank')
+  } else {
+    alert('Destination is not set')
+  }
+}
 onMounted(() => {
   // console.log('DeliveryView: Component mounted')
   setupSubscription()
@@ -394,6 +407,12 @@ export default {
         <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
         <div class="mb-4">
           <Map :destination="mapDestination"></Map>
+          <button
+            @click="openInGoogleMaps"
+            class="mt-4 py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out"
+          >
+            Open Route in Google Maps
+          </button>
         </div>
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
@@ -488,7 +507,7 @@ export default {
         ]"
         class="flex flex-col"
       >
-        <h2 class="text-xl font-bold mb-4 text-center">
+        <h2 class="text-xl font-bold mb-4 mt-4 text-center">
           Confirm Delivery for Shipment ID: {{ selectedShipmentId }}
         </h2>
         <p v-if="currentShipmentDetails" class="mb-4 text-center">

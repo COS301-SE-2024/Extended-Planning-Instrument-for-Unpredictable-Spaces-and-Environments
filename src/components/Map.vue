@@ -9,14 +9,14 @@
       Start Navigation
     </button>
     <div v-if="isNavigating" class="mt-4">
-      <h2 class="text-xl font-bold mb-2">Current Step:</h2>
+      <!-- <h2 class="text-xl font-bold mb-2">Current Step:</h2>
       <p v-html="currentStep"></p>
       <button
         @click="nextStep"
         class="w-full mt-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-600"
       >
         Next Step
-      </button>
+      </button> -->
     </div>
     <p v-if="errorMessage" class="error-message mt-4">{{ errorMessage }}</p>
   </div>

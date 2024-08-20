@@ -5,11 +5,17 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
-
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+const onGlobalFilterChange = (e) => {
+  filters.value.global.value = e.target.value
+}
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
 const dialogPopUpVisible = ref(false)
@@ -256,6 +262,27 @@ const items = [
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
         class="mb-4"
       >
+        <div class="w-full md:w-[300px] mb-4 mt-4">
+          <div
+            :class="[
+              isDark
+                ? 'border-neutral-500 bg-neutral-900 text-white'
+                : 'border-gray-500 bg-white text-black',
+              'border flex items-center px-4 py-2 rounded-xl '
+            ]"
+          >
+            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+            <InputText
+              v-model="filters['global'].value"
+              placeholder="Search"
+              @input="onGlobalFilterChange"
+              :class="[
+                isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
+                'focus:outline-none focus:ring-0'
+              ]"
+            />
+          </div>
+        </div>
         <p class="text-3xl mb-2">Current Deliveries:</p>
       </div>
       <div v-if="isLoading">Loading deliveries...</div>
