@@ -394,7 +394,7 @@ export default {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-500 text-black',
       ' h-[auto] flex flex-col '
     ]"
   >
@@ -448,7 +448,10 @@ export default {
                   <Card
                     :class="[
                       isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
-                      'rounded-xl border border-neutral-500 h-full'
+                      'rounded-xl border border-neutral-500 h-full',
+                      slotProps.index !== activeShipmentIndex
+                        ? 'bg-gray-900 bg-opacity-50 text-gray-500 cursor-not-allowed'
+                        : 'bg-orange-600 text-white hover:transform hover:-translate-y-1 transition duration-300 hover:shadow-xl'
                     ]"
                   >
                     <template #title>
@@ -478,22 +481,20 @@ export default {
                             {{ slotProps.item.destination }}
                           </div>
                         </div>
-                        <Button
-                          @click="openDialog(slotProps.item)"
-                          :disabled="slotProps.index !== activeShipmentIndex"
-                          class="mt-4 py-2 px-4 w-full justify-center"
+                        <button
+                          class="p-button p-component mt-4 py-2 px-4 w-full justify-center"
                           :class="[
                             slotProps.index !== activeShipmentIndex
-                              ? 'bg-orange-600 text-white opacity-70 cursor-not-allowed'
-                              : isDark
-                                ? 'bg-orange-600 text-white'
-                                : 'bg-black text-white hover:bg-orange-600'
+                              ? 'bg-gray-900 text-gray-500 opacity-0 cursor-not-allowed'
+                              : 'bg-orange-600 text-white hover:bg-orange-500'
                           ]"
+                          :disabled="slotProps.index !== activeShipmentIndex"
+                          @click="openDialog(slotProps.item)"
                         >
                           {{
                             slotProps.index < activeShipmentIndex ? 'Delivered' : 'Confirm Delivery'
                           }}
-                        </Button>
+                        </button>
                       </div>
                     </template>
                   </Card>
