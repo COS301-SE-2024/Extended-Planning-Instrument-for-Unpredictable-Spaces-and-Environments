@@ -168,7 +168,6 @@
         </Button>
       </div>
     </Dialog>
-    <Toast />
     <DialogComponent
       v-if="showDialog"
       :images="[
@@ -193,6 +192,7 @@
       @close-dialog="toggleDialog"
     />
   </div>
+  <Toast />
 </template>
 
 <script setup>
@@ -525,14 +525,24 @@ const processShipment = async () => {
               }
             }
             alert('All shipments and packages inserted successfully')
+            toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Shipments and packages inserted successfully',
+              life: 4000
+            })
           }
         }
       }
     }
   } catch (error) {
     console.error('Error processing file:', error)
-    alert('Error processing file: ' + error.message)
-
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error,
+      life: 10000
+    })
     selectedFile.value = null
     return
   }
