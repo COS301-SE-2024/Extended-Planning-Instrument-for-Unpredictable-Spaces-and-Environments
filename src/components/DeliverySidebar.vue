@@ -1,7 +1,7 @@
 <!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted/*, computed */} from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -12,7 +12,7 @@ const router = useRouter()
 
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
-const dialogPopUpVisible = ref(false)
+// const dialogPopUpVisible = ref(false)
 const showDialog = ref(false)
 
 const driverID = ref(false)
