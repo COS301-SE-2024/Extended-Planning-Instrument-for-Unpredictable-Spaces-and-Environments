@@ -35,6 +35,9 @@ jobs:
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
+      - name: Add _redirects file
+        run: echo "/* /index.html 200" > dist/_redirects
+
       - name: Deploy to Netlify
         id: netlify_deploy
         run: |
