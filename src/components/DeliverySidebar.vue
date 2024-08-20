@@ -215,7 +215,7 @@ const items = [
 </script>
 
 <template>
-  <div :class="[isDark ? 'dark' : 'light', 'h-full']">
+  <div :class="[isDark ? 'dark delivery-sidebar' : 'light delivery-sidebar', 'h-full']">
     <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
@@ -376,70 +376,84 @@ const items = [
   background-color: white;
   color: black;
 }
-.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+.delivery-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   border-radius: 0;
   color: white;
 }
-/* Update styles for hovered menu item link */
-.dark .p-menu {
+
+/* Update styles for hovered menu item link within delivery sidebar */
+.delivery-sidebar.dark .p-menu {
   background-color: #0a0a0a;
   border-radius: 0;
 }
-.dark .p-menubar {
-  border-radius: 0;
+
+.delivery-sidebar.dark .p-menubar {
+  background-color: #000000 !important; /* Ensure dark background */
+  color: rgb(0, 0, 0) !important; /* Ensure text color is white */
 }
-.dark .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #262626 !important;
-    }
+
+.delivery-sidebar.light .p-menubar {
+  background-color: #ffffff !important; /* Ensure light background */
+}
+.delivery-sidebar.dark .p-icon {
+  color: white !important; /* Ensure icon color is white in dark mode */
+}
+
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  background-color: #0a0a0a !important; /* Dark background for menu items */
+  color: white !important; /* Ensure text color is white */
+}
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: #262626 !important; /* Darker background on hover */
+  color: white !important;
+}
+.delivery-sidebar.dark .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #262626 !important;
   }
 }
 
-.dark .p-menuitem:hover > .p-menuitem-content {
+.delivery-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #262626 !important;
 }
 
-.p-calendar {
+/* Additional styles scoped to the delivery-sidebar component */
+.delivery-sidebar .p-calendar {
   width: 100%; /* Take up full width of parent */
   height: auto;
 }
 
-.p-chart {
+.delivery-sidebar .p-chart {
   height: auto;
 }
 
-.transition-opacity {
-  transition: opacity 0.3s ease-in-out;
-}
-
-/* Additional media query for sidebar collapse */
-
-.light .p-menu {
+.delivery-sidebar .light .p-menu {
   color: black;
   background-color: #0a0a0a;
-  background: #0a0a0a;
 }
-.light .p-menuitem {
+
+.delivery-sidebar .light .p-menuitem {
   color: black;
 }
 
-.dark .p-menubar {
+.delivery-sidebar .dark .p-menubar {
   padding: 1rem;
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-menubar {
+
+.delivery-sidebar .p-menubar {
   padding: 1rem;
   background: #ffffff;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-icon {
+
+.delivery-sidebar .p-icon {
   display: inline-block;
   color: #0a0a0a;
 }
 
-.light .p-menu-list {
+.delivery-sidebar .light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
   stroke: black !important;
   fill: black !important;
@@ -447,56 +461,59 @@ const items = [
   background: transparent;
 }
 
-.dark .a {
+.delivery-sidebar .dark .a {
   color: white !important;
 }
 
-.a {
+.delivery-sidebar .a {
   color: white !important;
 }
-.p-menu {
+
+.delivery-sidebar .p-menu {
   padding: 0.5rem 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.87);
 }
-.dark .p-menu {
+
+.delivery-sidebar .dark .p-menu {
   padding: 0.5rem 0;
   background: transparent;
 }
-.light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+
+.delivery-sidebar .light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: white;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
   color: black;
 }
-.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+
+.delivery-sidebar .dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: #0a0a0a;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
   color: white;
 }
-.dark .p-icon {
+
+.delivery-sidebar .dark .p-icon {
   display: inline-block;
   color: #ffffff;
 }
-.light .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #f3f4f6 !important;
-      /* Explicitly set color for spans inside */
-      color: black;
-      span {
-        color: black !important;
-      }
+
+.delivery-sidebar .light .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #f3f4f6 !important;
+    color: black;
+
+    span {
+      color: black !important;
     }
   }
 }
 
-.light .p-menuitem:hover > .p-menuitem-content {
+.delivery-sidebar .light .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
   color: white !important;
 
-  /* Explicitly set color for spans inside */
   span {
     color: white !important;
   }
