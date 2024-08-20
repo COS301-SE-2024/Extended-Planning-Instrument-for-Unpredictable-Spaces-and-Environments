@@ -120,6 +120,9 @@
         </span>
       </button>
     </div>
+    <!-- <input type="file" accept=".csv" @change="onFileChange" /> -->
+    <!-- <input type="file" accept=".csv" @change="onFileChange" /> -->
+    <!-- <input type="file" accept=".csv" @change="onFileChange" /> -->
 
     <Dialog
       v-model:visible="showShipment"
@@ -129,27 +132,40 @@
     >
       <div class="flex flex-col items-center justify-center m-8">
         <p class="mb-4 text-3xl">New Shipment</p>
-        <!-- 
-      <FileUpload
-        name="demo[]"
-        url="/api/upload"
-        @upload="onAdvancedUpload($event), processShipment"
-        :multiple="true"
-        accept=".csv"
-        :maxFileSize="1000000"
-        :class="[isDark ? 'dark' : 'light', 'px-2 py-2']"
-      >
-        <template #empty>
-          <div class="flex items-center justify-center">
-            <span class="text-center">Drag and drop files here to upload.</span>
-          </div>
-        </template>
-      </FileUpload> -->
-        <input type="file" accept=".csv" @change="onFileChange" />
-        <Button @click="processShipment" class="mt-4 text-white py-2 px-6 bg-green-800"
-          >Process Shipment</Button
+
+        <label
+          class="cursor-pointer flex flex-col items-center justify-center w-full max-w-xs p-2 bg-orange-600 text-white rounded-md shadow-md hover:bg-black transition-all duration-200 ease-in-out"
         >
-        <Button @click="toggleShipment" class="mt-4 text-white py-2 px-6 bg-red-800">Cancel</Button>
+          <span>Choose a CSV file</span>
+          <input type="file" accept=".csv" @change="onFileChange" class="hidden" />
+        </label>
+
+        <!-- Display the file name or a confirmation message -->
+        <p
+          v-if="selectedFile"
+          class="text-sm mt-4"
+          :class="[isDark ? 'text-white ' : 'text-black']"
+        >
+          Selected file: {{ selectedFile.name }}
+        </p>
+
+        <Button
+          @click="processShipment"
+          :disabled="!selectedFile"
+          :class="[
+            'w-full max-w-xs mt-4 items-center justify-center text-white py-2 px-6',
+            selectedFile ? 'bg-green-800 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'
+          ]"
+        >
+          Process Shipment
+        </Button>
+
+        <Button
+          @click="toggleShipment"
+          class="w-full max-w-xs mt-4 items-center justify-center text-white py-2 px-6 bg-red-800"
+        >
+          Cancel
+        </Button>
       </div>
     </Dialog>
     <Toast />
