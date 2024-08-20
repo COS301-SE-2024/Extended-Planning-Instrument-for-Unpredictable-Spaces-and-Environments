@@ -6,10 +6,39 @@ import { ref, onMounted/*, computed */} from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
+import { toLower } from 'lodash'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
+
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  deliveryId: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+
+const onFilterChange = (type, value) => {
+  console.log('Searching for delivery id ', value, ' and type is ', type)
+  filters.value[type].value = value
+  console.log('FILTERS: ', filters)
+  console.log('filters.value: ', filters.value)
+  console.log('filters.value[type]: ', filters.value[type])
+  console.log(' filters.value[type].value  ', filters.value[type].value)
+}
+
+const filteredDeliveries = computed(() => {
+  return deliveriesByStatus.value.filter((delivery) => {
+    const globalMatch =
+      !filters.value.global.value ||
+      (typeof delivery.id === 'number' && String(delivery.id).includes(filters.value.global.value))
+    const deliveryIdMatch =
+      !filters.value.deliveryId.value ||
+      (typeof delivery.id === 'number' &&
+        String(delivery.id).includes(filters.value.deliveryId.value))
+    return globalMatch && deliveryIdMatch
+  })
+})
 
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
@@ -187,7 +216,7 @@ const items = [
 </script>
 
 <template>
-  <div :class="[isDark ? 'dark' : 'light', 'h-full']">
+  <div :class="[isDark ? 'dark delivery-sidebar' : 'light delivery-sidebar', 'h-full']">
     <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
@@ -257,13 +286,35 @@ const items = [
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
         class="mb-4"
       >
+        <div class="w-full md:w-[300px] mb-4">
+          <div
+            :class="[
+              isDark
+                ? 'border-neutral-500 bg-neutral-900 text-white'
+                : 'border-gray-500 bg-white text-black',
+              'border flex items-center px-4 py-2 rounded-xl mt-4'
+            ]"
+          >
+            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+            <InputText
+              v-model="filters.deliveryId.value"
+              placeholder="Search by Delivery ID"
+              @input="onFilterChange('deliveryId', $event.target.value)"
+              type="number"
+              :class="[
+                isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
+                'focus:outline-none focus:ring-0'
+              ]"
+            />
+          </div>
+        </div>
         <p class="text-3xl mb-2">Current Deliveries:</p>
       </div>
       <div v-if="isLoading">Loading deliveries...</div>
       <div v-else-if="errorMessage">{{ errorMessage }}</div>
       <div v-else class="pb-12">
         <!-- Adjust padding to avoid overlap -->
-        <div v-for="delivery in deliveriesByStatus" :key="delivery.id" class="mb-8">
+        <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
           <p class="text-neutral-400 text-lg">Delivery Status:</p>
           <p class="text-lg">{{ delivery.Status }}</p>
           <p class="text-neutral-500 text-lg">Delivery ID:</p>
@@ -326,70 +377,84 @@ const items = [
   background-color: white;
   color: black;
 }
-.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+.delivery-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   border-radius: 0;
   color: white;
 }
-/* Update styles for hovered menu item link */
-.dark .p-menu {
+
+/* Update styles for hovered menu item link within delivery sidebar */
+.delivery-sidebar.dark .p-menu {
   background-color: #0a0a0a;
   border-radius: 0;
 }
-.dark .p-menubar {
-  border-radius: 0;
+
+.delivery-sidebar.dark .p-menubar {
+  background-color: #000000 !important; /* Ensure dark background */
+  color: rgb(0, 0, 0) !important; /* Ensure text color is white */
 }
-.dark .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #262626 !important;
-    }
+
+.delivery-sidebar.light .p-menubar {
+  background-color: #ffffff !important; /* Ensure light background */
+}
+.delivery-sidebar.dark .p-icon {
+  color: white !important; /* Ensure icon color is white in dark mode */
+}
+
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  background-color: #0a0a0a !important; /* Dark background for menu items */
+  color: white !important; /* Ensure text color is white */
+}
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: #262626 !important; /* Darker background on hover */
+  color: white !important;
+}
+.delivery-sidebar.dark .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #262626 !important;
   }
 }
 
-.dark .p-menuitem:hover > .p-menuitem-content {
+.delivery-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #262626 !important;
 }
 
-.p-calendar {
+/* Additional styles scoped to the delivery-sidebar component */
+.delivery-sidebar .p-calendar {
   width: 100%; /* Take up full width of parent */
   height: auto;
 }
 
-.p-chart {
+.delivery-sidebar .p-chart {
   height: auto;
 }
 
-.transition-opacity {
-  transition: opacity 0.3s ease-in-out;
-}
-
-/* Additional media query for sidebar collapse */
-
-.light .p-menu {
+.delivery-sidebar .light .p-menu {
   color: black;
   background-color: #0a0a0a;
-  background: #0a0a0a;
 }
-.light .p-menuitem {
+
+.delivery-sidebar .light .p-menuitem {
   color: black;
 }
 
-.dark .p-menubar {
+.delivery-sidebar .dark .p-menubar {
   padding: 1rem;
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-menubar {
+
+.delivery-sidebar .p-menubar {
   padding: 1rem;
   background: #ffffff;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-icon {
+
+.delivery-sidebar .p-icon {
   display: inline-block;
   color: #0a0a0a;
 }
 
-.light .p-menu-list {
+.delivery-sidebar .light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
   stroke: black !important;
   fill: black !important;
@@ -397,56 +462,59 @@ const items = [
   background: transparent;
 }
 
-.dark .a {
+.delivery-sidebar .dark .a {
   color: white !important;
 }
 
-.a {
+.delivery-sidebar .a {
   color: white !important;
 }
-.p-menu {
+
+.delivery-sidebar .p-menu {
   padding: 0.5rem 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.87);
 }
-.dark .p-menu {
+
+.delivery-sidebar .dark .p-menu {
   padding: 0.5rem 0;
   background: transparent;
 }
-.light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+
+.delivery-sidebar .light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: white;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
   color: black;
 }
-.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+
+.delivery-sidebar .dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: #0a0a0a;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
   color: white;
 }
-.dark .p-icon {
+
+.delivery-sidebar .dark .p-icon {
   display: inline-block;
   color: #ffffff;
 }
-.light .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #f3f4f6 !important;
-      /* Explicitly set color for spans inside */
-      color: black;
-      span {
-        color: black !important;
-      }
+
+.delivery-sidebar .light .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #f3f4f6 !important;
+    color: black;
+
+    span {
+      color: black !important;
     }
   }
 }
 
-.light .p-menuitem:hover > .p-menuitem-content {
+.delivery-sidebar .light .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
   color: white !important;
 
-  /* Explicitly set color for spans inside */
   span {
     color: white !important;
   }
