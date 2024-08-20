@@ -1,4 +1,3 @@
-<!-- DELIVERYVIEW.VUE -->
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -7,7 +6,7 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted/*, toRaw*/ } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -140,7 +139,7 @@ const upDateShipmentStatus = async (shipmentId) => {
 const updateShipmentStartTime = async (shipmentID) => {
   const currentDate = new Date().toISOString()
 
-  const { data, error } = await supabase.functions.invoke('core', {
+  const { /*data,*/ error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
       type: 'updateShipmentStartTime',
       deliveryId: shipmentID,
@@ -157,7 +156,7 @@ const updateShipmentStartTime = async (shipmentID) => {
 
 const uploadSigntaure = async (signature, shipmentID) => {
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
         dataURL: signature
@@ -169,7 +168,7 @@ const uploadSigntaure = async (signature, shipmentID) => {
     } else {
       const currentDate = new Date().toISOString()
 
-      const { data, error } = await supabase.functions.invoke('core', {
+      const { /*data,*/ error } = await supabase.functions.invoke('core', {
         body: JSON.stringify({
           type: 'updateShipmentEndTime',
           deliveryId: shipmentID,

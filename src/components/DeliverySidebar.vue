@@ -1,13 +1,12 @@
-
 <!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted/*, computed */} from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
-import { toLower } from 'lodash'
+// import { toLower } from 'lodash'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
@@ -43,6 +42,7 @@ const filteredDeliveries = computed(() => {
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
 // const dialogPopUpVisible = ref(false)
+
 const showDialog = ref(false)
 
 const driverID = ref(false)

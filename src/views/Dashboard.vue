@@ -228,6 +228,7 @@ const events = [
 const chartOptions = {
   responsive: true
 }
+
 onMounted(() => {
   getUsername()
   getAllShipments()

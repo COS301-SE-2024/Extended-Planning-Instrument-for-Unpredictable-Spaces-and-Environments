@@ -43,7 +43,7 @@ export default {
     // console.log('HERE IS PROPS FROM MAPS', props)
 
     const loader = new Loader({
-      apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+      apiKey: 'AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g',
       version: 'weekly',
       libraries: ['places']
     })
