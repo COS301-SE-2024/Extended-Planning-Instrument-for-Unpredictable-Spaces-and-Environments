@@ -232,7 +232,7 @@ const items = [
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
         <a class="flex items-center p-6" v-bind="props.action">
-          <span :class="item.icon" />
+          <span :class="item.icon"></span>
           <span class="ml-2">{{ item.label }}</span>
           <Badge
             v-if="item.badge"
