@@ -85,7 +85,6 @@ const organizeShipmentsByRoute = () => {
 
 
 const toggleDialog = () => {
-  console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
 
@@ -247,7 +246,6 @@ const upDateShipmentStatus = async (shipmentId) => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      console.log('Successfully updated Status')
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -268,7 +266,6 @@ const updateShipmentStartTime = async (shipmentID) => {
   if (error) {
     console.error(`API Error for updating EndTime for delivery`, error)
   } else {
-    console.log('Successfully updated EndTime and Uploaded')
   }
 }
 
@@ -297,7 +294,6 @@ const uploadSigntaure = async (signature, shipmentID) => {
       if (error) {
         console.error(`API Error for updating EndTime for delivery`, error)
       } else {
-        console.log('Successfully updated EndTime and Uploaded')
       }
     }
   } catch (error) {
@@ -349,7 +345,6 @@ function save(shipmentid) {
         if (nextShipmentIndex < timelineEvents.value.length) {
           const nextShipmentId = timelineEvents.value[nextShipmentIndex].shipment_id
           updateShipmentStartTime(nextShipmentId)
-          console.log('UPDATING SHIPMENT ID: ', nextShipmentId)
         }
       } else {
         currentDestination.value = ''
@@ -371,7 +366,6 @@ async function setupSubscription() {
   await supabase // Await for the subscription to be established
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
-      // console.log(payload.new)
       updateTimelineEvent(payload.new)
     })
     .subscribe()
@@ -423,7 +417,6 @@ const startNewDelivery = () => {
   if (timelineEvents.value.length > 0) {
     const firstShipmentId = timelineEvents.value[0].shipment_id
     updateShipmentStartTime(firstShipmentId)
-    console.log('UPDATING SHIPMENT ID:', firstShipmentId)
   }
 }
 
@@ -537,6 +530,7 @@ export default {
         <div class="mb-4">
           <Map :destination="mapDestination"></Map>
           <button
+            v-ripple
             @click="openInGoogleMaps"
             class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out mt-4"
           >
@@ -688,7 +682,10 @@ export default {
     v-if="showStartNewDeliveryOverlay"
     class="fixed inset-0 z-50 flex items-center justify-center"
   >
-    <div class="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+    <div
+      class="absolute inset-0 backdrop-blur-sm"
+      style="background-color: rgba(0, 0, 1, 0.5)"
+    ></div>
     <div
       class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
       :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
@@ -783,13 +780,18 @@ export default {
 .p-timeline {
   gap: 0.5rem;
 }
-.p-dialog-mask {
-  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 9998 !important; /* Ensure it is above other elements */
-}
+
 .p-timeline-left .p-timeline-event-opposite {
   text-align: left;
   padding: 0;
   flex-grow: 0;
 }
+
+.p-dialog-mask {
+  background-color: rgba(0, 0, 1, 0.5) !important;
+  backdrop-filter: blur(4px);
+  z-index: 9998 !important; /* Ensure it is above other elements */
+}
 </style>
+
+

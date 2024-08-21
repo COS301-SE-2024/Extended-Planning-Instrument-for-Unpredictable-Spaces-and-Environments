@@ -24,8 +24,8 @@ const chartDataDeliveries = ref({
 const knobValue = ref(0)
 const packages = ref([])
 const deliveries = ref([])
-const maxDeliveries = ref([])
-const knobValueDelivered = ref([])
+const maxDeliveries = ref(0)
+const knobValueDelivered = ref(0)
 
 // const router = useRouter()
 
@@ -178,6 +178,7 @@ const getAllPackages = async () => {
     console.error('Error fetching data:', error)
   }
 }
+
 const getAllDeliveries = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -188,10 +189,10 @@ const getAllDeliveries = async () => {
       console.log('API Error:', error)
     } else {
       deliveries.value = data.data
-      maxDeliveries.value = deliveries.value.length
+      maxDeliveries.value = deliveries.value.length // Ensure maxDeliveries is a number
       knobValueDelivered.value = deliveries.value.filter(
         (delivery) => delivery.Status === 'Delivered'
-      ).length
+      ).length // Ensure knobValueDelivered is a number
       updateChartData()
     }
   } catch (error) {
@@ -292,10 +293,10 @@ onMounted(() => {
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="knobValue"
+                :max="500"
                 valueColor="#f97316"
                 :rangeColor="isDark ? 'White' : 'Black'"
                 :class="[isDark ? 'dark' : 'light']"
-                :max="500"
               />
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Total Packages</h2>
@@ -316,10 +317,10 @@ onMounted(() => {
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="knobValueDelivered"
+                :max="maxDeliveries"
                 valueColor="#f97316"
                 :rangeColor="isDark ? 'White' : 'Black'"
                 :class="[isDark ? 'dark' : 'light']"
-                :max="maxDeliveries"
               />
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Delivered</h2>
@@ -339,12 +340,7 @@ onMounted(() => {
           >
             <h2 class="mb-6 font-bold">Fitness Value</h2>
             <div class="flex justify-center items-center w-full h-full">
-              <Chart
-                type="scatter"
-                :data="fitnessData"
-                :options="scatterOptions"
-                class="h-full w-full"
-              />
+              <Chart type="scatter" :data="fitnessData" class="h-full w-full" />
             </div>
           </div>
         </div>

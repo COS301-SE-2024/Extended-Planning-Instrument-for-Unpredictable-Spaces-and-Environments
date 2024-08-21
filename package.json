@@ -40,9 +40,12 @@
     "vue-router": "^4.3.0",
     "vue-signature-pad": "^3.0.2",
     "vue3-google-map": "^0.20.0",
-    "vuex": "^4.0.2"
+    "vuex": "^4.0.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@rushstack/eslint-patch": "^1.8.0",
     "@types/three": "^0.165.0",
     "@vitejs/plugin-vue": "^5.0.4",
@@ -56,12 +59,15 @@
     "eslint-plugin-vue": "^9.23.0",
     "flush-promises": "^1.0.2",
     "jsdom": "^24.0.0",
+    "path-browserify": "^1.0.1",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
+    "rollup-plugin-node-polyfills": "^0.2.1",
     "tailwindcss": "^3.4.3",
     "three": "^0.165.0",
     "typescript": "^5.5.4",
     "vite": "^5.3.4",
+    "vite-plugin-node-polyfills": "^0.22.0",
     "vite-plugin-vue-devtools": "^7.0.25",
     "vitest": "^1.6.0",
     "vue2-google-maps": "^0.10.7"

@@ -388,13 +388,13 @@ const handleJsonData = (json) => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-100 text-black',
       ' h-full flex flex-col shadow-lg'
     ]"
   >
     <PackerSidebar @handle-json="handleJsonData" />
 
-    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900', ' h-[100vh]']">
+    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
         <AccordionTab
           v-for="item in [1, 2, 3]"
@@ -516,7 +516,7 @@ const toggleDialog = () => {
   border-bottom: 1px solid black;
 }
 .custom-accordion .p-accordion-header .p-accordion-header-link {
-  background-color: #0a0a0a;
+  background-color: #171717;
   color: rgb(255, 255, 255);
   border-bottom: 1px solid rgb(255, 255, 255); /* Only apply a border to the bottom */
 }
@@ -563,6 +563,13 @@ const toggleDialog = () => {
 
 .dark .custom-timeline .p-timeline-event-marker {
   border: 2px solid #555;
+}
+
+.dark .p-accordion .p-accordion-header .p-accordion-header-link {
+  background: #0a0a0a !important;
+}
+.light .p-accordion .p-accordion-header .p-accordion-header-link {
+  background: white !important;
 }
 
 /* General styles for AccordionTab */

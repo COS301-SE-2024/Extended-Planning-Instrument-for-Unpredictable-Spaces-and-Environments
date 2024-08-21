@@ -27,7 +27,6 @@ const onGlobalFilterChange = (e) => {
 const shipments = ref([])
 const getAllShipments = async () => {
   try {
-    console.log('TRYING')
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'getAllShipments' }),
       method: 'POST'
@@ -36,7 +35,6 @@ const getAllShipments = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      console.log(data.data)
       shipments.value = data.data
       const formattedShipments = data.data.map((shipment) => ({
         ...shipment,
@@ -53,7 +51,6 @@ async function setupSubscription() {
   await supabase
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-      // console.log(payload.new)
       updateUserInTable(payload.new)
     })
     .subscribe()

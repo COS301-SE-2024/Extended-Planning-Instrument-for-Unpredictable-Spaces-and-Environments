@@ -6,7 +6,6 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
-// import { toLower } from 'lodash'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
@@ -18,12 +17,7 @@ const filters = ref({
 })
 
 const onFilterChange = (type, value) => {
-  console.log('Searching for delivery id ', value, ' and type is ', type)
   filters.value[type].value = value
-  console.log('FILTERS: ', filters)
-  console.log('filters.value: ', filters.value)
-  console.log('filters.value[type]: ', filters.value[type])
-  console.log(' filters.value[type].value  ', filters.value[type].value)
 }
 
 const filteredDeliveries = computed(() => {
@@ -44,6 +38,8 @@ const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialo
 // const dialogPopUpVisible = ref(false)
 
 const showDialog = ref(false)
+const isLoading = ref(false)
+const errorMessage = ''
 
 const driverID = ref(false)
 
@@ -120,7 +116,6 @@ const getDeliveriesByStatus = async () => {
 
 const updateDriverID = async (delivery) => {
   await getSession('Driver ID : ', driverID.value)
-  console.log('Driver iD : ', driverID.value)
   try {
     const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
@@ -273,74 +268,76 @@ const items = [
         </div>
       </template>
     </Menubar>
-    <Dialog
-      header="Select Delivery to Start"
-      :visible="props.dialogPopUpVisible"
-      @update:visible="(value) => emit('update:dialogPopUpVisible', value)"
-      :modal="true"
-      :closable="false"
-      class="z-10000000000 w-[auto] p-4 relative"
-    >
-      <div
-        @open-delivery-dialog="handleOpenDeliveryDialog"
-        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
-        class="mb-4"
+    <div class="bg-black opacity-50 backdrop-blur-lg">
+      <Dialog
+        header="Select Delivery to Start"
+        :visible="props.dialogPopUpVisible"
+        @update:visible="(value) => emit('update:dialogPopUpVisible', value)"
+        :modal="true"
+        :closable="false"
+        class="z-10000000000 w-[auto] p-4 relative"
       >
-        <div class="w-full md:w-[300px] mb-4">
-          <div
-            :class="[
-              isDark
-                ? 'border-neutral-500 bg-neutral-900 text-white'
-                : 'border-gray-500 bg-white text-black',
-              'border flex items-center px-4 py-2 rounded-xl mt-4'
-            ]"
-          >
-            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-            <InputText
-              v-model="filters.deliveryId.value"
-              placeholder="Search by Delivery ID"
-              @input="onFilterChange('deliveryId', $event.target.value)"
-              type="number"
-              :class="[
-                isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
-                'focus:outline-none focus:ring-0'
-              ]"
-            />
-          </div>
-        </div>
-        <p class="text-3xl mb-2">Current Deliveries:</p>
-      </div>
-      <div v-if="isLoading">Loading deliveries...</div>
-      <div v-else-if="errorMessage">{{ errorMessage }}</div>
-      <div v-else class="pb-12">
-        <!-- Adjust padding to avoid overlap -->
-        <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
-          <p class="text-neutral-400 text-lg">Delivery Status:</p>
-          <p class="text-lg">{{ delivery.Status }}</p>
-          <p class="text-neutral-500 text-lg">Delivery ID:</p>
-          <p class="mb-2 text-lg">{{ delivery.id }}</p>
-
-          <Button
-            @click="handleDelivery(delivery)"
-            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
-            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
-            >Start Delivery</Button
-          >
-        </div>
-        <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
-      </div>
-      <div
-        :class="[
-          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
-          'focus:outline-none focus:ring-0'
-        ]"
-        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
-      >
-        <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
-          >Close</Button
+        <div
+          @open-delivery-dialog="handleOpenDeliveryDialog"
+          :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+          class="mb-4"
         >
-      </div>
-    </Dialog>
+          <div class="w-full md:w-[300px] mb-4 sm">
+            <div
+              :class="[
+                isDark
+                  ? 'border-neutral-500 bg-neutral-900 text-white'
+                  : 'border-gray-500 bg-white text-black',
+                'border flex items-center px-4 py-2 rounded-xl mt-4'
+              ]"
+            >
+              <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+              <InputText
+                v-model="filters.deliveryId.value"
+                placeholder="Search by Delivery ID"
+                @input="onFilterChange('deliveryId', $event.target.value)"
+                type="number"
+                :class="[
+                  isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
+                  'focus:outline-none focus:ring-0'
+                ]"
+              />
+            </div>
+          </div>
+          <p class="text-3xl mb-2">Current Deliveries:</p>
+        </div>
+        <div v-if="isLoading">Loading deliveries...</div>
+        <div v-else-if="errorMessage">{{ errorMessage }}</div>
+        <div v-else class="pb-12">
+          <!-- Adjust padding to avoid overlap -->
+          <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
+            <p class="text-neutral-400 text-lg">Delivery Status:</p>
+            <p class="text-lg">{{ delivery.Status }}</p>
+            <p class="text-neutral-500 text-lg">Delivery ID:</p>
+            <p class="mb-2 text-lg">{{ delivery.id }}</p>
+
+            <Button
+              @click="handleDelivery(delivery)"
+              :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+              class="text-lg justify-center px-4 py-2 w-full bg-green-800"
+              >Start Delivery</Button
+            >
+          </div>
+          <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
+        </div>
+        <div
+          :class="[
+            isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+            'focus:outline-none focus:ring-0'
+          ]"
+          class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+        >
+          <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+            >Close</Button
+          >
+        </div>
+      </Dialog>
+    </div>
     <div>
       <DialogComponent
         v-if="showDialog"
@@ -389,7 +386,7 @@ const items = [
 }
 
 .delivery-sidebar.dark .p-menubar {
-  background-color: #000000 !important; /* Ensure dark background */
+  background-color: #0a0a0a !important; /* Ensure dark background */
   color: rgb(0, 0, 0) !important; /* Ensure text color is white */
 }
 
@@ -413,7 +410,6 @@ const items = [
     background-color: #262626 !important;
   }
 }
-
 .delivery-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #262626 !important;
 }

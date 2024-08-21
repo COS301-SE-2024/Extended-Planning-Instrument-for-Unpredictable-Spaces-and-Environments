@@ -59,7 +59,7 @@ async function fetchCurrentUser() {
           handleError(error, 'fetchCurrentUser')
         } else {
           currentUser.value = data.data
-          // console.log('Current user fetched:', currentUser.value)
+          // console.log('Current user:', currentUser.value) // Debugging statement
         }
       } else {
         console.log('User does not have permission')
@@ -78,15 +78,15 @@ async function setupSubscription() {
       .channel('custom-all-channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Users' }, (payload) => {
         handleInsertOrUpdate(payload.new)
-        console.log('Inserted:', payload.new)
+        // console.log('Inserted:', payload.new)
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Users' }, (payload) => {
         handleInsertOrUpdate(payload.new)
-        console.log('Updated:', payload.new)
+        // console.log('Updated:', payload.new)
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Users' }, (payload) => {
         handleDelete(payload.old)
-        console.log('Deleted:', payload.old)
+        // console.log('Deleted:', payload.old)
       })
       .subscribe()
   } catch (error) {
@@ -200,7 +200,8 @@ const saveChanges = async () => {
 }
 
 const nameWithYou = (user) => {
-  if (currentUser.value.email === user.Email) {
+  // console.log('Function called for user:', user) // Debugging statement
+  if (currentUser.value && currentUser.value.email === user.email) {
     return `${user.FullName} (You)`
   }
   return user.FullName
