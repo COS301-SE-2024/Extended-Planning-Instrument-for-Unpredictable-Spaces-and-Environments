@@ -90,12 +90,11 @@
                 'h-[45px] flex align-items-center mb-2',
                 item.active ? 'active-menu-item' : ''
               ]"
-              aria-hidden="false"
               v-bind="props.action"
               :target="item.target"
               :href="item.url"
-              @click="item.command"
-              :style="{ cursor: 'pointer' }"
+              @click.prevent="showDialog"
+              :style="{ cursor: showDialog ? 'default' : 'pointer' }"
             >
               <span class="mr-2" :class="item.icon"></span>
               <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
