@@ -123,7 +123,7 @@ const signInWithProvider = async (provider) => {
           id="password"
           v-model="password"
           toggleMask
-          :invalid="value === null"
+          :invalid="password === ''"
           required
           :feedback="false"
           :class="[

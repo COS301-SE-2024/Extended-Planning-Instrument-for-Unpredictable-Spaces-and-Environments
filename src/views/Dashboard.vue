@@ -338,12 +338,7 @@ onMounted(() => {
           >
             <h2 class="mb-6 font-bold">Fitness Value</h2>
             <div class="flex justify-center items-center w-full h-full">
-              <Chart
-                type="scatter"
-                :data="fitnessData"
-                :options="scatterOptions"
-                class="h-full w-full"
-              />
+              <Chart type="scatter" :data="fitnessData" class="h-full w-full" />
             </div>
           </div>
         </div>
