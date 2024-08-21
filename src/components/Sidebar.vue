@@ -71,6 +71,7 @@
           <template #item="{ item, props }">
             <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
               <a
+                aria-hidden="false"
                 :class="[
                   'h-[45px]  flex align-items-center mb-2',
                   item.active ? 'active-menu-item' : ''
@@ -89,6 +90,7 @@
                 'h-[45px] flex align-items-center mb-2',
                 item.active ? 'active-menu-item' : ''
               ]"
+              aria-hidden="false"
               v-bind="props.action"
               :target="item.target"
               :href="item.url"
