@@ -1,3 +1,4 @@
+<!-- DELIVERYVIEW.VUE -->
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -6,7 +7,7 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, computed, onMounted, onUnmounted/*, toRaw*/ } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -20,69 +21,6 @@ const currentShipmentDetails = ref(null)
 const dialogVisible = ref(false)
 const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
-
-const calculateDistance = (loc1, loc2) => {
-  // Simple Euclidean distance for demonstration purposes
-  const [lat1, lon1] = loc1;
-  const [lat2, lon2] = loc2;
-  const R = 6371; // Radius of the Earth in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
-};
-
-const solveVRP = (locations) => {
-  const route = [];
-  const unvisited = [...locations];
-  let currentLocation = unvisited.shift(); // Start from the first location
-  route.push(currentLocation);
-
-  while (unvisited.length > 0) {
-    let nearestIndex = -1;
-    let nearestDistance = Infinity;
-    for (let i = 0; i < unvisited.length; i++) {
-      const distance = calculateDistance(currentLocation, unvisited[i]);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = i;
-      }
-    }
-    currentLocation = unvisited.splice(nearestIndex, 1)[0];
-    route.push(currentLocation);
-  }
-  return route;
-};
-
-const organizeShipmentsByRoute = () => {
-  for (const deliveryId in shipmentsByDelivery.value) {
-    const shipments = shipmentsByDelivery.value[deliveryId];
-    
-    if (shipments.length > 1) {
-      const locations = shipments.map(shipment => {
-        const [lat, lon] = shipment.Destination.split(',').map(Number);
-        return [lat, lon];
-      });
-
-      const optimizedRoute = solveVRP(locations);
-      
-      // Reorder shipments based on the optimized route
-      shipmentsByDelivery.value[deliveryId] = optimizedRoute.map((location) => {
-        return shipments.find(shipment => {
-          const [lat, lon] = shipment.Destination.split(',').map(Number);
-          return lat === location[0] && lon === location[1];
-        });
-      });
-    }
-  }
-  identifyPendingLocations();
-  updateTimelineEvents();
-};
-
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
@@ -122,92 +60,37 @@ const getShipmentByDeliveryId = async () => {
         deliveryID: currentDelivery.value.id
       }),
       method: 'POST'
-    });
+    })
     if (error) {
-      console.log(`API Error for delivery ${currentDelivery.value.id}:`, error);
+      console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
-        shipmentsByDelivery.value[currentDelivery.value.id] = [];
+        shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
-      shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data);
+      shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
 
       if (data.data.length > 0 && data.data[0].Destination) {
-        mapDestination.value = data.data[0].Destination;
+        mapDestination.value = data.data[0].Destination
       }
-      
-      // Organize shipments based on VRP
-      organizeShipmentsByRoute();
-
-      identifyPendingLocations();
-      updateTimelineEvents();
+      identifyPendingLocations()
+      updateTimelineEvents()
     }
   } catch (error) {
-    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error);
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
   }
-};
-
-
-// const getShipmentByDeliveryId = async () => {
-//   try {
-//     const { data, error } = await supabase.functions.invoke('core', {
-//       body: JSON.stringify({
-//         type: 'getShipmentByDeliveryID',
-//         deliveryID: currentDelivery.value.id
-//       }),
-//       method: 'POST'
-//     })
-//     if (error) {
-//       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
-//     } else {
-//       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
-//         shipmentsByDelivery.value[currentDelivery.value.id] = []
-//       }
-//       shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
-
-//       if (data.data.length > 0 && data.data[0].Destination) {
-//         mapDestination.value = data.data[0].Destination
-//       }
-//       identifyPendingLocations()
-//       updateTimelineEvents()
-//     }
-//   } catch (error) {
-//     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
-//   }
-// }
-
-function identifyPendingLocations(shipments) {
-  if (!Array.isArray(shipments)) {
-    console.error('Shipments data is not an array:', shipments);
-    return [];
-  }
-
-  return shipments.map(shipment => {
-    // Check if shipment and its Destination property are defined
-    if (!shipment || !shipment.Destination) {
-      console.error('Shipment or Destination is undefined:', shipment);
-      return null; // or handle this case appropriately
-    }
-
-    return {
-      id: shipment.id,
-      destination: shipment.Destination, 
-      status: shipment.Status,
-    };
-  }).filter(location => location !== null); // Remove any null results from the map
 }
 
+const identifyPendingLocations = () => {
+  const allLocations = Object.values(shipmentsByDelivery.value)
+    .flat()
+    .map((shipment) => shipment.Destination)
+    .filter(Boolean)
 
-// const identifyPendingLocations = () => {
-//   const allLocations = Object.values(shipmentsByDelivery.value)
-//     .flat()
-//     .map((shipment) => shipment.Destination)
-//     .filter(Boolean)
-
-//   pendingLocations.value = [...new Set(allLocations)]
-//   if (pendingLocations.value.length > 0) {
-//     currentDestination.value = pendingLocations.value[0]
-//   }
-// }
+  pendingLocations.value = [...new Set(allLocations)]
+  if (pendingLocations.value.length > 0) {
+    currentDestination.value = pendingLocations.value[0]
+  }
+}
 
 const getStatusColor = (status) => {
   switch (status.toLowerCase()) {
@@ -255,7 +138,7 @@ const upDateShipmentStatus = async (shipmentId) => {
 const updateShipmentStartTime = async (shipmentID) => {
   const currentDate = new Date().toISOString()
 
-  const { /*data,*/ error } = await supabase.functions.invoke('core', {
+  const { data, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
       type: 'updateShipmentStartTime',
       deliveryId: shipmentID,
@@ -271,7 +154,7 @@ const updateShipmentStartTime = async (shipmentID) => {
 
 const uploadSigntaure = async (signature, shipmentID) => {
   try {
-    const { /*data,*/ error } = await supabase.functions.invoke('core', {
+    const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
         dataURL: signature
@@ -283,7 +166,7 @@ const uploadSigntaure = async (signature, shipmentID) => {
     } else {
       const currentDate = new Date().toISOString()
 
-      const { /*data,*/ error } = await supabase.functions.invoke('core', {
+      const { data, error } = await supabase.functions.invoke('core', {
         body: JSON.stringify({
           type: 'updateShipmentEndTime',
           deliveryId: shipmentID,
@@ -793,5 +676,3 @@ export default {
   z-index: 9998 !important; /* Ensure it is above other elements */
 }
 </style>
-
-
