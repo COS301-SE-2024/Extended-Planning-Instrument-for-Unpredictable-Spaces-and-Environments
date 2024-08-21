@@ -32,6 +32,7 @@ import ToastService from 'primevue/toastservice'
 import Carousel from 'primevue/carousel'
 import FileUpload from 'primevue/fileupload'
 import VueSignaturePad from 'vue-signature-pad'
+import Ripple from 'primevue/ripple'
 
 import 'primeicons/primeicons.css'
 import 'primevue/resources/themes/md-dark-indigo/theme.css'
@@ -42,6 +43,7 @@ import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
 const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
 
+app.directive('ripple', Ripple)
 app.use(VueSignaturePad)
 app.use(router)
 app.use(PrimeVue)

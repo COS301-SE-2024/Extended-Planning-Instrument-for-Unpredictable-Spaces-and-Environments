@@ -23,7 +23,6 @@ const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
 
 const toggleDialog = () => {
-  console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
 
@@ -130,7 +129,6 @@ const upDateShipmentStatus = async (shipmentId) => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      console.log('Successfully updated Status')
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -151,7 +149,6 @@ const updateShipmentStartTime = async (shipmentID) => {
   if (error) {
     console.error(`API Error for updating EndTime for delivery`, error)
   } else {
-    console.log('Successfully updated EndTime and Uploaded')
   }
 }
 
@@ -180,7 +177,6 @@ const uploadSigntaure = async (signature, shipmentID) => {
       if (error) {
         console.error(`API Error for updating EndTime for delivery`, error)
       } else {
-        console.log('Successfully updated EndTime and Uploaded')
       }
     }
   } catch (error) {
@@ -232,7 +228,6 @@ function save(shipmentid) {
         if (nextShipmentIndex < timelineEvents.value.length) {
           const nextShipmentId = timelineEvents.value[nextShipmentIndex].shipment_id
           updateShipmentStartTime(nextShipmentId)
-          console.log('UPDATING SHIPMENT ID: ', nextShipmentId)
         }
       } else {
         currentDestination.value = ''
@@ -254,7 +249,6 @@ async function setupSubscription() {
   await supabase // Await for the subscription to be established
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
-      // console.log(payload.new)
       updateTimelineEvent(payload.new)
     })
     .subscribe()
@@ -306,7 +300,6 @@ const startNewDelivery = () => {
   if (timelineEvents.value.length > 0) {
     const firstShipmentId = timelineEvents.value[0].shipment_id
     updateShipmentStartTime(firstShipmentId)
-    console.log('UPDATING SHIPMENT ID:', firstShipmentId)
   }
 }
 
@@ -420,6 +413,7 @@ export default {
         <div class="mb-4">
           <Map :destination="mapDestination"></Map>
           <button
+            v-ripple
             @click="openInGoogleMaps"
             class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out mt-4"
           >

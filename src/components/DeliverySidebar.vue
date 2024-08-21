@@ -37,6 +37,8 @@ const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialo
 // Use a single state variable for the dialog
 // const dialogPopUpVisible = ref(false)
 const showDialog = ref(false)
+const isLoading = ref(false)
+const errorMessage = ''
 
 const driverID = ref(false)
 
@@ -113,7 +115,6 @@ const getDeliveriesByStatus = async () => {
 
 const updateDriverID = async (delivery) => {
   await getSession('Driver ID : ', driverID.value)
-  console.log('Driver iD : ', driverID.value)
   try {
     const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
