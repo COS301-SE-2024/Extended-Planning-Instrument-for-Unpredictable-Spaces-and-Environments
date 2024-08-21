@@ -6,7 +6,6 @@ export async function updateDeliveryStartTime(supabase: any, deliveryId: number,
   
     if (error) {
       console.error('Error updating delivery start time:', error);
-      
       return { error: 'Failed to update delivery start time' };
     }
   
