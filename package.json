@@ -21,6 +21,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "@vue/cli-service": "^3.3.1",
     "@vueuse/core": "^10.10.0",
+    "axios": "^1.7.4",
     "chart.js": "^4.4.3",
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",

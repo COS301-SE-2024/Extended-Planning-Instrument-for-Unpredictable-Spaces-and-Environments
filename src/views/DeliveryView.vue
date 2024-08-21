@@ -7,10 +7,11 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
+import loader from '../googleMapsLoader.js'
 
 const isDark = useDark()
 
@@ -51,6 +52,37 @@ const updateScreenSize = () => {
 const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
 const signaturePad = ref(null)
+let google = null
+
+async function sortLocationsByDistance(origins, destinations) {
+  // await loader.load() // Ensure the Google Maps library is loaded
+  if (!google) {
+    google = window.google
+  }
+  const service = new google.maps.DistanceMatrixService()
+  const request = {
+    origins: [origins],
+    destinations: destinations,
+    travelMode: google.maps.TravelMode.DRIVING
+  }
+
+  return new Promise((resolve, reject) => {
+    service.getDistanceMatrix(request, (response, status) => {
+      if (status === google.maps.DistanceMatrixStatus.OK) {
+        const distanceList = []
+        for (let i = 0; i < response.rows[0].elements.length; i++) {
+          const distance = response.rows[0].elements[i].distance.value // distance in meters
+          distanceList.push([destinations[i], distance])
+        }
+        // Sort by distance (ascending)
+        distanceList.sort((a, b) => a[1] - b[1])
+        resolve(distanceList.map(([location]) => location))
+      } else {
+        reject(`Error: ${status}`)
+      }
+    })
+  })
+}
 
 const getShipmentByDeliveryId = async () => {
   try {
@@ -67,11 +99,26 @@ const getShipmentByDeliveryId = async () => {
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
-      shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
 
-      if (data.data.length > 0 && data.data[0].Destination) {
-        mapDestination.value = data.data[0].Destination
+      // Extract destinations and their corresponding shipment data
+      const destinations = data.data.map((shipment) => shipment.Destination)
+      const origin = 'University of Pretoria'
+
+      // Sort the destinations by distance
+      const sortedLocations = await sortLocationsByDistance(origin, destinations)
+
+      // Reorganize the shipments based on the sorted locations
+      const sortedShipments = sortedLocations.map((location) => {
+        return data.data.find((shipment) => shipment.Destination === location)
+      })
+
+      shipmentsByDelivery.value[currentDelivery.value.id] = sortedShipments
+
+      if (sortedLocations.length > 0) {
+        mapDestination.value = sortedLocations[0]
       }
+
+      // Trigger updates for pending locations and the timeline
       identifyPendingLocations()
       updateTimelineEvents()
     }
@@ -118,7 +165,7 @@ const handleDeliveryFromSidebar = (delivery) => {
 
 const upDateShipmentStatus = async (shipmentId) => {
   try {
-    const { /*data,*/ error } = await supabase.functions.invoke('core', {
+    const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateShipmentStatus',
         shipmentId: shipmentId,
@@ -128,7 +175,6 @@ const upDateShipmentStatus = async (shipmentId) => {
     })
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
-    } else {
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -138,7 +184,7 @@ const upDateShipmentStatus = async (shipmentId) => {
 const updateShipmentStartTime = async (shipmentID) => {
   const currentDate = new Date().toISOString()
 
-  const { data, error } = await supabase.functions.invoke('core', {
+  const { error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
       type: 'updateShipmentStartTime',
       deliveryId: shipmentID,
@@ -148,13 +194,12 @@ const updateShipmentStartTime = async (shipmentID) => {
   })
   if (error) {
     console.error(`API Error for updating EndTime for delivery`, error)
-  } else {
   }
 }
 
 const uploadSigntaure = async (signature, shipmentID) => {
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
         dataURL: signature
@@ -166,7 +211,7 @@ const uploadSigntaure = async (signature, shipmentID) => {
     } else {
       const currentDate = new Date().toISOString()
 
-      const { data, error } = await supabase.functions.invoke('core', {
+      const { error } = await supabase.functions.invoke('core', {
         body: JSON.stringify({
           type: 'updateShipmentEndTime',
           deliveryId: shipmentID,
@@ -176,7 +221,6 @@ const uploadSigntaure = async (signature, shipmentID) => {
       })
       if (error) {
         console.error(`API Error for updating EndTime for delivery`, error)
-      } else {
       }
     }
   } catch (error) {
@@ -361,6 +405,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize)
 })
 </script>
+
 <script>
 export default {
   name: 'MySignaturePad',
