@@ -2,9 +2,10 @@ import { Loader } from '@googlemaps/js-api-loader'
 
 // Create a singleton instance of the Loader
 const loader = new Loader({
-  apiKey: 'AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g',
+  apiKey: import.meta.env.VITE_GOOGLE_DISTANCE_API,
   version: 'weekly',
   libraries: ['places']
 })
+
 
 export default loader

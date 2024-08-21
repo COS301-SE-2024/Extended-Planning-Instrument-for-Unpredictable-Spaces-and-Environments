@@ -41,14 +41,6 @@ export default {
     let google = null
     // let watchId = null
 
-    // console.log('HERE IS PROPS FROM MAPS', props)
-
-    // const loader = new Loader({
-    //   apiKey: 'AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g',
-    //   version: 'weekly',
-    //   libraries: ['places']
-    // })
-
     const getLocation = () => {
       return new Promise((resolve, reject) => {
         if (navigator.geolocation) {

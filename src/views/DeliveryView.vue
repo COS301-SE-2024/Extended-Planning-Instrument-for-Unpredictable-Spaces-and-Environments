@@ -55,7 +55,6 @@ const signaturePad = ref(null)
 let google = null
 
 async function sortLocationsByDistance(origins, destinations) {
-  // await loader.load() // Ensure the Google Maps library is loaded
   if (!google) {
     google = window.google
   }
