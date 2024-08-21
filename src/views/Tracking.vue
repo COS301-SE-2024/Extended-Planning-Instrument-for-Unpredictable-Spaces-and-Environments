@@ -409,8 +409,6 @@ export default {
     },
     save() {
       const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-      console.log(isEmpty)
-      console.log(data)
     }
   },
   components: {

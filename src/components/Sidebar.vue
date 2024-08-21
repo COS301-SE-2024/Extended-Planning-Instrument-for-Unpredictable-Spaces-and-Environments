@@ -72,7 +72,7 @@
             <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
               <a
                 :class="[
-                  'h-[45px] flex align-items-center mb-2',
+                  'h-[45px]  flex align-items-center mb-2',
                   item.active ? 'active-menu-item' : ''
                 ]"
                 v-bind="props.action"
@@ -86,13 +86,14 @@
             <a
               v-else
               :class="[
-                'h-[45px] flex align-items-center mb-2 ',
+                'h-[45px] flex align-items-center mb-2',
                 item.active ? 'active-menu-item' : ''
               ]"
               v-bind="props.action"
               :target="item.target"
               :href="item.url"
               @click="item.command"
+              :style="{ cursor: 'pointer' }"
             >
               <span class="mr-2" :class="item.icon"></span>
               <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
@@ -174,6 +175,9 @@
     </Dialog>
     <DialogComponent
       v-if="showDialog"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+      title="Contact Support"
       :images="[
         { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
         { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
@@ -187,13 +191,10 @@
           alt: 'Alternative Image 5'
         }
       ]"
-      title="Contact Support"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
       ]"
-      :dialogVisible="showDialog"
-      @close-dialog="toggleDialog"
     />
   </div>
   <Toast />
@@ -258,8 +259,6 @@ const validateCSV = (file) => {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       complete: (results) => {
-        console.log('Parsed results:', results)
-
         if (results.data.length < 2) {
           reject('CSV file is empty or contains only headers')
           return
@@ -337,7 +336,6 @@ onUnmounted(() => {
 })
 
 const loading = ref(false)
-const loadingDel = ref(false)
 
 const logout = async () => {
   const { error } = await supabase.auth.signOut()
@@ -350,9 +348,9 @@ const logout = async () => {
 }
 
 const showDialog = ref(false)
+
 const toggleDialog = () => {
   showDialog.value = !showDialog.value
-  console.log('closing')
 }
 
 const showShipment = ref(false)
@@ -611,7 +609,6 @@ const items = computed(() => [
     label: isDark.value ? 'Light Mode' : 'Dark Mode',
     icon: isDark.value ? 'pi pi-fw pi-sun' : 'pi pi-fw pi-moon',
     command: () => {
-      console.log('Toggling Dark Mode')
       toggleDark()
     }
   },
@@ -619,7 +616,6 @@ const items = computed(() => [
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      console.log('Logging Out')
       logout()
     }
   },
@@ -627,7 +623,6 @@ const items = computed(() => [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
-      console.log('Opening Help Menu')
       toggleDialog()
     }
   }
@@ -652,7 +647,6 @@ const items = computed(() => [
 
 .dark .p-menuitem.p-focus > .p-menuitem-content {
   background-color: #262626 !important;
-  border-radius: 1rem;
 }
 
 .dark .p-menuitem:hover > .p-menuitem-content {
@@ -839,5 +833,15 @@ const items = computed(() => [
 
 .light .p-fileupload-upload-button {
   padding: 10px;
+}
+
+.p-dialog-mask.p-component-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.p-dialog {
+  max-height: 100vh;
+  overflow-y: auto;
 }
 </style>
