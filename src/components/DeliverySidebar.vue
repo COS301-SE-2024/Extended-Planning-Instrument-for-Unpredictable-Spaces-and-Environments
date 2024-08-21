@@ -384,7 +384,7 @@ const items = [
 }
 
 .delivery-sidebar.dark .p-menubar {
-  background-color: #000000 !important; /* Ensure dark background */
+  background-color: #0a0a0a !important; /* Ensure dark background */
   color: rgb(0, 0, 0) !important; /* Ensure text color is white */
 }
 

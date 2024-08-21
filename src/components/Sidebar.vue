@@ -128,7 +128,7 @@
 
     <Dialog
       v-model:visible="showShipment"
-      :class="[isDark ? 'dark' : 'light', 'w-[50%] rounded-lg']"
+      :class="[isDark ? 'dark' : 'light', 'w-[50%] max-w-xs rounded-lg']"
       :modal="true"
       @close-dialog="toggleShipment"
     >
