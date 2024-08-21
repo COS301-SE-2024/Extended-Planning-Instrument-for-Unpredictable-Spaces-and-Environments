@@ -36,6 +36,7 @@ const filteredDeliveries = computed(() => {
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
 // const dialogPopUpVisible = ref(false)
+
 const showDialog = ref(false)
 const isLoading = ref(false)
 const errorMessage = ''
@@ -226,7 +227,7 @@ const items = [
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
         <a class="flex items-center p-6" v-bind="props.action">
-          <span :class="item.icon" />
+          <span :class="item.icon"></span>
           <span class="ml-2">{{ item.label }}</span>
           <Badge
             v-if="item.badge"
