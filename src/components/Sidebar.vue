@@ -205,10 +205,8 @@
 import { useDark, useToggle } from '@vueuse/core'
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { createClient } from '@supabase/supabase-js'
 import Papa from 'papaparse'
 import DialogComponent from '@/components/DialogComponent.vue'
-import { Result } from 'postcss'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/supabase.js' // Import the Supabase client

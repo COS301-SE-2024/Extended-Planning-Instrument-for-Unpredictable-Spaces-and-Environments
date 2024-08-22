@@ -4,14 +4,11 @@ import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
-// import { ref } from 'vue';
 
 const router = useRouter()
 const toast = useToast()
 const isDark = useDark()
 const activeIndex = ref(0)
-
-// let session = await getUserSession()
 
 const changeUserRoute = () => {
   router.push({ name: 'callback' })
@@ -21,7 +18,6 @@ async function setupSubscription() {
   await supabase // Await for the subscription to be established
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-      // console.log(payload.new)
       changeUserRoute()
     })
     .subscribe()
@@ -38,6 +34,7 @@ onMounted(() => {
     })
   }
 })
+
 const logout = async () => {
   const { error } = await supabase.auth.signOut()
 
@@ -45,7 +42,6 @@ const logout = async () => {
     console.log(error)
   } else {
     router.push({ name: 'login' })
-    // console.log('Log out successful')
   }
 }
 </script>
@@ -54,9 +50,8 @@ const logout = async () => {
   <div
     :class="[
       isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-100 text-black',
-      'h-full flex flex-col lg:flex-row shadow-lg'
+      'flex flex-col lg:flex-row h-screen'
     ]"
-    style="position: relative; height: 100vh; width: 100vw"
   >
     <div class="video-container flex items-center justify-center w-full lg:w-1/2 lg:h-full">
       <video
@@ -69,17 +64,18 @@ const logout = async () => {
       ></video>
     </div>
     <div
-      class="text-container flex items-center justify-center w-full lg:w-1/2 h-1/2 lg:h-full p-8"
+      class="text-container flex flex-col items-center justify-center w-full lg:w-1/2 lg:h-full p-4 lg:p-8"
     >
-      <div>
-        <p class="text-4xl font-bold mb-4">Welcome to Janeeb Solutions</p>
-        <p class="text-lg">
-          We're excited to have you on board! Your account is being set up and you'll receive an
-          activation confirmation soon. Once activated, you'll have access to all the relevant
-          features. Thank you for your patience!
+      <div class="text-center lg:text-left">
+        <p class="text-6xl font-bold mb-4 text-orange-600">Welcome</p>
+        <p class="text-3xl lg:text-4xl font-bold mb-4">
+          Your account is being set up, and you’ll receive an activation confirmation soon.
         </p>
-        <div class="flex justify-left mt-10">
-          <button @click="logout" class="w-full bg-orange-600 px-10 py-2 rounded-md ter">
+        <p class="text-base lg:text-2xl mb-4">
+          Once activated, you'll have access to all features. Thank you for your patience!
+        </p>
+        <div class="flex justify-center lg:justify-start mt-6 lg:mt-10">
+          <button @click="logout" class="bg-orange-600 text-white px-6 py-2 rounded-md">
             Logout
           </button>
         </div>

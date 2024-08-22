@@ -6,9 +6,12 @@ import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 const isDark = useDark()
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
+const toast = useToast()
 
 // Utility to sanitize input
 const sanitizeInput = (input) => {
@@ -129,9 +132,24 @@ const DelteUser = async () => {
     })
 
     if (error) {
-      handleError(error, 'deleteUser')
-    } else {
+      console.log(error)
       dialogVisible.value = false
+      handleError(error, 'deleteUser')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error,
+        life: 10000
+      })
+    } else {
+      console.log('DELETED USER')
+      dialogVisible.value = false
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'You have successfully deleted user the user',
+        life: 50000
+      })
     }
   } catch (error) {
     handleError(error, 'deleteUser')
@@ -393,6 +411,7 @@ const nameWithYou = (user) => {
       @close-dialog="toggleDialog"
     />
   </div>
+  <Toast />
 </template>
 
 <script>

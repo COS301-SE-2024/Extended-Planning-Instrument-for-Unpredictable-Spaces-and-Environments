@@ -176,6 +176,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
 
 function createContainer(scene, CONTAINER_SIZE) {
   console.log('Creating container', CONTAINER_SIZE)
+
   const geometry = new THREE.BoxGeometry(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
   const material = new THREE.MeshPhongMaterial({
     color: 0xcccccc,
