@@ -262,7 +262,7 @@ const updateDeliveryStatus = async () => {
       body: JSON.stringify({
         type: 'updateDeliveryStatus',
         deliveryId: currentDelivery.value.id,
-        Status: 'Completed'
+        newStatus: 'Completed'
       }),
       method: 'POST'
     })
