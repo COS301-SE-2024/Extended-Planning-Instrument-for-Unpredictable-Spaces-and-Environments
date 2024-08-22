@@ -28,7 +28,7 @@ export async function uploadSignature(supabase: any, signatureDataUrl: string) {
       .upload(`signatures/${fileName}`, encryptedBlob);
 
     if (uploadError) {
-      console.error('Error uploading signature:', uploadError);
+      console.error('Error uploading sign ature:', uploadError);
       return { error: 'Failed to upload signature' };
     }
 

@@ -35,6 +35,7 @@ import { getDeliveriesByDriverID } from './Deliveries/getDeliveriesByDriverID.ts
 import { getDeliveriesByStatus } from './Deliveries/getDeliveriesByStatus.ts'
 import { updateDeliveryStartTime } from './Deliveries/updateDeliveryStartTime.ts'
 import { updateDeliveryEndTime } from './Deliveries/updateDeliveryEndTime.ts'
+import { updateDeliveryStatus } from './Deliveries/updateDeliveryStatus.ts'
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -141,6 +142,11 @@ Deno.serve(async (req) => {
       if (requestBody.type == 'updateShipmentStartTime') {
         return responseBuilder(
           await updateShipmentStartTime(supabaseUser, requestBody.shipmentId, new Date(requestBody.newStartTime))
+        );
+      }
+      if (requestBody.type == 'updateDeliveryStatus') {
+        return responseBuilder(
+          await updateDeliveryStatus(supabaseUser, requestBody.deliveryId, requestBody.newStatus)
         );
       }
       if (requestBody.type == 'updateShipmentEndTime') {
