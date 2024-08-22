@@ -14,6 +14,7 @@ import Shipments from '../views/Shipments.vue'
 import TruckEnvironment from '@/components/TruckEnvironment.vue'
 import ForgotPassword from '@/views/ForgotPassword.vue'
 import ConfirmPassword from '@/views/ConfirmPassword.vue'
+import Error404 from '@/views/Error404.vue'
 
 import { supabase } from '../supabase'
 // import ResetPassword from '@/views/confirm-reset-password.vue'
@@ -97,6 +98,11 @@ const routes = [
     path: '/confirm-password',
     name: 'confirm-password',
     component: ConfirmPassword
+  },
+  {
+    path: '/error-404',
+    name: 'error-404',
+    component: Error404
   }
 
   // ,
