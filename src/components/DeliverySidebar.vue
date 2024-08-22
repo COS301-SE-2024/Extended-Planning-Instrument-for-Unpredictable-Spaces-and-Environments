@@ -1,22 +1,64 @@
 <!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const router = useRouter()
 
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  deliveryId: { value: null, matchMode: FilterMatchMode.CONTAINS }
+})
+
+const onFilterChange = (type, value) => {
+  filters.value[type].value = value
+}
+
+const filteredDeliveries = computed(() => {
+  return deliveriesByStatus.value.filter((delivery) => {
+    const globalMatch =
+      !filters.value.global.value ||
+      (typeof delivery.id === 'number' && String(delivery.id).includes(filters.value.global.value))
+    const deliveryIdMatch =
+      !filters.value.deliveryId.value ||
+      (typeof delivery.id === 'number' &&
+        String(delivery.id).includes(filters.value.deliveryId.value))
+    return globalMatch && deliveryIdMatch
+  })
+})
+
+const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 // Use a single state variable for the dialog
-const dialogVisible = ref(false)
+// const dialogPopUpVisible = ref(false)
+
+const showDialog = ref(false)
+const isLoading = ref(false)
+const errorMessage = ''
+
 const driverID = ref(false)
 
+const props = defineProps({
+  dialogPopUpVisible: Boolean
+})
+
 const toggleDialog = () => {
-  console.log('Toggling Dialog Visibility', dialogVisible.value)
-  dialogVisible.value = !dialogVisible.value
+  emit('update:dialogPopUpVisible', !props.dialogPopUpVisible)
+}
+
+const toggleDialog2 = () => {
+  showDialog.value = !showDialog.value
+  console.log('Toggling showDialog:', showDialog.value)
+}
+
+const handleOpenDeliveryDialog = () => {
+  toggleDialog()
+  console.log('Emmit has been recieved and dialog has been toggled')
 }
 
 async function getSession() {
@@ -72,13 +114,10 @@ const getDeliveriesByStatus = async () => {
   }
 }
 
-const emit = defineEmits(['handle-delivery'])
-
 const updateDriverID = async (delivery) => {
   await getSession('Driver ID : ', driverID.value)
-  console.log('Driver iD : ', driverID.value)
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateDriverID',
         deliveryID: delivery.id,
@@ -94,10 +133,29 @@ const updateDriverID = async (delivery) => {
   }
 }
 
+const addDeliveryStartTime = async (delivery) => {
+  try {
+    const currentDate = new Date().toISOString()
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryStartTime',
+        deliveryId: delivery.id,
+        newStartTime: currentDate
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error Adding start time to delivery:', error)
+    }
+  } catch (error) {
+    console.error('Error fetching data from updateDeliveryStartTime:', error)
+  }
+}
+
 const handleDelivery = (delivery) => {
-  console.log('Delivery:', delivery)
   updateDriverID(delivery)
-  // Emit an event to be caught by the parent component (DeliveryView)
+  addDeliveryStartTime(delivery)
+
   emit('handle-delivery', delivery)
   toggleDialog()
 }
@@ -111,9 +169,6 @@ async function logout() {
     console.log('Log out successful')
   }
 }
-components: {
-  DialogComponent
-}
 
 onMounted(() => {
   getDeliveriesByStatus()
@@ -125,24 +180,7 @@ const items = [
     icon: 'pi pi-fw pi-truck',
     command: () => {
       toggleDialog()
-    }
-  },
-  {
-    label: 'Updates',
-    icon: 'pi pi-fw pi-envelope',
-    severity: 'warning',
-    badge: '5',
-    command: () => {
-      console.log('Navigating to Messages')
-      router.push({ name: '/' })
-    }
-  },
-  {
-    label: 'Profile',
-    icon: 'pi pi-fw pi-user',
-    command: () => {
-      console.log('Navigating to Profile')
-      router.push({ name: '/' })
+      emit('start-new-delivery')
     }
   },
   {
@@ -173,7 +211,7 @@ const items = [
 </script>
 
 <template>
-  <div :class="[isDark ? 'dark' : 'light', 'h-full']">
+  <div :class="[isDark ? 'dark delivery-sidebar' : 'light delivery-sidebar', 'h-full']">
     <Menubar :model="items" class="w-full specific-menubar">
       <template #start>
         <svg
@@ -189,7 +227,7 @@ const items = [
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
         <a class="flex items-center p-6" v-bind="props.action">
-          <span :class="item.icon" />
+          <span :class="item.icon"></span>
           <span class="ml-2">{{ item.label }}</span>
           <Badge
             v-if="item.badge"
@@ -210,7 +248,7 @@ const items = [
       </template>
       <template #end>
         <div class="flex items-center gap-2">
-          <div
+          <!-- <div
             :class="[
               isDark
                 ? 'border-neutral-500 bg-neutral-950 text-white'
@@ -226,54 +264,80 @@ const items = [
                 'focus:outline-none focus:ring-0 w-32 sm:w-auto'
               ]"
             />
-          </div>
+          </div> -->
         </div>
       </template>
     </Menubar>
-    <Dialog
-      header="Edit User Profile"
-      v-model:visible="dialogVisible"
-      :modal="true"
-      :closable="false"
-      class="z-10000000000 w-[auto] p-4 relative"
-    >
-      <div
-        :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
-        class="mb-4"
+    <div class="bg-black opacity-50 backdrop-blur-lg">
+      <Dialog
+        header="Select Delivery to Start"
+        :visible="props.dialogPopUpVisible"
+        @update:visible="(value) => emit('update:dialogPopUpVisible', value)"
+        :modal="true"
+        :closable="false"
+        class="z-10000000000 w-[auto] p-4 relative"
       >
-        <p class="text-3xl mb-2">Current Deliveries:</p>
-      </div>
-      <div v-if="isLoading">Loading deliveries...</div>
-      <div v-else-if="errorMessage">{{ errorMessage }}</div>
-      <div v-else class="pb-12">
-        <!-- Adjust padding to avoid overlap -->
-        <div v-for="delivery in deliveriesByStatus" :key="delivery.id" class="mb-8">
-          <p class="text-neutral-400 text-lg">Delivery Status:</p>
-          <p class="text-lg">{{ delivery.Status }}</p>
-          <p class="text-neutral-500 text-lg">Delivery ID:</p>
-          <p class="mb-2 text-lg">{{ delivery.id }}</p>
+        <div
+          @open-delivery-dialog="handleOpenDeliveryDialog"
+          :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
+          class="mb-4"
+        >
+          <div class="w-full md:w-[300px] mb-4 sm">
+            <div
+              :class="[
+                isDark
+                  ? 'border-neutral-500 bg-neutral-900 text-white'
+                  : 'border-gray-500 bg-white text-black',
+                'border flex items-center px-4 py-2 rounded-xl mt-4'
+              ]"
+            >
+              <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
+              <InputText
+                v-model="filters.deliveryId.value"
+                placeholder="Search by Delivery ID"
+                @input="onFilterChange('deliveryId', $event.target.value)"
+                type="number"
+                :class="[
+                  isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
+                  'focus:outline-none focus:ring-0'
+                ]"
+              />
+            </div>
+          </div>
+          <p class="text-3xl mb-2">Current Deliveries:</p>
+        </div>
+        <div v-if="isLoading">Loading deliveries...</div>
+        <div v-else-if="errorMessage">{{ errorMessage }}</div>
+        <div v-else class="pb-12">
+          <!-- Adjust padding to avoid overlap -->
+          <div v-for="delivery in filteredDeliveries" :key="delivery.id" class="mb-8">
+            <p class="text-neutral-400 text-lg">Delivery Status:</p>
+            <p class="text-lg">{{ delivery.Status }}</p>
+            <p class="text-neutral-500 text-lg">Delivery ID:</p>
+            <p class="mb-2 text-lg">{{ delivery.id }}</p>
 
-          <Button
-            @click="handleDelivery(delivery)"
-            :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
-            class="text-lg justify-center px-4 py-2 w-full bg-green-800"
-            >Start Delivery</Button
+            <Button
+              @click="handleDelivery(delivery)"
+              :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
+              class="text-lg justify-center px-4 py-2 w-full bg-green-800"
+              >Start Delivery</Button
+            >
+          </div>
+          <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
+        </div>
+        <div
+          :class="[
+            isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
+            'focus:outline-none focus:ring-0'
+          ]"
+          class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
+        >
+          <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+            >Close</Button
           >
         </div>
-        <div v-if="deliveriesByStatus.length === 0">No deliveries found.</div>
-      </div>
-      <div
-        :class="[
-          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-white',
-          'focus:outline-none focus:ring-0'
-        ]"
-        class="bg-neutral-800 p-6 absolute bottom-4 left-4 right-4"
-      >
-        <Button @click="toggleDialog()" class="text-lg justify-center px-4 py-2 w-full bg-red-800"
-          >Close</Button
-        >
-      </div>
-    </Dialog>
+      </Dialog>
+    </div>
     <div>
       <DialogComponent
         v-if="showDialog"
@@ -295,7 +359,7 @@ const items = [
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
         ]"
         :dialogVisible="showDialog"
-        @close-dialog="toggleDialog"
+        @close-dialog="toggleDialog2"
       />
     </div>
   </div>
@@ -310,70 +374,83 @@ const items = [
   background-color: white;
   color: black;
 }
-.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+.delivery-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   border-radius: 0;
   color: white;
 }
-/* Update styles for hovered menu item link */
-.dark .p-menu {
+
+/* Update styles for hovered menu item link within delivery sidebar */
+.delivery-sidebar.dark .p-menu {
   background-color: #0a0a0a;
   border-radius: 0;
 }
-.dark .p-menubar {
-  border-radius: 0;
-}
-.dark .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #262626 !important;
-    }
-  }
+
+.delivery-sidebar.dark .p-menubar {
+  background-color: #0a0a0a !important; /* Ensure dark background */
+  color: rgb(0, 0, 0) !important; /* Ensure text color is white */
 }
 
-.dark .p-menuitem:hover > .p-menuitem-content {
+.delivery-sidebar.light .p-menubar {
+  background-color: #ffffff !important; /* Ensure light background */
+}
+.delivery-sidebar.dark .p-icon {
+  color: white !important; /* Ensure icon color is white in dark mode */
+}
+
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  background-color: #0a0a0a !important; /* Dark background for menu items */
+  color: white !important; /* Ensure text color is white */
+}
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: #262626 !important; /* Darker background on hover */
+  color: white !important;
+}
+.delivery-sidebar.dark .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #262626 !important;
+  }
+}
+.delivery-sidebar.dark .p-menuitem:hover > .p-menuitem-content {
   background-color: #262626 !important;
 }
 
-.p-calendar {
+/* Additional styles scoped to the delivery-sidebar component */
+.delivery-sidebar .p-calendar {
   width: 100%; /* Take up full width of parent */
   height: auto;
 }
 
-.p-chart {
+.delivery-sidebar .p-chart {
   height: auto;
 }
 
-.transition-opacity {
-  transition: opacity 0.3s ease-in-out;
-}
-
-/* Additional media query for sidebar collapse */
-
-.light .p-menu {
+.delivery-sidebar .light .p-menu {
   color: black;
   background-color: #0a0a0a;
-  background: #0a0a0a;
 }
-.light .p-menuitem {
+
+.delivery-sidebar .light .p-menuitem {
   color: black;
 }
 
-.dark .p-menubar {
+.delivery-sidebar .dark .p-menubar {
   padding: 1rem;
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-menubar {
+
+.delivery-sidebar .p-menubar {
   padding: 1rem;
   background: #ffffff;
   color: rgba(255, 255, 255, 0.87);
 }
-.p-icon {
+
+.delivery-sidebar .p-icon {
   display: inline-block;
   color: #0a0a0a;
 }
 
-.light .p-menu-list {
+.delivery-sidebar .light .p-menu-list {
   color: rgba(0, 0, 0, 0.87) !important;
   stroke: black !important;
   fill: black !important;
@@ -381,56 +458,59 @@ const items = [
   background: transparent;
 }
 
-.dark .a {
+.delivery-sidebar .dark .a {
   color: white !important;
 }
 
-.a {
+.delivery-sidebar .a {
   color: white !important;
 }
-.p-menu {
+
+.delivery-sidebar .p-menu {
   padding: 0.5rem 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.87);
 }
-.dark .p-menu {
+
+.delivery-sidebar .dark .p-menu {
   padding: 0.5rem 0;
   background: transparent;
 }
-.light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+
+.delivery-sidebar .light .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: white;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
   color: black;
 }
-.dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+
+.delivery-sidebar .dark .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
   transition: none;
   background: #0a0a0a;
   border-bottom: 0.1px solid rgb(74, 74, 74); /* Only apply a border to the bottom */
   color: white;
 }
-.dark .p-icon {
+
+.delivery-sidebar .dark .p-icon {
   display: inline-block;
   color: #ffffff;
 }
-.light .p-menuitem {
-  &.p-focus {
-    > .p-menuitem-content {
-      background-color: #f3f4f6 !important;
-      /* Explicitly set color for spans inside */
-      color: black;
-      span {
-        color: black !important;
-      }
+
+.delivery-sidebar .light .p-menuitem {
+  &.p-focus > .p-menuitem-content {
+    background-color: #f3f4f6 !important;
+    color: black;
+
+    span {
+      color: black !important;
     }
   }
 }
 
-.light .p-menuitem:hover > .p-menuitem-content {
+.delivery-sidebar .light .p-menuitem:hover > .p-menuitem-content {
   background-color: #a16207 !important;
   color: white !important;
 
-  /* Explicitly set color for spans inside */
   span {
     color: white !important;
   }

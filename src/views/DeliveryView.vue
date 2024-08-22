@@ -1,5 +1,4 @@
 <!-- DELIVERYVIEW.VUE -->
-
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -8,40 +7,50 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, computed, onMounted, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
-import FileUpload from 'primevue/fileupload'
-// import Map from '@/components/Map.vue';
+
 const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
 
-const showDialog = ref(false)
+const showStartNewDeliveryOverlay = ref(true)
+
+const currentShipmentDetails = ref(null)
+
 const dialogVisible = ref(false)
-
+const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
 
 const toggleDialog = () => {
-  console.log('Toggling dialog')
   dialogVisible.value = !dialogVisible.value
 }
+
+const togglePopUpDialog = () => {
+  dialogPopUpVisible.value = !dialogPopUpVisible.value
+  showStartNewDeliveryOverlay.value = !showStartNewDeliveryOverlay.value
+}
+
 const shipmentsByDelivery = ref([])
 const pendingLocations = ref([])
 
 const currentDestination = ref('')
-const deliveriesByDriverID = ref([])
 const deliveries = ref([])
-const visible = ref(true)
+
+const activeShipmentIndex = ref(0)
 
 const timelineEvents = ref([])
 
-const confirmedShipments = ref(new Set())
+const isSmallScreen = ref(window.innerWidth < 768)
+const layoutClass = computed(() => (isSmallScreen.value ? 'vertical' : 'horizontal'))
 
+const updateScreenSize = () => {
+  isSmallScreen.value = window.innerWidth < 768
+}
+
+const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
+const signaturePad = ref(null)
 
 const getShipmentByDeliveryId = async () => {
   try {
@@ -62,7 +71,6 @@ const getShipmentByDeliveryId = async () => {
 
       if (data.data.length > 0 && data.data[0].Destination) {
         mapDestination.value = data.data[0].Destination
-        console.log('HERE IS THE NEXT MAP', mapDestination.value)
       }
       identifyPendingLocations()
       updateTimelineEvents()
@@ -93,22 +101,16 @@ const getStatusColor = (status) => {
     case 'delivered':
       return '#14532d'
     default:
-      // console.log('Error fetching status: ' + status)
       return '#6b7280'
   }
 }
 
-function formattedDateTime(slotProps) {
-  const options = { dateStyle: 'medium', timeStyle: 'short' }
-  return new Date(slotProps.item.time).toLocaleString('en-US', options)
-}
 const currentDelivery = ref(null)
 
 const handleDeliveryFromSidebar = (delivery) => {
   // If delivery is a ref, we need to access its value
   currentDelivery.value = delivery._isRef ? delivery.value : delivery
 
-  // console.log('Processed delivery data:', currentDelivery.id)
   getShipmentByDeliveryId()
   // Trigger timeline update
   updateTimeline()
@@ -116,7 +118,7 @@ const handleDeliveryFromSidebar = (delivery) => {
 
 const upDateShipmentStatus = async (shipmentId) => {
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateShipmentStatus',
         shipmentId: shipmentId,
@@ -127,43 +129,126 @@ const upDateShipmentStatus = async (shipmentId) => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      console.log('Successfully updated Status')
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
   }
 }
 
-function save(shipmentid) {
-  // const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-  // console.log(isEmpty)
-  // console.log(data)
+const updateShipmentStartTime = async (shipmentID) => {
+  const currentDate = new Date().toISOString()
 
-  console.log('SHIPEMENT ID HAS ARRIVED', shipmentid)
-
-  if (pendingLocations.value.length > 0) {
-    pendingLocations.value.shift() // Remove the first (current) destination
-    if (pendingLocations.value.length > 0) {
-      console.log('PENDING LOCATIONS', pendingLocations.value)
-      currentDestination.value = pendingLocations.value[0]
-      mapDestination.value = pendingLocations.value[0]
-      upDateShipmentStatus(shipmentid)
-    } else {
-      currentDestination.value = ''
-      upDateShipmentStatus(shipmentid)
-      mapDestination.value = 'University of Pretoria'
-      alert('All destinations visited')
-    }
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: JSON.stringify({
+      type: 'updateShipmentStartTime',
+      deliveryId: shipmentID,
+      newEndTime: currentDate
+    }),
+    method: 'POST'
+  })
+  if (error) {
+    console.error(`API Error for updating EndTime for delivery`, error)
+  } else {
   }
-
-  confirmedShipments.value.add(shipmentid)
-  toggleDialog()
 }
+
+const uploadSigntaure = async (signature, shipmentID) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'uploadSignature',
+        dataURL: signature
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.error(`API Error for uploading signature`, error)
+    } else {
+      const currentDate = new Date().toISOString()
+
+      const { data, error } = await supabase.functions.invoke('core', {
+        body: JSON.stringify({
+          type: 'updateShipmentEndTime',
+          deliveryId: shipmentID,
+          newEndTime: currentDate
+        }),
+        method: 'POST'
+      })
+      if (error) {
+        console.error(`API Error for updating EndTime for delivery`, error)
+      } else {
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+  }
+}
+
+const openDialog = (item) => {
+  dialogVisible.value = true
+  selectedShipmentId.value = item.shipment_id
+  currentShipmentDetails.value = {
+    id: item.shipment_id,
+    destination: item.destination,
+    status: item.status
+  }
+}
+
+const addDeliveryEndTime = async () => {
+  try {
+    const currentDate = new Date().toISOString()
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryEndTime',
+        deliveryId: currentDelivery.value.id,
+        newStartTime: currentDate
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error Adding start time to delivery:', error)
+    }
+  } catch (error) {
+    console.error('Error fetching data from updateDeliveryStartTime:', error)
+  }
+}
+
+function save(shipmentid) {
+  if (signaturePad.value) {
+    const { data } = signaturePad.value.saveSignature()
+    uploadSigntaure(data, shipmentid)
+    if (pendingLocations.value.length > 0) {
+      pendingLocations.value.shift() // Remove the first (current) destination
+      if (pendingLocations.value.length > 0) {
+        currentDestination.value = pendingLocations.value[0]
+        mapDestination.value = pendingLocations.value[0]
+        upDateShipmentStatus(shipmentid)
+
+        const nextShipmentIndex = activeShipmentIndex.value + 1
+        if (nextShipmentIndex < timelineEvents.value.length) {
+          const nextShipmentId = timelineEvents.value[nextShipmentIndex].shipment_id
+          updateShipmentStartTime(nextShipmentId)
+        }
+      } else {
+        currentDestination.value = ''
+        upDateShipmentStatus(shipmentid)
+        mapDestination.value = 'University of Pretoria'
+        alert('All destinations visited')
+        addDeliveryEndTime()
+      }
+    }
+    activeShipmentIndex.value++
+    confirmedShipments.value.add(shipmentid)
+    toggleDialog()
+  } else {
+    console.error('Signature pad ref is not available')
+  }
+}
+
 async function setupSubscription() {
   await supabase // Await for the subscription to be established
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipment' }, (payload) => {
-      // console.log(payload.new)
       updateTimelineEvent(payload.new)
     })
     .subscribe()
@@ -185,14 +270,36 @@ const updateTimelineEvent = (updatedShipment) => {
 
     // Update the next event's line_colour if it exists
     if (index < timelineEvents.value.length - 1) {
-      timelineEvents.value[index + 1] = {
-        ...timelineEvents.value[index + 1],
+      timelineEvents.value[index] = {
+        ...timelineEvents.value[index],
         line_colour: newColor
       }
     }
 
     // Force Vue to react to the change
     timelineEvents.value = [...timelineEvents.value]
+
+    currentShipmentDetails.value = {
+      id: updatedShipment.id,
+      destination: updatedShipment.Destination,
+      status: newStatus
+    }
+  }
+}
+
+const startNewDelivery = () => {
+  showStartNewDeliveryOverlay.value = false
+  currentDelivery.value = null
+  shipmentsByDelivery.value = []
+  pendingLocations.value = []
+  currentDestination.value = ''
+  timelineEvents.value = []
+  confirmedShipments.value = new Set()
+  mapDestination.value = null
+
+  if (timelineEvents.value.length > 0) {
+    const firstShipmentId = timelineEvents.value[0].shipment_id
+    updateShipmentStartTime(firstShipmentId)
   }
 }
 
@@ -226,15 +333,32 @@ const updateTimelineEvents = () => {
         end_time: shipment.End_time,
         icon: 'pi pi-box',
         color: color,
-        line_colour: index === shipments.length - 1 ? '#6b7280' : color
+        line_colour: index === shipments.length - 1 ? '#6b7280' : color,
+        index: events.length
       })
     })
   }
   timelineEvents.value = events
 }
+
+//OPEN IN GOOGLE MAPS FUNCTONALITY
+const openInGoogleMaps = () => {
+  if (mapDestination.value) {
+    const destination = encodeURIComponent(mapDestination.value)
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`
+
+    // Check if the user is on a mobile device and try to open the native app
+    window.open(googleMapsUrl, '_blank')
+  } else {
+    alert('Destination is not set')
+  }
+}
 onMounted(() => {
-  // console.log('DeliveryView: Component mounted')
+  window.addEventListener('resize', updateScreenSize)
   setupSubscription()
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenSize)
 })
 </script>
 <script>
@@ -264,11 +388,15 @@ export default {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-500 text-black',
       ' h-[auto] flex flex-col '
     ]"
   >
-    <DeliverySidebar @handle-delivery="handleDeliveryFromSidebar" />
+    <DeliverySidebar
+      @handle-delivery="handleDeliveryFromSidebar"
+      @start-new-delivery="startNewDelivery"
+      v-model:dialogPopUpVisible="dialogPopUpVisible"
+    />
     <div
       :class="[
         isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
@@ -283,7 +411,14 @@ export default {
       >
         <p class="pb-6 text-3xl font-bold">On Route to : {{}}</p>
         <div class="mb-4">
-          <Map :destination="mapDestination" />
+          <Map :destination="mapDestination"></Map>
+          <button
+            v-ripple
+            @click="openInGoogleMaps"
+            class="py-2 px-4 w-full justify-center bg-orange-500 rounded-md text-white hover:bg-green-700 transition duration-300 ease-in-out mt-4"
+          >
+            Open Route in Google Maps
+          </button>
         </div>
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
@@ -292,7 +427,7 @@ export default {
           <div class="flex flex-row">
             <Timeline
               :value="timelineEvents"
-              layout="horizontal"
+              :layout="layoutClass"
               class="customized-timeline w-full"
             >
               <template #marker="slotProps">
@@ -308,7 +443,10 @@ export default {
                   <Card
                     :class="[
                       isDark ? 'dark bg-neutral-950 text-white' : 'light bg-white-100 text-black',
-                      'rounded-xl border border-neutral-500 h-full'
+                      'rounded-xl border border-neutral-500 h-full',
+                      slotProps.index !== activeShipmentIndex
+                        ? 'bg-gray-900 bg-opacity-50 text-gray-500 cursor-not-allowed'
+                        : 'bg-orange-600 text-white hover:transform hover:-translate-y-1 transition duration-300 hover:shadow-xl'
                     ]"
                   >
                     <template #title>
@@ -338,25 +476,20 @@ export default {
                             {{ slotProps.item.destination }}
                           </div>
                         </div>
-                        <Button
-                          @click="
-                            (dialogVisible = true),
-                              (selectedShipmentId = slotProps.item.shipment_id)
-                          "
-                          :disabled="confirmedShipments.has(slotProps.item.shipment_id)"
-                          class="text-white mt-4 bg-orange-600 py-2 px-4 w-full justify-center"
-                          :class="{
-                            'opacity-50 cursor-not-allowed': confirmedShipments.has(
-                              slotProps.item.shipment_id
-                            )
-                          }"
+                        <button
+                          class="p-button p-component mt-4 py-2 px-4 w-full justify-center"
+                          :class="[
+                            slotProps.index !== activeShipmentIndex
+                              ? 'bg-gray-900 text-gray-500 opacity-0 cursor-not-allowed'
+                              : 'bg-orange-600 text-white hover:bg-orange-500'
+                          ]"
+                          :disabled="slotProps.index !== activeShipmentIndex"
+                          @click="openDialog(slotProps.item)"
                         >
                           {{
-                            confirmedShipments.has(slotProps.item.shipment_id)
-                              ? 'Delivered'
-                              : 'Confirm Delivery'
+                            slotProps.index < activeShipmentIndex ? 'Delivered' : 'Confirm Delivery'
                           }}
-                        </Button>
+                        </button>
                       </div>
                     </template>
                   </Card>
@@ -381,6 +514,13 @@ export default {
         ]"
         class="flex flex-col"
       >
+        <h2 class="text-xl font-bold mb-4 mt-4 text-center">
+          Confirm Delivery for Shipment ID: {{ selectedShipmentId }}
+        </h2>
+        <p v-if="currentShipmentDetails" class="mb-4 text-center">
+          Destination: {{ currentShipmentDetails.destination }}
+        </p>
+
         <div id="app" class="text-white">
           <VueSignaturePad
             width="100%"
@@ -416,9 +556,42 @@ export default {
           label="Back"
           class="font-semibold w-auto p-button-text text-orange-500 p-2"
           @click="dialogVisible = false"
-        />
+        ></Button>
       </div>
     </Dialog>
+  </div>
+
+  <div
+    v-if="showStartNewDeliveryOverlay"
+    class="fixed inset-0 z-50 flex items-center justify-center"
+  >
+    <div
+      class="absolute inset-0 backdrop-blur-sm"
+      style="background-color: rgba(0, 0, 1, 0.5)"
+    ></div>
+    <div
+      class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
+      :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+    >
+      <h2
+        :class="[isDark ? 'bg-neutral-800 text-white ' : '  text-black']"
+        class="text-2xl font-bold mb-4"
+      >
+        Start a New Delivery
+      </h2>
+      <p :class="[isDark ? '  text-white ' : '  text-black']" class="mb-6">
+        Please start a new delivery to begin.
+      </p>
+      <button
+        @click="togglePopUpDialog()"
+        :class="[
+          isDark ? ' text-white ' : 'text-black',
+          'px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300'
+        ]"
+      >
+        Start New Delivery
+      </button>
+    </div>
   </div>
 </template>
 
@@ -490,13 +663,16 @@ export default {
 .p-timeline {
   gap: 0.5rem;
 }
-.p-dialog-mask {
-  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 9998 !important; /* Ensure it is above other elements */
-}
+
 .p-timeline-left .p-timeline-event-opposite {
   text-align: left;
   padding: 0;
   flex-grow: 0;
+}
+
+.p-dialog-mask {
+  background-color: rgba(0, 0, 1, 0.5) !important;
+  backdrop-filter: blur(4px);
+  z-index: 9998 !important; /* Ensure it is above other elements */
 }
 </style>
