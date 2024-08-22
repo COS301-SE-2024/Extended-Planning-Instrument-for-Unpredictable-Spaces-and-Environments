@@ -34,6 +34,7 @@ jobs:
           VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.VITE_GOOGLE_CLIENT_SECRET }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_GOOGLE_DISTANCE_API: ${{ secrets.VITE_GOOGLE_DISTANCE_API }}  # Add the new API key here
 
       - name: Deploy to Netlify
         id: netlify_deploy
