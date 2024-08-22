@@ -4,7 +4,10 @@ import { useDark } from '@vueuse/core'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
-const dialogVisible = ref(false)
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const isDark = useDark()
 const router = useRouter()
@@ -53,7 +56,6 @@ const signUp = async () => {
       password: password.value
     })
     if (error) {
-      alert(error.message)
       console.log(error.message)
       if (error.message == 'User already registered') {
         emailDuplicate.value = true
@@ -61,7 +63,12 @@ const signUp = async () => {
       }
     } else {
       console.log('User signed up:', user)
-      alert('Sign up successful!')
+      toast.add({
+        severity: 'success',
+        summary: 'Successfully signed up',
+        detail: user,
+        life: 10000
+      })
       const { data, error } = await supabase.functions.invoke('core', {
         body: {
           type: 'insertUser',
@@ -197,6 +204,7 @@ const signUp = async () => {
         <p v-if="emailDuplicate" class="text-red-500 text-sm mb-4">
           This email has already been registered.
         </p>
+
         <div class="form-group w-full">
           <label
             for="password"
@@ -231,7 +239,7 @@ const signUp = async () => {
               </ul>
             </template>
           </Password>
-          <p v-if="passwordError" class="text-red-500 text-sm mt-2">
+          <p v-if="passwordError" class="text-red-500 text-sm mt-6">
             Password must be at least 8 characters long and include one lowercase, one uppercase,
             and one numeric character.
           </p>
@@ -285,6 +293,7 @@ const signUp = async () => {
       @close-dialog="toggleDialog"
     />
   </div>
+  <Toast />
 </template>
 <script>
 export default {

@@ -9,6 +9,9 @@ import DialogComponent from '@/components/DialogComponent.vue'
 // let localUser
 const dialogVisible = ref(false)
 
+const emailError = ref(false)
+const passwordError = ref(false)
+
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
@@ -20,17 +23,27 @@ const email = ref('')
 const password = ref('')
 const router = useRouter()
 
-// Sign in with email and password
 const signIn = async () => {
   const { user, error } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value
   })
   if (error) {
-    alert(error.message)
+    if (error.message.includes('email')) {
+      emailError.value = true
+      passwordError.value = false
+    } else if (error.message.includes('password')) {
+      passwordError.value = true
+      emailError.value = false
+    } else {
+      // If we can't determine which field is wrong, set both to true
+      emailError.value = true
+      passwordError.value = true
+    }
+    // You might want to set a more specific error message here
+    console.error(error.message)
   } else {
     console.log('User signed in:', user)
-    // await checkRole()
     router.push({ name: 'callback' })
   }
 }
@@ -87,17 +100,16 @@ const signInWithProvider = async (provider) => {
       <p
         :class="[
           isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center  font-bold mb-6 '
+          'text-3xl flex items-center   mb-6 '
         ]"
       >
         Sign in
       </p>
-
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
           <label
             for="email"
-            :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
+            :class="[isDark ? 'text-white' : 'text-neutral-800', 'block font-bold']"
             >Email</label
           >
           <input
@@ -107,36 +119,41 @@ const signInWithProvider = async (provider) => {
             required
             :class="[
               isDark
-                ? 'text-white  bg-neutral-900'
+                ? 'text-white bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
+              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+              { 'border-red-500 border-2': emailError }
             ]"
+            @input="emailError = false"
+            @blur="validateEmail"
           />
+          <p v-if="emailError" class="text-red-500 text-sm mt-2">Incorrect email or password.</p>
         </div>
 
         <label
           for="password"
-          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
+          :class="[isDark ? 'text-white' : 'text-neutral-800', 'block font-bold']"
           >Password</label
         >
         <Password
-          id="password"
           v-model="password"
+          inputId="password"
+          id="password"
           toggleMask
-          :invalid="password === ''"
           required
-          :feedback="false"
-          :class="[
-            !isDark ? 'text-white' : 'text-neutral-800',
-            'focus:ring-0 hover:ring-0 mb-6 mt-2'
-          ]"
+          class="mt-2 w-full p-password"
+          :class="{ 'password-error': passwordError }"
+          @input="passwordError = false"
+          @blur="validatePassword"
         />
-        <router-link to="/forgot-password" class="text-center text-md text-orange-500">
+        <p v-if="passwordError" class="text-red-500 text-sm mt-2">Incorrect email or password.</p>
+
+        <router-link to="/forgot-password" class="mt-6 text-center text-md text-orange-500">
           Forgot Password ?</router-link
         >
         <button
           type="submit"
-          class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition-transform duration-300 ease-in-out transform hover:translate-y-[-4px]"
         >
           Sign In
         </button>
@@ -337,5 +354,27 @@ body {
 }
 .p-dialog .p-dialog-header {
   background: white;
+}
+
+input.border-red-500 {
+  border-color: #ff0000 !important;
+}
+input.border-red-500:focus {
+  border-color: #ff0000 !important;
+  box-shadow: none;
+}
+
+/* Dark mode error styling */
+.dark .border-red-500 {
+  border-color: #ff0000 !important;
+}
+
+/* Error message styling */
+.text-red-500 {
+  color: #ff0000;
+}
+
+.p-password.password-error input {
+  border: 2px solid #ff0000 !important;
 }
 </style>

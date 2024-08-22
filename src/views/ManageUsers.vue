@@ -125,6 +125,7 @@ const fetchUsers = async () => {
 const DelteUser = async () => {
   loadingDel.value = true
   const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
+  console.log(sanitizedEmail)
   try {
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'deleteUser', email: sanitizedEmail }),
@@ -142,13 +143,12 @@ const DelteUser = async () => {
         life: 10000
       })
     } else {
-      console.log('DELETED USER')
       dialogVisible.value = false
       toast.add({
         severity: 'success',
         summary: 'Success',
-        detail: 'You have successfully deleted user the user',
-        life: 50000
+        detail: 'You have successfully deleted the user',
+        life: 5000
       })
     }
   } catch (error) {
