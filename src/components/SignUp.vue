@@ -103,14 +103,14 @@ const signUp = async () => {
       <div class="flex items-center justify-center">
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
           style="width: 10rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
           style="width: 10rem; height: auto"
