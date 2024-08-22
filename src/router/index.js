@@ -103,6 +103,11 @@ const routes = [
     path: '/error-404',
     name: 'error-404',
     component: Error404
+  },
+  {
+    path: '/:catchAll(.*)',
+    name: 'NotFound',
+    component: Error404
   }
 
   // ,
@@ -220,6 +225,11 @@ router.beforeEach(async (to, from, next) => {
         return
       }
     }
+  }
+
+  if (!to.matched.length) {
+    next({ name: 'NotFound', replace: true })
+    return
   }
   next()
 })
