@@ -71,14 +71,14 @@ const signInWithProvider = async (provider) => {
       <div class="flex items-center justify-center">
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
           style="width: 10rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
           style="width: 10rem; height: auto"
@@ -231,8 +231,8 @@ const signInWithProvider = async (provider) => {
     <DialogComponent
       v-if="showDialog"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '@/assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '@/assets/Photos/Sign-up.png', alt: 'Image 2' }
         // Add more images as needed
       ]"
       title="Contact Support"
