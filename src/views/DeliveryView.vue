@@ -256,6 +256,24 @@ const addDeliveryEndTime = async () => {
   }
 }
 
+const updateDeliveryStatus = async () => {
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryStatus',
+        deliveryId: currentDelivery.value.id,
+        Status: 'Completed'
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error updating delivery status:', error)
+    }
+  } catch (error) {
+    console.error('Error updating delivery status', error)
+  }
+}
+
 function save(shipmentid) {
   if (signaturePad.value) {
     const { data } = signaturePad.value.saveSignature()
@@ -276,8 +294,10 @@ function save(shipmentid) {
         currentDestination.value = ''
         upDateShipmentStatus(shipmentid)
         mapDestination.value = 'University of Pretoria'
-        alert('All destinations visited')
+
         addDeliveryEndTime()
+        updateDeliveryStatus()
+        alert('All destinations visited')
       }
     }
     activeShipmentIndex.value++
