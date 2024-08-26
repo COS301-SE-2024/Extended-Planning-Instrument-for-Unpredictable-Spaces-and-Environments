@@ -5,7 +5,7 @@ import { supabase } from '../supabase'
 import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { useToast } from 'primevue/usetoast'
-import { checkUserExistsByEmail } from '../../supabase/functions/core/Users/checkUserExistsByEmail';
+import { checkUserExistsByEmail } from '../../supabase/functions/core/Users/checkUserExistsByEmail'
 
 const dialogVisible = ref(false)
 const isDark = useDark()
@@ -45,47 +45,63 @@ const showError = () => {
 
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
-    passwordError.value = true;
-    alert('Passwords do not match. Please try again.');
-    return;
+    passwordError.value = true
+    alert('Passwords do not match. Please try again.')
+    return
   }
 
-  passwordError.value = false;
+  passwordError.value = false
 
   try {
     // Check if the email exists using the new API call
-    const { exists, error: emailError } = await checkUserExistsByEmail(supabase, email.value);
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'checkUserExistsByEmail',
+        email: email.value
+      }),
+      method: 'POST'
+    })
+    // console.log('DATATA', data.exists)
 
-    if (emailError || !exists) {
-      // If there's an error or no user is found, show an error message
+    if (error || !data.exists) {
       toast.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Email not found. Please check the email address and try again.',
-        life: 3000,
-      });
-      return; // Exit the function since the email is not valid
+        detail:
+          'An Account with this Email Does not exist. Please check the email address or Sign Up with an Account.',
+        life: 3000
+      })
+      return
     }
-
     // Email exists, proceed with password reset
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/confirm-password`,
-    });
+    const { resetError } = await supabase.auth.resetPasswordForEmail(email.value, {
+      redirectTo: `${window.location.origin}/confirm-password`
+    })
 
-    if (error) {
-      showError();
-      console.error('Error sending password recovery email:', error);
-      alert('Error sending password recovery email: ' + error.message);
+    if (resetError) {
+      showError()
+      console.error('Error sending password recovery email:', resetError)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `Unexpected Error when sending password recovery email ${resetError.message}`,
+        life: 3000
+      })
+      return
     } else {
-      showSuccess();
-      emailSent.value = true;
+      showSuccess()
+      emailSent.value = true
     }
   } catch (error) {
-    console.error('Unexpected error:', error);
-    alert('Unexpected error occurred: ' + error.message);
+    console.error('Unexpected error:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Unexpected Error when sending password recovery email ${error.message}`,
+      life: 3000
+    })
   }
-};
-
+}
 
 // Function to handle password update
 const resetPassword = async () => {
