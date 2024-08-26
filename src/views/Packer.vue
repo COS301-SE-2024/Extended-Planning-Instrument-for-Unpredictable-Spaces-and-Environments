@@ -34,19 +34,20 @@ async function getUsername() {
 
 onMounted(() => {
   watch(
-    packingData,
-    (newPackingData) => {
-      if (newPackingData) {
+    [packingData, shipments],
+    ([newPackingData, newShipments]) => {
+      console.log('PACKING SOLUTION RECEIVED FROM Sidebar', newPackingData)
+      console.log('Shipments:', newShipments)
+      if (newPackingData && newShipments.length > 0) {
         CONTAINER_SIZE = [1000, 1930, 1200]
-        packingData.value = newPackingData
         nextTick(() => {
-          shipments.value.forEach((shipment) => {
-            initThreeJS(`three-container-${shipment.id}`, isDark.value, packingData)
+          newShipments.forEach((shipment) => {
+            initThreeJS(`three-container-${shipment.id}`, isDark.value, newPackingData)
           })
         })
       }
     },
-    { immediate: true }
+    { immediate: true, deep: true }
   )
 })
 
@@ -110,6 +111,37 @@ function getColorForWeight(weight, minWeight, maxWeight) {
 
   return `rgb(${red}, ${green}, 0)`
 }
+// function cleanupThreeJS(containerId) {
+//   const container = document.getElementById(containerId)
+//   if (container) {
+//     while (container.firstChild) {
+//       container.removeChild(container.firstChild)
+//     }
+//   }
+
+//   if (window.threeJSScenes && window.threeJSScenes[containerId]) {
+//     const scene = window.threeJSScenes[containerId].scene
+//     const renderer = window.threeJSScenes[containerId].renderer
+
+//     // Dispose of scene objects
+//     scene.traverse((object) => {
+//       if (object.geometry) object.geometry.dispose()
+//       if (object.material) {
+//         if (Array.isArray(object.material)) {
+//           object.material.forEach((material) => material.dispose())
+//         } else {
+//           object.material.dispose()
+//         }
+//       }
+//     })
+
+//     // Dispose of renderer
+//     renderer.dispose()
+
+//     delete window.threeJSScenes[containerId]
+//   }
+// }
+
 let scene
 function initThreeJS(containerId, isDark, packingDataType) {
   const container = document.getElementById(containerId)
@@ -151,7 +183,11 @@ function initThreeJS(containerId, isDark, packingDataType) {
   createContainer(scene, CONTAINER_SIZE)
 
   // Create boxes from packing data
-  createBoxesFromData(scene, packingDataType.value.boxes)
+  if (packingDataType && packingDataType.data && packingDataType.data.boxes) {
+    createBoxesFromData(scene, packingDataType.data.boxes)
+  } else {
+    console.error('Invalid packing data structure:', packingDataType)
+  }
 
   // Add scale
   addScale(scene, CONTAINER_SIZE)
@@ -380,10 +416,12 @@ const images = ref([
 ])
 
 const handleJsonData = (json) => {
-  packingData.value = json._isRef ? json.value : json.data
-  if (json.data && Array.isArray(json.data)) {
-    shipments.value = json.data
-  }
+  packingData.value = json._isRef ? json.value : json
+  console.log('Packing data received:', packingData.value)
+}
+const handleShipmentsLoaded = (loadedShipments) => {
+  shipments.value = loadedShipments
+  console.log('Shipments loaded:', shipments.value)
 }
 </script>
 
@@ -394,7 +432,7 @@ const handleJsonData = (json) => {
       ' h-full flex flex-col shadow-lg'
     ]"
   >
-    <PackerSidebar @handle-json="handleJsonData" />
+    <PackerSidebar @handle-json="handleJsonData" @shipments-loaded="handleShipmentsLoaded" />
 
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">

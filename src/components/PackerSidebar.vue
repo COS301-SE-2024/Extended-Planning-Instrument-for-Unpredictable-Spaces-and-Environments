@@ -46,7 +46,7 @@ async function logout() {
   }
 }
 
-const emit = defineEmits(['handle-json'])
+const emit = defineEmits(['handle-json', 'shipments-loaded'])
 
 //API CALLS FOR SHIPMENTS
 const DeliveriesByProcessing = ref([])
@@ -159,51 +159,6 @@ const shipmentsToPack = ref(null)
 //   }
 // }
 
-async function getSolution(shipmentId) {
-  try {
-    const { data, error } = await supabase.functions.invoke('packing', {
-      body: JSON.stringify({
-        type: 'getPackages',
-        ShipmentID: shipmentId
-      }),
-      method: 'POST'
-    })
-
-    console.log('HREE SI OASHDAODN', data)
-    if (error) {
-      console.error('PACKING API ERROR: ', error)
-      return
-    }
-
-    if (!data || !data.data) {
-      console.error('Invalid data structure received:', data)
-      return
-    }
-
-    const result = data.data
-    console.log('Packages data:', result) // Log the received data
-
-    packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
-    emit('handle-json', packingResults.value)
-
-    const { data: updateData, error: updateError } = await supabase.functions.invoke('packing', {
-      body: JSON.stringify({
-        type: 'updateFitnessValue',
-        ShipmentId: shipmentId,
-        newFitnessValue: parseFloat(packingResults.value.data.fitness)
-      }),
-      method: 'POST'
-    })
-
-    if (updateError) {
-      console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
-    } else {
-      console.log('DATA FROM UPDATE', updateData)
-    }
-  } catch (error) {
-    console.error('Error in getSolution:', error)
-  }
-}
 async function fetchShipmentsFromDelivery(DeliveryID) {
   const { data, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
@@ -218,16 +173,15 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
   }
 
   shipmentsToPack.value = data.data
+  emit('shipmentsLoaded', shipmentsToPack.value)
+  
   toggleDialog()
   for (const shipment of shipmentsToPack.value) {
     await runPackingAlgo(shipment.id)
   }
-  // Emit the shipments data to the parent component
-  emit('shipmentsLoaded', shipmentsToPack.value)
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  console.log('SHipment ID : ', shipmentId)
   const { data, error } = await supabase.functions.invoke('packing', {
     body: JSON.stringify({
       type: 'fetchSolution',
@@ -235,11 +189,57 @@ const runPackingAlgo = async (shipmentId) => {
     }),
     method: 'POST'
   })
+  if (error) {
+    console.error('Error fetching cached solution: ' + error)
+  }
   if (data && data.Solution == null) {
-    await getSolution()
+    await getSolution(shipmentId)
   } else {
     packingResults.value = data.Solution
+  }
+}
+
+async function getSolution(shipmentId) {
+  console.log('SHIPMETN ID', shipmentId)
+  try {
+    const { data, error } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'getPackages',
+        ShipmentID: shipmentId
+      }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.error('PACKING API ERROR: ', error)
+      return
+    }
+
+    if (!data || !data.data) {
+      console.error('Invalid data structure received:', data)
+      return
+    }
+
+    const result = data.data
+
+    packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
     emit('handle-json', packingResults.value)
+    console.log('Successfully sent packingResults.value', packingResults.value)
+
+    const { error: updateError } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'updateFitnessValue',
+        ShipmentId: shipmentId,
+        newFitnessValue: parseFloat(packingResults.value.data.fitness)
+      }),
+      method: 'POST'
+    })
+
+    if (updateError) {
+      console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+    }
+  } catch (error) {
+    console.error('Error in getSolution:', error)
   }
 }
 
