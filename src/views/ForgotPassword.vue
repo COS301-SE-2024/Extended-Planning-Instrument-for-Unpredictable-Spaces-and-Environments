@@ -41,34 +41,53 @@ const showError = () => {
     life: 3000
   })
 }
+
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
-    passwordError.value = true
-    alert('Passwords do not match. Please try again.')
-    return
+    passwordError.value = true;
+    alert('Passwords do not match. Please try again.');
+    return;
   }
 
-  passwordError.value = false
+  passwordError.value = false;
 
   try {
+    // Check if the email exists in the database
+    const { data: user, error: emailError } = await supabase
+      .from('users') // Replace 'users' with the appropriate table name where you store emails
+      .select('*')
+      .eq('email', email.value)
+      .single();
+
+    if (emailError || !user) {
+      // If there's an error or no user is found, show an error message
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Email not found. Please check the email address and try again.',
+        life: 3000,
+      });
+      return; // Exit the function since the email is not valid
+    }
+
+    // Email exists, proceed with password reset
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/confirm-password`
-    })
+      redirectTo: `${window.location.origin}/confirm-password`,
+    });
 
     if (error) {
-      showError()
-      console.error('Error sending password recovery email:', error)
-      alert('Error sending password recovery email: ' + error.message)
+      showError();
+      console.error('Error sending password recovery email:', error);
+      alert('Error sending password recovery email: ' + error.message);
     } else {
-      showSuccess()
-      // alert('Password recovery email sent. Please check your inbox.')
-      emailSent.value = true
+      showSuccess();
+      emailSent.value = true;
     }
   } catch (error) {
-    console.error('Unexpected error:', error)
-    alert('Unexpected error occurred: ' + error.message)
+    console.error('Unexpected error:', error);
+    alert('Unexpected error occurred: ' + error.message);
   }
-}
+};
 
 // Function to handle password update
 const resetPassword = async () => {
