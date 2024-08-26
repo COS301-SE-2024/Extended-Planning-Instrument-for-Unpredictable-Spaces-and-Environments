@@ -47,7 +47,8 @@ const resetPassword = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.',
+      detail:
+        'Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.',
       life: 3000
     })
     return
@@ -56,8 +57,19 @@ const resetPassword = async () => {
   passwordError.value = false
 
   try {
+    const { data: sessionData } = await supabase.auth.getSession()
+
+    if (!sessionData || !sessionData.session) {
+      console.error('No session found')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No active session found. Please try again.',
+        life: 3000
+      })
+      return
+    }
     const { error } = await supabase.auth.updateUser({
-      email: userEmail.value,
       password: password1.value
     })
 
@@ -70,14 +82,16 @@ const resetPassword = async () => {
         life: 3000
       })
     } else {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut()
       toast.add({
         severity: 'success',
         summary: 'Success',
         detail: 'Password updated successfully.',
         life: 3000
       })
-      router.push('/')
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
     }
   } catch (error) {
     console.error('Unexpected error:', error)
@@ -174,7 +188,8 @@ onMounted(() => {
           </template>
         </Password>
         <p v-if="passwordError" class="text-red-500 text-sm mt-2 mb-4">
-          Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.
+          Password must be at least 8 characters long and include one lowercase, one uppercase, and
+          one numeric character.
         </p>
         <label
           for="password2"

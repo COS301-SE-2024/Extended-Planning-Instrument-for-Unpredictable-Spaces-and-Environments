@@ -217,7 +217,7 @@ const signInWithProvider = async (provider) => {
     <div>
       <DialogComponent
         v-if="showDialog"
-        imagePath="/Members/Photos/Login _ landing page.png"
+        imagePath="../assets/Photos/Login _ landing page.png"
         altText="Alternative Image"
         title="Contact Support"
         :contacts="[
@@ -231,9 +231,8 @@ const signInWithProvider = async (provider) => {
     <DialogComponent
       v-if="showDialog"
       :images="[
-        { src: '@/assets/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '@/assets/Photos/Sign-up.png', alt: 'Image 2' }
-        // Add more images as needed
+        { src: '../assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '../assets/Photos/Sign-up.png', alt: 'Image 2' }
       ]"
       title="Contact Support"
       :contacts="[

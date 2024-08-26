@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { useToast } from 'primevue/usetoast'
+import { checkUserExistsByEmail } from '../../supabase/functions/core/Users/checkUserExistsByEmail'
 
 const dialogVisible = ref(false)
 const isDark = useDark()
@@ -41,6 +42,7 @@ const showError = () => {
     life: 3000
   })
 }
+
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
     passwordError.value = true
@@ -51,22 +53,53 @@ const requestPasswordReset = async () => {
   passwordError.value = false
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+    // Check if the email exists using the new API call
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'checkUserExistsByEmail',
+        email: email.value
+      }),
+      method: 'POST'
+    })
+    // console.log('DATATA', data.exists)
+
+    if (error || !data.exists) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail:
+          'An Account with this Email Does not exist. Please check the email address or Sign Up with an Account.',
+        life: 3000
+      })
+      return
+    }
+    // Email exists, proceed with password reset
+    const { resetError } = await supabase.auth.resetPasswordForEmail(email.value, {
       redirectTo: `${window.location.origin}/confirm-password`
     })
 
-    if (error) {
+    if (resetError) {
       showError()
-      console.error('Error sending password recovery email:', error)
-      alert('Error sending password recovery email: ' + error.message)
+      console.error('Error sending password recovery email:', resetError)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `Unexpected Error when sending password recovery email ${resetError.message}`,
+        life: 3000
+      })
+      return
     } else {
       showSuccess()
-      // alert('Password recovery email sent. Please check your inbox.')
       emailSent.value = true
     }
   } catch (error) {
     console.error('Unexpected error:', error)
-    alert('Unexpected error occurred: ' + error.message)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Unexpected Error when sending password recovery email ${error.message}`,
+      life: 3000
+    })
   }
 }
 
