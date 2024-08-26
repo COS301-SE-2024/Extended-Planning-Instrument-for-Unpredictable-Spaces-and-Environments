@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { useToast } from 'primevue/usetoast'
+import { checkUserExistsByEmail } from '../../supabase/functions/core/Users/checkUserExistsByEmail';
 
 const dialogVisible = ref(false)
 const isDark = useDark()
@@ -52,14 +53,10 @@ const requestPasswordReset = async () => {
   passwordError.value = false;
 
   try {
-    // Check if the email exists in the database
-    const { data: user, error: emailError } = await supabase
-      .from('users') // Replace 'users' with the appropriate table name where you store emails
-      .select('*')
-      .eq('email', email.value)
-      .single();
+    // Check if the email exists using the new API call
+    const { exists, error: emailError } = await checkUserExistsByEmail(supabase, email.value);
 
-    if (emailError || !user) {
+    if (emailError || !exists) {
       // If there's an error or no user is found, show an error message
       toast.add({
         severity: 'error',
@@ -88,6 +85,7 @@ const requestPasswordReset = async () => {
     alert('Unexpected error occurred: ' + error.message);
   }
 };
+
 
 // Function to handle password update
 const resetPassword = async () => {
