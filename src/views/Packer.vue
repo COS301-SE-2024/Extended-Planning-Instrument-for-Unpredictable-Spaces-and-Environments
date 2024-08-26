@@ -23,6 +23,8 @@ const numberShipments = ref(null)
 const truckSize = [2350, 2390, 5898]
 const isNewSceneVisible = ref(false)
 
+const shipments = ref([])
+
 let userName
 async function getUsername() {
   const { data } = await supabase.auth.getSession()
@@ -37,11 +39,10 @@ onMounted(() => {
       if (newPackingData) {
         CONTAINER_SIZE = [1000, 1930, 1200]
         packingData.value = newPackingData
-        console.log('PackingData : ', packingData.value)
         nextTick(() => {
-          initThreeJS('three-container-1', isDark.value, packingData)
-          initThreeJS('three-container-2', isDark.value, packingData)
-          initThreeJS('three-container-3', isDark.value, packingData)
+          shipments.value.forEach((shipment) => {
+            initThreeJS(`three-container-${shipment.id}`, isDark.value, packingData)
+          })
         })
       }
     },
@@ -380,6 +381,9 @@ const images = ref([
 
 const handleJsonData = (json) => {
   packingData.value = json._isRef ? json.value : json.data
+  if (json.data && Array.isArray(json.data)) {
+    shipments.value = json.data
+  }
 }
 </script>
 
@@ -395,16 +399,19 @@ const handleJsonData = (json) => {
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', ' h-[100vh]']">
       <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
         <AccordionTab
-          v-for="item in [1, 2, 3]"
-          :key="item"
-          :header="`Shipment #344${item}`"
+          v-for="shipment in shipments"
+          :key="shipment.id"
+          :header="`Shipment #${shipment.id}`"
           :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
         >
           <div
-            :id="`three-container-${item}`"
+            :id="`three-container-${shipment.id}`"
             :class="[
               'w-full mb-4',
-              { 'h-[80vh]': activeIndex === item - 1, 'h-[300px]': activeIndex !== item - 1 }
+              {
+                'h-[80vh]': activeIndex === shipments.indexOf(shipment),
+                'h-[300px]': activeIndex !== shipments.indexOf(shipment)
+              }
             ]"
           ></div>
           <Button
@@ -412,7 +419,6 @@ const handleJsonData = (json) => {
             @click="dialogVisible = true"
           >
             <span>Scan Barcode</span>
-
             <i class="pi pi-barcode"></i>
           </Button>
         </AccordionTab>

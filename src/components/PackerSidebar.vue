@@ -17,7 +17,7 @@ const onFilterChange = (type, value) => {
 }
 
 const filteredShipments = computed(() => {
-  return shipmentsByProcessing.value.filter((shipment) => {
+  return DeliveriesByProcessing.value.filter((shipment) => {
     const globalMatch =
       !filters.value.global.value ||
       (typeof shipment.id === 'number' && String(shipment.id).includes(filters.value.global.value))
@@ -36,6 +36,7 @@ const dialogVisible = ref(false)
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
 }
+
 async function logout() {
   const { error } = await supabase.auth.signOut()
   if (error) {
@@ -47,18 +48,18 @@ async function logout() {
 
 const emit = defineEmits(['handle-json'])
 
-//API CALLS FOR SHIPMENTS 
-const shipmentsByProcessing = ref([])
+//API CALLS FOR SHIPMENTS
+const DeliveriesByProcessing = ref([])
 const getAllProcessing = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
-      body: JSON.stringify({ type: 'getAllProcessing' }),
+      body: JSON.stringify({ type: 'getDeliveriesByProcessing' }),
       method: 'POST'
     })
     if (error) {
       console.log('API Error:', error)
     } else {
-      shipmentsByProcessing.value = data.data
+      DeliveriesByProcessing.value = data.data
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -110,6 +111,7 @@ async function printQRcode() {
 const containerDimensions = [1000, 1930, 1200]
 
 const packingResults = ref(null)
+const shipmentsToPack = ref(null)
 
 // async function checkProcessing() {
 //   try {
@@ -158,20 +160,33 @@ const packingResults = ref(null)
 // }
 
 async function getSolution(shipmentId) {
-  const { data, error } = await supabase.functions.invoke('packing', {
-    body: JSON.stringify({
-      type: 'getPackages',
-      ShipmentID: shipmentId
-    }),
-    method: 'POST'
-  })
-  const result = await data.data
-  if (error) {
-    console.log('PACKING API ERROR: ', error)
-  } else {
+  try {
+    const { data, error } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'getPackages',
+        ShipmentID: shipmentId
+      }),
+      method: 'POST'
+    })
+
+    console.log('HREE SI OASHDAODN', data)
+    if (error) {
+      console.error('PACKING API ERROR: ', error)
+      return
+    }
+
+    if (!data || !data.data) {
+      console.error('Invalid data structure received:', data)
+      return
+    }
+
+    const result = data.data
+    console.log('Packages data:', result) // Log the received data
+
     packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
     emit('handle-json', packingResults.value)
-    const { data, error2 } = await supabase.functions.invoke('packing', {
+
+    const { data: updateData, error: updateError } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'updateFitnessValue',
         ShipmentId: shipmentId,
@@ -179,16 +194,40 @@ async function getSolution(shipmentId) {
       }),
       method: 'POST'
     })
-    if (error2) {
-      console.log('ERROR UPDATING FINTESS VALUE: ', error)
+
+    if (updateError) {
+      console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+    } else {
+      console.log('DATA FROM UPDATE', updateData)
     }
-    console.log('DATA FROM UPDATE', data)
+  } catch (error) {
+    console.error('Error in getSolution:', error)
   }
+}
+async function fetchShipmentsFromDelivery(DeliveryID) {
+  const { data, error } = await supabase.functions.invoke('core', {
+    body: JSON.stringify({
+      type: 'getShipmentByDeliveryID',
+      deliveryID: DeliveryID
+    }),
+    method: 'POST'
+  })
+  if (!data || !data.data || data.data.length === 0) {
+    console.error('No Shipments related to that delivery ID', error)
+    return
+  }
+
+  shipmentsToPack.value = data.data
+  toggleDialog()
+  for (const shipment of shipmentsToPack.value) {
+    await runPackingAlgo(shipment.id)
+  }
+  // Emit the shipments data to the parent component
+  emit('shipmentsLoaded', shipmentsToPack.value)
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  toggleDialog()
-
+  console.log('SHipment ID : ', shipmentId)
   const { data, error } = await supabase.functions.invoke('packing', {
     body: JSON.stringify({
       type: 'fetchSolution',
@@ -204,8 +243,8 @@ const runPackingAlgo = async (shipmentId) => {
   }
 }
 
-const handleSelectShipment = (shipmentId) => {
-  runPackingAlgo(shipmentId)
+const handleSelectShipment = (deliveryID) => {
+  fetchShipmentsFromDelivery(deliveryID)
 }
 
 onMounted(() => {
@@ -314,20 +353,18 @@ onMounted(() => {
       <div v-else class="pb-12">
         <!-- Adjust padding to avoid overlap -->
         <div v-for="shipment in filteredShipments" :key="shipment.id" class="mb-8">
-          <p class="text-neutral-400 text-lg">Shipment Status:</p>
+          <p class="text-neutral-400 text-lg">Delivery Status:</p>
           <p class="text-lg">{{ shipment.Status }}</p>
-          <p class="text-neutral-500 text-lg">Shipment ID:</p>
+          <p class="text-neutral-500 text-lg">Delivery ID:</p>
           <p class="text-lg">{{ shipment.id }}</p>
-          <p class="text-neutral-400 text-lg">Destination:</p>
-          <p class="text-lg mb-2">{{ shipment.Destination }}</p>
           <Button
             @click="handleSelectShipment(shipment.id)"
             :class="[isDark ? 'text-white' : ' text-white', 'focus:outline-none focus:ring-0']"
             class="text-lg justify-center px-4 py-2 w-full bg-green-800"
-            >Select Shipment</Button
+            >Select Delivery</Button
           >
         </div>
-        <div v-if="shipmentsByProcessing.length === 0">No shipments found.</div>
+        <div v-if="DeliveriesByProcessing.length === 0">No Deliveries found.</div>
       </div>
       <div
         :class="[
