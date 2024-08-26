@@ -47,7 +47,7 @@ async function logout() {
 
 const emit = defineEmits(['handle-json'])
 
-//API CALLS FOR SHIPMENTS
+//API CALLS FOR SHIPMENTS 
 const shipmentsByProcessing = ref([])
 const getAllProcessing = async () => {
   try {
@@ -111,8 +111,53 @@ const containerDimensions = [1000, 1930, 1200]
 
 const packingResults = ref(null)
 
-const runPackingAlgo = async (shipmentId) => {
-  toggleDialog()
+// async function checkProcessing() {
+//   try {
+//     await supabase
+//       .channel('changes')
+//       .on(
+//         'postgres_changes',
+//         {
+//           event: '*',
+//           schema: 'public',
+//           table: 'Shipment'
+//         },
+//         (payload) => {
+//           console.log('New or updated Processing Shipment:', payload.new)
+//         }
+//       )
+//       .subscribe()
+//     console.log('Subscription set up successfully')
+//   } catch (error) {
+//     console.error('Error setting up subscription:', error)
+//   }
+// }
+
+// async function uploadOrFetchSoltuion(shipmentId) {
+//   const { data, error } = await supabase.functions.invoke('packing', {
+//     body: JSON.stringify({
+//       type: 'getPackages',
+//       ShipmentID: shipmentId
+//     }),
+//     method: 'POST'
+//   })
+//   const result = await data.data
+//   if (error) {
+//     console.error('Error fetching packages for shipment', error.message)
+//   } else {
+//     const Solution = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
+//     const { data, error } = await supabase.functions.invoke('packing', {
+//       body: JSON.stringify({
+//         type: 'uploadSolution',
+//         shipmentID: shipmentId,
+//         solutions: Solution
+//       }),
+//       method: 'POST'
+//     })
+//   }
+// }
+
+async function getSolution(shipmentId) {
   const { data, error } = await supabase.functions.invoke('packing', {
     body: JSON.stringify({
       type: 'getPackages',
@@ -138,6 +183,24 @@ const runPackingAlgo = async (shipmentId) => {
       console.log('ERROR UPDATING FINTESS VALUE: ', error)
     }
     console.log('DATA FROM UPDATE', data)
+  }
+}
+
+const runPackingAlgo = async (shipmentId) => {
+  toggleDialog()
+
+  const { data, error } = await supabase.functions.invoke('packing', {
+    body: JSON.stringify({
+      type: 'fetchSolution',
+      ShipmentID: shipmentId
+    }),
+    method: 'POST'
+  })
+  if (data && data.Solution == null) {
+    await getSolution()
+  } else {
+    packingResults.value = data.Solution
+    emit('handle-json', packingResults.value)
   }
 }
 
