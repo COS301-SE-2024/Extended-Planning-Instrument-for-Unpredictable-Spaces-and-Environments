@@ -1,4 +1,3 @@
-<!-- DELIVERYVIEW.VUE -->
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -25,6 +24,17 @@ const mapDestination = ref(null)
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
+}
+function saveDeliveryProgress() {
+  const deliveryData = {
+    currentDelivery: currentDelivery.value,
+    shipmentsByDelivery: shipmentsByDelivery.value,
+    pendingLocations: pendingLocations.value,
+    currentDestination: currentDestination.value,
+    timelineEvents: timelineEvents.value,
+    activeShipmentIndex: activeShipmentIndex.value
+  }
+  localStorage.setItem('deliveryProgress', JSON.stringify(deliveryData))
 }
 
 const togglePopUpDialog = () => {
@@ -99,14 +109,10 @@ const getShipmentByDeliveryId = async () => {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
 
-      // Extract destinations and their corresponding shipment data
       const destinations = data.data.map((shipment) => shipment.Destination)
       const origin = 'University of Pretoria'
 
-      // Sort the destinations by distance
       const sortedLocations = await sortLocationsByDistance(origin, destinations)
-
-      // Reorganize the shipments based on the sorted locations
       const sortedShipments = sortedLocations.map((location) => {
         return data.data.find((shipment) => shipment.Destination === location)
       })
@@ -117,9 +123,11 @@ const getShipmentByDeliveryId = async () => {
         mapDestination.value = sortedLocations[0]
       }
 
-      // Trigger updates for pending locations and the timeline
       identifyPendingLocations()
       updateTimelineEvents()
+
+      // Save progress
+      saveDeliveryProgress()
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -236,6 +244,17 @@ const openDialog = (item) => {
     status: item.status
   }
 }
+const completeDelivery = async () => {
+  try {
+    await addDeliveryEndTime()
+    await updateDeliveryStatus()
+    alert('All destinations visited')
+    // Clear the saved delivery progress
+    localStorage.removeItem('deliveryProgress')
+  } catch (error) {
+    console.error('Error completing delivery:', error)
+  }
+}
 
 const addDeliveryEndTime = async () => {
   try {
@@ -297,7 +316,9 @@ function save(shipmentid) {
 
         addDeliveryEndTime()
         updateDeliveryStatus()
-        alert('All destinations visited')
+
+        // Call completeDelivery here
+        completeDelivery()
       }
     }
     activeShipmentIndex.value++
@@ -360,6 +381,8 @@ const startNewDelivery = () => {
   confirmedShipments.value = new Set()
   mapDestination.value = null
 
+  saveDeliveryProgress()
+
   if (timelineEvents.value.length > 0) {
     const firstShipmentId = timelineEvents.value[0].shipment_id
     updateShipmentStartTime(firstShipmentId)
@@ -417,9 +440,22 @@ const openInGoogleMaps = () => {
   }
 }
 onMounted(() => {
+  const savedProgress = localStorage.getItem('deliveryProgress')
+  if (savedProgress) {
+    const deliveryData = JSON.parse(savedProgress)
+    currentDelivery.value = deliveryData.currentDelivery
+    shipmentsByDelivery.value = deliveryData.shipmentsByDelivery
+    pendingLocations.value = deliveryData.pendingLocations
+    currentDestination.value = deliveryData.currentDestination
+    timelineEvents.value = deliveryData.timelineEvents
+    activeShipmentIndex.value = deliveryData.activeShipmentIndex
+    showStartNewDeliveryOverlay.value = !showStartNewDeliveryOverlay.value
+  }
+
   window.addEventListener('resize', updateScreenSize)
   setupSubscription()
 })
+
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize)
 })
