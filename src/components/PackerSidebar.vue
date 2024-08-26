@@ -3,7 +3,7 @@ import { useDark, useToggle } from '@vueuse/core'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
-import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm.ts'
 import { createPDF } from '@/QRcodeGenerator'
 import { FilterMatchMode } from 'primevue/api'
 
@@ -58,9 +58,7 @@ const getAllProcessing = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      console.log('Data', data.data)
       shipmentsByProcessing.value = data.data
-      console.log('SHIPS', shipmentsByProcessing)
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -128,7 +126,6 @@ const runPackingAlgo = async (shipmentId) => {
   } else {
     packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
     emit('handle-json', packingResults.value)
-    console.log('PACKING FITNESS: ', packingResults.value.data.fitness)
     const { data, error2 } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'updateFitnessValue',
@@ -143,6 +140,7 @@ const runPackingAlgo = async (shipmentId) => {
     console.log('DATA FROM UPDATE', data)
   }
 }
+
 const handleSelectShipment = (shipmentId) => {
   runPackingAlgo(shipmentId)
 }

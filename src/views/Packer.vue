@@ -34,11 +34,8 @@ onMounted(() => {
   watch(
     packingData,
     (newPackingData) => {
-      // console.log('MEWER : ', newPackingData)
-      // console.log('MEW STREAK : ', packingData)
       if (newPackingData) {
         CONTAINER_SIZE = [1000, 1930, 1200]
-        // No need to parse if it's already an object
         packingData.value = newPackingData
         console.log('PackingData : ', packingData.value)
         nextTick(() => {

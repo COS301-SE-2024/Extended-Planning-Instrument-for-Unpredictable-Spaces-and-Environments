@@ -49,10 +49,10 @@ async function setupSubscription() {
       })
       .subscribe()
   } catch (error) {
-    handleError(error, 'setupSubscription')
+    console.error(error, 'setupSubscription')
   }
 }
-//
+
 const getAllShipments = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
