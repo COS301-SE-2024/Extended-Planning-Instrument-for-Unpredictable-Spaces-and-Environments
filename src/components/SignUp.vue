@@ -97,14 +97,16 @@ const signUp = async () => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      isDark ? 'dark bg-neutral-900' : 'bg-gray-200',
+      'min-h-screen flex flex-col items-center justify-center font-inter'
     ]"
   >
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
+        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sm:rounded-xl sm:shadow-xl ',
+        'flex flex-col justify-center'
       ]"
     >
       <div class="flex items-center justify-center">
@@ -124,11 +126,14 @@ const signUp = async () => {
         />
       </div>
       <p
-        :class="[isDark ? 'text-white' : ' text-neutral-800 ', 'text-3xl flex items-center  mb-2 ']"
+        :class="[
+          isDark ? 'text-white' : ' text-neutral-800 ',
+          'text-3xl flex justify-center items-center  mb-2 '
+        ]"
       >
         Create your new account
       </p>
-      <h2 class="mb-10 text-gray-500 dark:text-gray-400 text-left">
+      <h2 class="mb-10 flex justify-center items-center text-gray-500 dark:text-gray-400">
         Join us and revolutionize logistics efficiency.
       </h2>
 
@@ -255,28 +260,31 @@ const signUp = async () => {
           <router-link to="/" class="text-orange-500">Login</router-link>
         </p>
       </form>
-    </div>
-    <div
-      @click="toggleDark"
-      :class="[
-        isDark ? 'text-white bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm',
-        'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-      ]"
-    >
-      <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-        <span v-if="isDark">Light Mode</span>
-        <span v-else>Dark Mode</span>
+      <p
+        @click="toggleDialog"
+        class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      >
+        Help
       </p>
-      <button class="focus:outline-none">
-        <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-      </button>
+      <!-- <div class="flex items-center justify-center">
+        <div
+          @click="toggleDark"
+          :class="[
+            isDark ? 'text-white bg-neutral-900' : 'text-neutral-800 bg-gray-200 shadow-sm',
+            'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
+          ]"
+        >
+          <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
+            <span v-if="isDark">Light Mode</span>
+            <span v-else>Dark Mode</span>
+          </p>
+          <button class="focus:outline-none">
+            <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
+          </button>
+        </div>
+      </div> -->
     </div>
-    <p
-      @click="toggleDialog"
-      class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
-    >
-      Help
-    </p>
+
     <DialogComponent
       v-if="showDialog"
       :images="[

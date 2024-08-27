@@ -1,7 +1,7 @@
 <template>
   <div
     class="loading"
-    :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black']"
+    :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
   >
     <img
       :src="

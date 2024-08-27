@@ -78,4 +78,5 @@ app.component('Dropdown', Dropdown)
 app.component('QrcodeStream', QrcodeStream)
 app.component('QrcodeDropZone', QrcodeDropZone)
 app.component('QrcodeCapture', QrcodeCapture)
+
 app.mount('#app')

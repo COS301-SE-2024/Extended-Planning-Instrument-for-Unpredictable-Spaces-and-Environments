@@ -53,7 +53,7 @@ const logout = async () => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-200 text-black',
       'flex flex-col lg:flex-row h-screen'
     ]"
   >

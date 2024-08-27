@@ -487,7 +487,7 @@ function toggleShipment(shipmentId) {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-200 text-black',
       ' h-full flex flex-col shadow-lg'
     ]"
   >
@@ -499,7 +499,7 @@ function toggleShipment(shipmentId) {
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
-            'bg-orange-500 text-gray-100 rounded-xl p-2',
+            'bg-orange-500 text-gray-200 rounded-xl p-2',
             { 'opacity-50': activeShipment === shipment.id }
           ]"
           @click="toggleShipment(shipment.id)"
@@ -511,7 +511,7 @@ function toggleShipment(shipmentId) {
       <div v-if="activeShipment" class="mt-4">
         <div :id="`three-container-${activeShipment}`" class="w-full h-[80vh] mb-4"></div>
         <Button
-          class="w-full bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
+          class="w-full bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
           @click="dialogVisible = true"
         >
           <span>Scan Barcode</span>
@@ -521,7 +521,7 @@ function toggleShipment(shipmentId) {
 
       <div class="flex justify-center mt-4">
         <Button
-          class="w-[98%] bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
+          class="w-[98%] bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
           @click="getShipmentByID"
         >
           Confirm Shipment
@@ -530,7 +530,7 @@ function toggleShipment(shipmentId) {
       <div
         v-if="isNewSceneVisible"
         :class="[
-          isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-100 text-black',
+          isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-200 text-black',
           ' h-full flex flex-col shadow-lg'
         ]"
       >

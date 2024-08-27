@@ -229,7 +229,7 @@ const nameWithYou = (user) => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -285,7 +285,7 @@ const nameWithYou = (user) => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-orange-500 text-gray-100 rounded-lg p-2"
+                class="bg-orange-500 text-gray-200 rounded-lg p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />

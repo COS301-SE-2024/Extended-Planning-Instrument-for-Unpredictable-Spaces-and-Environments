@@ -238,7 +238,7 @@ const loading = ref(false)
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -270,7 +270,7 @@ const loading = ref(false)
       <div
         class="loading-new"
         v-if="visible"
-        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black']"
+        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
       >
         <ProgressSpinner
           style="width: 150px; height: 150px"

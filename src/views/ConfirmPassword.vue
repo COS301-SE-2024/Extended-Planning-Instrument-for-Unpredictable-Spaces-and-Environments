@@ -103,7 +103,7 @@ onMounted(() => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
+      isDark ? 'dark bg-neutral-900' : 'bg-gray-200',
       'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
     ]"
   >

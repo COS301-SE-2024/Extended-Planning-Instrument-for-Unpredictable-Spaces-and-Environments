@@ -399,13 +399,13 @@ export default {
     />
     <div
       :class="[
-        isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
+        isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-200 text-black',
         'w-full  text-white flex-col mb-10'
       ]"
     >
       <div
         :class="[
-          isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
+          isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-200 text-black',
           'card h-[auto] flex flex-col p-4'
         ]"
       >
