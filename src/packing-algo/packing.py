@@ -3,7 +3,7 @@ import random
 import socketio
 from itertools import permutations
 import numpy as np
-
+import json
 class Box:
     def __init__(self, box_id, width, height, length, weight):
         self.id = box_id
@@ -411,7 +411,25 @@ def genetic_algorithm(csv_file, container_dimensions, sio, pop_size=150, num_gen
         else:
             print("All boxes placed successfully!")
 
-    return best_individual, best_container
+    solution = {
+        "fitness": float(best_fitness),
+        "boxes": [
+            {
+                "id": box.id,
+                "width": int(box.width),
+                "height": int(box.height),
+                "length": int(box.length),
+                "weight": int(box.weight),
+                "volume": int(box.volume),
+                "x": int(x),
+                "y": int(y),
+                "z": int(z)
+            }
+            for box, x, y, z in best_container.boxes
+        ]
+    }
+    
+    return solution
 
 def emit_solution(sio, container, generation, fitness):
     generation_data = {
