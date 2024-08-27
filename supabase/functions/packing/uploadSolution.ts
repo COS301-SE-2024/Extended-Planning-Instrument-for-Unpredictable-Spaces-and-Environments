@@ -1,4 +1,5 @@
-export async function uploadSolution(supabase: any, shipmentId: bigint, solution: any) {
+export async function uploadSolution(supabase: any, shipmentId: bigint, solution: String) {
+  
   if (!solution) {
     console.error('Solution is undefined')
     return { error: 'Solution is undefined' }
