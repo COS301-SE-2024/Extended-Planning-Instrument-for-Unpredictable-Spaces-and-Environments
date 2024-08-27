@@ -105,14 +105,15 @@ const signUp = async () => {
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
         'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
-        'sm:rounded-xl sm:shadow-xl ',
+        'sm:rounded-xl sm:shadow-xl',
         'flex flex-col justify-center'
       ]"
     >
+      <!-- Logo container -->
       <div
         :class="[
-          'flex items-center justify-center', // Ensures the logo aligns at the top
-          'sm:justify-center' // Centers the logo on larger screens
+          'flex items-start justify-start w-full', // Align left on smaller screens
+          'sm:items-center sm:justify-center' // Center on larger screens
         ]"
         style="margin-bottom: 1rem"
       >
@@ -131,11 +132,16 @@ const signUp = async () => {
           style="width: 15rem; height: auto"
         />
       </div>
-      <div class="flex flex-col items-center justify-center mb-4">
-        <p
-          class="text-4xl font-bold mb-1"
-          :class="[isDark ? 'text-white' : 'text-neutral-800', 'block font-bold']"
-        >
+
+      <!-- Text container -->
+      <div
+        :class="[
+          'flex flex-col w-full mb-6',
+          'items-start justify-start text-left', // Align text left on smaller screens
+          'sm:items-center sm:text-center' // Center text on larger screens
+        ]"
+      >
+        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
           Create your new account
         </p>
         <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
