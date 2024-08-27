@@ -10,10 +10,11 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
-const packingData = ref(null)
+const packingData = ref([]) // Changed to an array
 const truckpackingData = ref(null)
 let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
+const activeShipment = ref(null)
 
 const toast = useToast()
 const isDark = useDark()
@@ -38,12 +39,23 @@ onMounted(() => {
     ([newPackingData, newShipments]) => {
       console.log('PACKING SOLUTION RECEIVED FROM Sidebar', newPackingData)
       console.log('Shipments:', newShipments)
-      if (newPackingData && newShipments.length > 0) {
+      if (newPackingData.length > 0 && newShipments.length > 0 && activeShipment.value) {
         CONTAINER_SIZE = [1000, 1930, 1200]
         nextTick(() => {
-          newShipments.forEach((shipment) => {
-            initThreeJS(`three-container-${shipment.id}`, isDark.value, newPackingData)
-          })
+          const activePackingData = newPackingData.find(
+            (data) => data.shipmentId === activeShipment.value
+          )
+          if (activePackingData && activePackingData.data && activePackingData.data.boxes) {
+            initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
+          } else {
+            console.error(`No valid packing data found for active shipment ${activeShipment.value}`)
+            toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: `Unable to display packing for shipment ${activeShipment.value}`,
+              life: 3000
+            })
+          }
         })
       }
     },
@@ -416,12 +428,59 @@ const images = ref([
 ])
 
 const handleJsonData = (json) => {
-  packingData.value = json._isRef ? json.value : json
-  console.log('Packing data received:', packingData.value)
+  const newPackingData = json._isRef ? json.value : json
+  console.log('Received packing data:', newPackingData)
+
+  if (!newPackingData || !newPackingData.data || !newPackingData.data.boxes) {
+    console.error('Invalid packing data received:', newPackingData)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Invalid packing data received',
+      life: 3000
+    })
+    return
+  }
+
+  // Find if there's already data for this shipment
+  const existingIndex = packingData.value.findIndex(
+    (data) => data.shipmentId === newPackingData.shipmentId
+  )
+  if (existingIndex !== -1) {
+    // Update existing data
+    packingData.value[existingIndex] = newPackingData
+  } else {
+    // Add new data
+    packingData.value.push(newPackingData)
+  }
+  console.log('Packing data updated:', packingData.value)
 }
+
 const handleShipmentsLoaded = (loadedShipments) => {
   shipments.value = loadedShipments
   console.log('Shipments loaded:', shipments.value)
+}
+
+function toggleShipment(shipmentId) {
+  if (activeShipment.value === shipmentId) {
+    activeShipment.value = null
+  } else {
+    activeShipment.value = shipmentId
+    nextTick(() => {
+      const activePackingData = packingData.value.find((data) => data.shipmentId === shipmentId)
+      if (activePackingData && activePackingData.data && activePackingData.data.boxes) {
+        initThreeJS(`three-container-${shipmentId}`, isDark.value, activePackingData)
+      } else {
+        console.error(`No valid packing data found for shipment ${shipmentId}`)
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: `Unable to display packing for shipment ${shipmentId}`,
+          life: 3000
+        })
+      }
+    })
+  }
 }
 </script>
 
@@ -434,36 +493,35 @@ const handleShipmentsLoaded = (loadedShipments) => {
   >
     <PackerSidebar @handle-json="handleJsonData" @shipments-loaded="handleShipmentsLoaded" />
 
-    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', ' h-[100vh]']">
-      <Accordion v-model:activeIndex="activeIndex" class="custom-accordion w-full">
-        <AccordionTab
+    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', 'h-[100vh]']">
+      <div class="flex flex-wrap justify-center gap-4 p-4">
+        <Button
           v-for="shipment in shipments"
           :key="shipment.id"
-          :header="`Shipment #${shipment.id}`"
-          :class="isDark ? 'dark-mode-accordion-tab' : 'light-mode-accordion-tab'"
+          :class="[
+            'bg-orange-500 text-gray-100 rounded-xl p-2',
+            { 'opacity-50': activeShipment === shipment.id }
+          ]"
+          @click="toggleShipment(shipment.id)"
         >
-          <div
-            :id="`three-container-${shipment.id}`"
-            :class="[
-              'w-full mb-4',
-              {
-                'h-[80vh]': activeIndex === shipments.indexOf(shipment),
-                'h-[300px]': activeIndex !== shipments.indexOf(shipment)
-              }
-            ]"
-          ></div>
-          <Button
-            class="w-full bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
-            @click="dialogVisible = true"
-          >
-            <span>Scan Barcode</span>
-            <i class="pi pi-barcode"></i>
-          </Button>
-        </AccordionTab>
-      </Accordion>
-      <div class="flex justify-center">
+          Show Shipment #{{ shipment.id }}
+        </Button>
+      </div>
+
+      <div v-if="activeShipment" class="mt-4">
+        <div :id="`three-container-${activeShipment}`" class="w-full h-[80vh] mb-4"></div>
         <Button
-          class="w-[98%] mt-4 bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
+          class="w-full bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
+          @click="dialogVisible = true"
+        >
+          <span>Scan Barcode</span>
+          <i class="pi pi-barcode"></i>
+        </Button>
+      </div>
+
+      <div class="flex justify-center mt-4">
+        <Button
+          class="w-[98%] bg-orange-500 text-gray-100 rounded-xl p-2 flex items-center justify-center space-x-2"
           @click="getShipmentByID"
         >
           Confirm Shipment
