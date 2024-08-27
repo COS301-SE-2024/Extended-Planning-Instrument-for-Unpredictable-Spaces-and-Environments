@@ -64,17 +64,19 @@ async function uploadSoltuion(shipmentId) {
   } else {
     console.log('RESULT GOING INTO ALGO:', JSON.stringify(result))
     const Solution = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
-    console.log('SOLUTION FROM ALGO:', JSON.stringify(Solution))
+    const stringSOl = JSON.stringify(Solution)
     const { data, error } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'uploadSolution',
         shipmentID: shipmentId,
-        solutions: Solution
+        solutions: stringSOl
       }),
       method: 'POST'
     })
     if (error) {
       console.error('Error uploading calculated Solution', error)
+    } else {
+      console.log('Successfully uploaded solution')
     }
   }
 }

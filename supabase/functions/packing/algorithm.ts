@@ -411,6 +411,5 @@ export function geneticAlgorithm(
       z
     }))
   }
-  console.log("INSIDE ALGO NOW",finalSolution)
   return { data: finalSolution }
 }
