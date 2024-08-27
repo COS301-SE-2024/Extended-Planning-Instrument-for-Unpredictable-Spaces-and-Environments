@@ -1,5 +1,4 @@
 export async function uploadSolution(supabase: any, shipmentId: bigint, solution: String) {
-  
   if (!solution) {
     console.error('Solution is undefined')
     return { error: 'Solution is undefined' }
@@ -8,7 +7,7 @@ export async function uploadSolution(supabase: any, shipmentId: bigint, solution
   const solutionString = JSON.stringify(solution)
   const { data, error } = await supabase
     .from('Shipment')
-    .update({ Solution: solutionString })
+    .update({ Solution: supabase.raw('??::json', [solution]) })
     .eq('id', shipmentId)
 
   if (error) {
