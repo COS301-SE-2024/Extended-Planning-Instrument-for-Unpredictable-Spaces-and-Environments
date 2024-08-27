@@ -29,6 +29,7 @@ const signIn = async () => {
     password: password.value
   })
   if (error) {
+    console.log(error)
     if (error.message.includes('email')) {
       emailError.value = true
       passwordError.value = false
@@ -121,13 +122,11 @@ const signInWithProvider = async (provider) => {
               isDark
                 ? 'text-white bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
-              { 'border-red-500 border-2': emailError }
+              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
             ]"
             @input="emailError = false"
             @blur="validateEmail"
           />
-          <p v-if="emailError" class="text-red-500 text-sm mt-2">Incorrect email or password.</p>
         </div>
 
         <label
@@ -142,11 +141,12 @@ const signInWithProvider = async (provider) => {
           toggleMask
           required
           class="mt-2 w-full p-password"
-          :class="{ 'password-error': passwordError }"
           @input="passwordError = false"
           @blur="validatePassword"
         />
-        <p v-if="passwordError" class="text-red-500 text-sm mt-2">Incorrect email or password.</p>
+        <div v-if="passwordError" class="w-full bg-red-200 border-red-500 border-2 rounded-md mt-8">
+          <p class="text-red-500 p-4">Incorrect email or password.</p>
+        </div>
 
         <router-link to="/forgot-password" class="mt-6 text-center text-md text-orange-500">
           Forgot Password ?</router-link
