@@ -62,9 +62,9 @@ async function uploadSoltuion(shipmentId) {
   if (error) {
     console.error('Error fetching packages for shipment', error.message)
   } else {
-    console.log('RESULT GOING INTO ALGO:', JSON.stringify(result))
     const Solution = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
     const stringSOl = JSON.stringify(Solution)
+    console.log('RESULT GOING INTO INVOKE:', stringSOl)
     const { data, error } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'uploadSolution',
