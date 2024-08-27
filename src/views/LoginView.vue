@@ -204,6 +204,7 @@ const signInWithProvider = async (provider) => {
           <router-link to="/SignUp" class="ml-2 text-orange-500"> Sign up</router-link>
         </p>
       </form>
+      
     </div>
     <div class="flex-col">
       <div
