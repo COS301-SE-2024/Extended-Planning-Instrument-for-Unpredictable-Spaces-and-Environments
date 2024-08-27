@@ -1,7 +1,13 @@
-export async function uploadSolution(supabase: any, shipmentId: bigint, solution: JSON) {
+export async function uploadSolution(supabase: any, shipmentId: bigint, solution: any) {
+  if (!solution) {
+    console.error('Solution is undefined')
+    return { error: 'Solution is undefined' }
+  }
+
+  const solutionString = JSON.stringify(solution)
   const { data, error } = await supabase
     .from('Shipment')
-    .update({ Solution: solution })
+    .update({ Solution: solutionString })
     .eq('id', shipmentId)
 
   if (error) {
@@ -9,5 +15,5 @@ export async function uploadSolution(supabase: any, shipmentId: bigint, solution
     return { error: 'Failed to update fitness value' }
   }
 
-  return { data }
+  return { data: 'sucessfull inserted record' }
 }
