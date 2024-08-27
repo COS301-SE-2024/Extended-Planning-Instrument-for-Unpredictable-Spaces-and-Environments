@@ -7,7 +7,7 @@ export async function uploadSolution(supabase: any, shipmentId: bigint, solution
   const solutionString = JSON.stringify(solution)
   const { data, error } = await supabase
     .from('Shipment')
-    .update({ Solution: supabase.raw('??::json', [solution]) })
+    .update({ Solution: solutionString })
     .eq('id', shipmentId)
 
   if (error) {
