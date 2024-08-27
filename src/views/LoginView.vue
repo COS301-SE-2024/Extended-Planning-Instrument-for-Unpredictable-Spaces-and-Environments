@@ -387,4 +387,14 @@ input.border-red-500:focus {
 .p-password.password-error input {
   border: 2px solid #ff0000 !important;
 }
+
+.light .p-icon-field-right > .p-input-icon:last-of-type {
+  right: 0rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.dark .p-icon-field-right > .p-input-icon:last-of-type {
+  right: 0rem;
+  color: rgba(255, 255, 255, 0.6);
+}
 </style>
