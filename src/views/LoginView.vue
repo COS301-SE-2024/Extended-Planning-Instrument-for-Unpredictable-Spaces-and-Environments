@@ -84,23 +84,39 @@ const signInWithProvider = async (provider) => {
         'flex flex-col justify-center'
       ]"
     >
-      <div class="flex items-center justify-center">
+      <div
+        :class="[
+          'flex items-center justify-center', // Ensures the logo aligns at the top
+          'sm:justify-center' // Centers the logo on larger screens
+        ]"
+        style="margin-bottom: 1rem"
+      >
         <img
           v-if="isDark"
           src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
         <img
           v-else
           src="/Members/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
       </div>
-
+      <div class="flex flex-col items-center justify-center mb-4">
+        <p
+          class="text-4xl font-bold mb-1"
+          :class="[isDark ? 'text-white' : 'text-neutral-800', 'block font-bold']"
+        >
+          Welcome back!
+        </p>
+        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+          Please enter login details below
+        </p>
+      </div>
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
           <label
