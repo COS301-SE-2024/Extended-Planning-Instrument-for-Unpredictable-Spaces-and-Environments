@@ -113,52 +113,6 @@ const containerDimensions = [1000, 1930, 1200]
 const packingResults = ref(null)
 const shipmentsToPack = ref(null)
 
-// async function checkProcessing() {
-//   try {
-//     await supabase
-//       .channel('changes')
-//       .on(
-//         'postgres_changes',
-//         {
-//           event: '*',
-//           schema: 'public',
-//           table: 'Shipment'
-//         },
-//         (payload) => {
-//           console.log('New or updated Processing Shipment:', payload.new)
-//         }
-//       )
-//       .subscribe()
-//     console.log('Subscription set up successfully')
-//   } catch (error) {
-//     console.error('Error setting up subscription:', error)
-//   }
-// }
-
-// async function uploadOrFetchSoltuion(shipmentId) {
-//   const { data, error } = await supabase.functions.invoke('packing', {
-//     body: JSON.stringify({
-//       type: 'getPackages',
-//       ShipmentID: shipmentId
-//     }),
-//     method: 'POST'
-//   })
-//   const result = await data.data
-//   if (error) {
-//     console.error('Error fetching packages for shipment', error.message)
-//   } else {
-//     const Solution = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
-//     const { data, error } = await supabase.functions.invoke('packing', {
-//       body: JSON.stringify({
-//         type: 'uploadSolution',
-//         shipmentID: shipmentId,
-//         solutions: Solution
-//       }),
-//       method: 'POST'
-//     })
-//   }
-// }
-
 async function fetchShipmentsFromDelivery(DeliveryID) {
   const { data, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({

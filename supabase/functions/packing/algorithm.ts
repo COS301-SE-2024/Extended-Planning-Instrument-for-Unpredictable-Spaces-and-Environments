@@ -393,7 +393,7 @@ export function geneticAlgorithm(
     population = nextPopulation
 
     if (currentIterations >= 16) {
-      return
+      break
     }
   }
 
@@ -411,6 +411,6 @@ export function geneticAlgorithm(
       z
     }))
   }
-
+  console.log("INSIDE ALGO NOW",finalSolution)
   return { data: finalSolution }
 }

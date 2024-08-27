@@ -210,7 +210,9 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+
 const toast = useToast()
+
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
@@ -333,6 +335,7 @@ const validateCSV = (file) => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
+
 
 const loading = ref(false)
 

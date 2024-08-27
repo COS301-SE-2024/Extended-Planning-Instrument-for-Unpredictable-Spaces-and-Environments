@@ -5,6 +5,7 @@ import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { supabase } from '../supabase'
 import { format, parseISO } from 'date-fns'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
 const isDark = useDark()
 const chartData = ref({
@@ -28,6 +29,55 @@ const maxDeliveries = ref(0)
 const knobValueDelivered = ref(0)
 
 // const router = useRouter()
+
+async function checkProcessing() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'Shipment', filter: 'Status=eq.Processing' },
+        (payload) => {
+          console.log('New or updated Processing Shipment:', payload.new.id)
+          uploadSoltuion(payload.new.id)
+        }
+      )
+      .subscribe()
+    // console.log('Subscription set up successfully')
+  } catch (error) {
+    console.error('Error setting up subscription:', error)
+  }
+}
+const containerDimensions = [1000, 1930, 1200] // defualt truck
+
+async function uploadSoltuion(shipmentId) {
+  const { data, error } = await supabase.functions.invoke('packing', {
+    body: JSON.stringify({
+      type: 'getPackages',
+      ShipmentID: shipmentId
+    }),
+    method: 'POST'
+  })
+  const result = await data.data
+  if (error) {
+    console.error('Error fetching packages for shipment', error.message)
+  } else {
+    console.log('RESULT GOING INTO ALGO:', JSON.stringify(result))
+    const Solution = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
+    console.log('SOLUTION FROM ALGO:', JSON.stringify(Solution))
+    const { data, error } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'uploadSolution',
+        shipmentID: shipmentId,
+        solutions: Solution
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.error('Error uploading calculated Solution', error)
+    }
+  }
+}
 
 let userName
 async function getUsername() {
@@ -236,6 +286,7 @@ onMounted(() => {
   getAllPackages()
   getAllDeliveries()
   setupSubscription()
+  checkProcessing()
 })
 </script>
 
