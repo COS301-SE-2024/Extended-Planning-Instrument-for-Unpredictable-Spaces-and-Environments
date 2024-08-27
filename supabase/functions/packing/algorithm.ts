@@ -1,13 +1,13 @@
 type BoxData = {
-  id: number;
-  Shipment_id: number;
-  Packed_time: string | null;
-  Width: number;
-  Length: number;
-  Height: number;
-  Weight: number;
-  Volume: number;
-};
+  id: number
+  Shipment_id: number
+  Packed_time: string | null
+  Width: number
+  Length: number
+  Height: number
+  Weight: number
+  Volume: number
+}
 
 class Box {
   id: number
@@ -336,6 +336,7 @@ function mutate(individual: Box[], mutationRate: number): void {
 }
 
 let bestFitness = Number.NEGATIVE_INFINITY
+let currentIterations = 0
 
 export function geneticAlgorithm(
   boxesData: BoxData[],
@@ -370,6 +371,9 @@ export function geneticAlgorithm(
       bestFitness = currentBestFitness
       bestContainer = currentBestContainer
       bestIndividual = currentBestIndividual
+      currentIterations = 0
+    } else {
+      currentIterations++
     }
 
     const parents = selectParents(population, fitness, Math.floor(popSize / 2))
@@ -387,6 +391,10 @@ export function geneticAlgorithm(
     nextPopulation[0] = bestIndividual ? [...bestIndividual] : nextPopulation[0]
 
     population = nextPopulation
+
+    if (currentIterations >= 16) {
+      return
+    }
   }
 
   const finalSolution = {
