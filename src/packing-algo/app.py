@@ -52,10 +52,9 @@ def get_solution():
     try:
         # Upload the file
         response = supabase.storage.from_("solutions").upload(file_path, solution_string.encode('utf-8'))
-        print("File upload response:", response)
 
         if response.status_code == 200:
-            return jsonify({"message": "Solution uploaded successfully", "file_path": file_path}), 200
+            return jsonify({"boxes": solution_json["boxes"],"fitness" :solution_json["fitness"] }), 200
         else:
             return jsonify({"error": "File upload failed", "details": response.text}), response.status_code
     except Exception as e:
