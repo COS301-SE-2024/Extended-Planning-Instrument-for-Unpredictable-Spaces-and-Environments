@@ -11,6 +11,8 @@ import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
 import loader from '../googleMapsLoader.js'
+import CryptoJS from 'crypto-js';
+
 
 const isDark = useDark()
 
@@ -204,36 +206,56 @@ const updateShipmentStartTime = async (shipmentID) => {
   }
 }
 
-const uploadSigntaure = async (signature, shipmentID) => {
+const encryptionKey = Deno.env.get('ENCRYPTION_KEY') || 'default_key'; // Use Deno.env.get for environment variables, or a fallback key
+const uploadSignature = async (signature, shipmentID) => {
   try {
-    const { error } = await supabase.functions.invoke('core', {
+    // Log the incoming Data URL for debugging
+    console.log('Original Signature Data URL:', signature);
+
+    // Encrypt the signature
+    const encryptedSignature = encryptData(signature, encryptionKey);
+
+    // Log the encrypted signature for debugging
+    console.log('Encrypted Signature:', encryptedSignature);
+
+    // Call the API function to upload the signature
+    const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
-        dataURL: signature
+        dataURL: encryptedSignature
       }),
       method: 'POST'
-    })
-    if (error) {
-      console.error(`API Error for uploading signature`, error)
-    } else {
-      const currentDate = new Date().toISOString()
+    });
 
-      const { error } = await supabase.functions.invoke('core', {
-        body: JSON.stringify({
-          type: 'updateShipmentEndTime',
-          deliveryId: shipmentID,
-          newEndTime: currentDate
-        }),
-        method: 'POST'
-      })
-      if (error) {
-        console.error(`API Error for updating EndTime for delivery`, error)
-      }
+    if (uploadError) {
+      console.error('API Error for uploading signature:', uploadError);
+      return;
+    }
+
+    // Update the shipment end time after successful upload
+    const currentDate = new Date().toISOString();
+    const { error: updateError } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentEndTime',
+        deliveryId: shipmentID,
+        newEndTime: currentDate
+      }),
+      method: 'POST'
+    });
+
+    if (updateError) {
+      console.error('API Error for updating EndTime for delivery:', updateError);
     }
   } catch (error) {
-    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+    console.error('Error uploading signature or updating shipment:', error);
   }
+};
+
+// Helper function to encrypt data
+function encryptData(data, key) {
+  return CryptoJS.AES.encrypt(data, key).toString();
 }
+
 
 const openDialog = (item) => {
   dialogVisible.value = true
