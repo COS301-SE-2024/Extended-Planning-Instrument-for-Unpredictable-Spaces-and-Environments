@@ -147,13 +147,12 @@ const runPackingAlgo = async (shipmentId) => {
       })
     })
     const responsedata = await response.json()
-    console.log('HERE IS RESPONSE DATA', responsedata)
-    if (responsedata.Status === 400) {
-      console.log('eherehrheh')
-      return await uploadSolution(shipmentId, containerDimensions)
+    if (responsedata.error === 'File retrieval failed') {
+      await uploadSolution(shipmentId, containerDimensions)
+    } else {
+      console.log(responsedata.boxes)
+      packingResults.value = responsedata.boxes
     }
-
-    return responsedata
   } catch (e) {
     console.error('failure to fetch solution', e)
   }
@@ -179,7 +178,8 @@ async function uploadSolution(shipmentId, containerDimensions) {
       return
     }
 
-    const result = data.data
+    const result = data
+    console.log('Sending in result', result)
 
     const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/uploadSolution', {
       method: 'POST',
@@ -208,8 +208,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
       if (updateError) {
         console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
       }
-
-      return responsedata.boxes
+      packingResults.value = responsedata.boxes
     }
   } catch (error) {
     console.error('Error in getSolution:', error)
