@@ -136,34 +136,27 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  const response = await fetch('https://my-flask-app-wj7u4v5cka-uc.a.run.app/getSolution', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      shipmentID: shipmentId
-    })
-  })
-  if (response == null) {
-    await uploadSolution(shipmentId, containerDimensions)
-  } else {
-    const data = await response.json()
-    const { error: updateError } = await supabase.functions.invoke('packing', {
+  try {
+    const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/getSolution', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
-        type: 'updateFitnessValue',
-        ShipmentId: shipmentId,
-        newFitnessValue: parseFloat(data.fitness)
-      }),
-      method: 'POST'
+        shipmentID: shipmentId
+      })
     })
-
-    if (updateError) {
-      console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+    const responsedata = await response.json()
+    console.log('HERE IS RESPONSE DATA', responsedata)
+    if (responsedata.Status === 400) {
+      console.log('eherehrheh')
+      return await uploadSolution(shipmentId, containerDimensions)
     }
-  }
 
-  return response.json()
+    return responsedata
+  } catch (e) {
+    console.error('failure to fetch solution', e)
+  }
 }
 
 async function uploadSolution(shipmentId, containerDimensions) {
@@ -188,7 +181,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
 
     const result = data.data
 
-    const response = await fetch('https://my-flask-app-wj7u4v5cka-uc.a.run.app/uploadSolution', {
+    const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/uploadSolution', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -202,8 +195,22 @@ async function uploadSolution(shipmentId, containerDimensions) {
     const responsedata = await response.json()
     if (responsedata == null) {
       console.error('Failed to upload solution', responsedata)
+    } else {
+      const { error: updateError } = await supabase.functions.invoke('packing', {
+        body: JSON.stringify({
+          type: 'updateFitnessValue',
+          ShipmentId: shipmentId,
+          newFitnessValue: parseFloat(responsedata.fitness)
+        }),
+        method: 'POST'
+      })
+
+      if (updateError) {
+        console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+      }
+
+      return responsedata.boxes
     }
-    runPackingAlgo(shipmentId, containerDimensions)
   } catch (error) {
     console.error('Error in getSolution:', error)
   }
