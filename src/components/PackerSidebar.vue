@@ -180,14 +180,21 @@ async function uploadSolution(shipmentId, containerDimensions) {
 
     const result = data
     console.log('Sending in result', result)
-
+    console.log(
+      'BODY',
+      JSON.stringify({
+        shipmentID: shipmentId,
+        containerSize: containerDimensions,
+        boxes: result
+      })
+    )
     const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/uploadSolution', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        shipmentID: shipmentId,
+        shipmentID: 7,
         containerSize: containerDimensions,
         boxes: result
       })
