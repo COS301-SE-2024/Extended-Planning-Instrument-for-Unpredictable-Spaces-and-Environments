@@ -136,85 +136,78 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  const { data, error } = await supabase.functions.invoke('packing', {
-    body: JSON.stringify({
-      type: 'fetchSolution',
-      ShipmentID: shipmentId
-    }),
-    method: 'POST'
-  })
-  if (error) {
-    console.error('Error fetching cached solution: ' + error)
-  }
-  if (data && data.Solution == null) {
-    await getSolution(shipmentId)
-  } else {
-    packingResults.value = data.Solution
-  }
-}
-
-async function getSolution(shipmentID) {
-  const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/getSolution', {
+  const response = await fetch('https://my-flask-app-wj7u4v5cka-uc.a.run.app/getSolution', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      shipmentID: 7
+      shipmentID: shipmentId
     })
   })
   if (response == null) {
-    console.log('Solution doesnt exist')
+    await uploadSolution(shipmentId, containerDimensions)
   } else {
-    console.log('HERE IS RESPONSE', response)
-    packingResults.value = response.boxes
+    const data = await response.json()
+    const { error: updateError } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'updateFitnessValue',
+        ShipmentId: shipmentId,
+        newFitnessValue: parseFloat(data.fitness)
+      }),
+      method: 'POST'
+    })
+
+    if (updateError) {
+      console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+    }
   }
+
   return response.json()
 }
 
-// async function getSolution(shipmentId) {
-//   console.log('SHIPMETN ID', shipmentId)
-//   try {
-//     const { data, error } = await supabase.functions.invoke('packing', {
-//       body: JSON.stringify({
-//         type: 'getPackages',
-//         ShipmentID: shipmentId
-//       }),
-//       method: 'POST'
-//     })
+async function uploadSolution(shipmentId, containerDimensions) {
+  try {
+    const { data, error } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'getPackages',
+        ShipmentID: shipmentId
+      }),
+      method: 'POST'
+    })
 
-//     if (error) {
-//       console.error('PACKING API ERROR: ', error)
-//       return
-//     }
+    if (error) {
+      console.error('PACKING API ERROR: ', error)
+      return
+    }
 
-//     if (!data || !data.data) {
-//       console.error('Invalid data structure received:', data)
-//       return
-//     }
+    if (!data || !data.data) {
+      console.error('Invalid data structure received:', data)
+      return
+    }
 
-//     const result = data.data
+    const result = data.data
 
-//     packingResults.value = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
-//     emit('handle-json', packingResults.value)
-//     console.log('Successfully sent packingResults.value', packingResults.value)
-
-//     const { error: updateError } = await supabase.functions.invoke('packing', {
-//       body: JSON.stringify({
-//         type: 'updateFitnessValue',
-//         ShipmentId: shipmentId,
-//         newFitnessValue: parseFloat(packingResults.value.data.fitness)
-//       }),
-//       method: 'POST'
-//     })
-
-//     if (updateError) {
-//       console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
-//     }
-//   } catch (error) {
-//     console.error('Error in getSolution:', error)
-//   }
-// }
+    const response = await fetch('https://my-flask-app-wj7u4v5cka-uc.a.run.app/uploadSolution', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        shipmentID: shipmentId,
+        containerSize: containerDimensions,
+        boxes: result
+      })
+    })
+    const responsedata = await response.json()
+    if (responsedata == null) {
+      console.error('Failed to upload solution', responsedata)
+    }
+    runPackingAlgo(shipmentId, containerDimensions)
+  } catch (error) {
+    console.error('Error in getSolution:', error)
+  }
+}
 
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
