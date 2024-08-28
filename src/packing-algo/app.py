@@ -7,9 +7,10 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 load_dotenv()
-CORS(app)
+
 # Initialize Supabase client
 url: str = os.getenv("SUPABASE_URL")
 key: str = os.getenv("SUPABASE_KEY")
@@ -62,6 +63,7 @@ def get_solution():
         return jsonify({"error": "File upload failed", "details": str(e)}), 500
 
 
+
 @app.route('/getSolution', methods=['POST'])
 def get_solution2():
     data = request.json
@@ -72,10 +74,11 @@ def get_solution2():
         return jsonify({"error": "shipmentID is required"}), 400
 
     file_name = f"{shipment_id}.json"  # Name the file using shipmentId
+    file_path = f"solutions/{file_name}"  # Define the path in the bucket
 
     try:
         # Download the file from the Supabase bucket
-        file_content = supabase.storage.from_("solutions").download(file_name)
+        file_content = supabase.storage.from_("solutions").download(file_path)
         
         # Decode the file content
         solution_data = file_content.decode('utf-8')
@@ -85,6 +88,7 @@ def get_solution2():
     except Exception as e:
         print("File retrieval failed:", str(e))
         return jsonify({"error": "File retrieval failed", "details": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
