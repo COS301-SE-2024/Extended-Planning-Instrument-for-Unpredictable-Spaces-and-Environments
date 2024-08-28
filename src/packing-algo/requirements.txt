@@ -5,3 +5,4 @@ supabase==2.7.3
 python-dotenv
 werkzeug==2.1.1
 pandas
+Flask-CORS
