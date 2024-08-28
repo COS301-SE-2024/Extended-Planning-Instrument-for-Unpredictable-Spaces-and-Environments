@@ -1,6 +1,4 @@
-import CryptoJS from 'https://esm.sh/crypto-js@4.1.1';
-
-export async function uploadEncryptedSignature(supabase: any, encryptedSignature: string) {
+export async function uploadSignature(supabase: any, encryptedSignature: string) {
   try {
     // Log the incoming encrypted string for debugging
     console.log('Incoming Encrypted Signature:', encryptedSignature);
