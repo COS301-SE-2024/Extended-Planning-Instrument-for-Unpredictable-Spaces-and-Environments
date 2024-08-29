@@ -178,7 +178,7 @@
       v-if="showDialog"
       :dialogVisible="showDialog"
       @close-dialog="toggleDialog"
-      title="Contact Support"
+      title="Help Menu"
       :images="[
         { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
         { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
@@ -212,7 +212,6 @@ import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/supabase.js' // Import the Supabase client
 
 const toast = useToast()
-
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
@@ -335,7 +334,6 @@ const validateCSV = (file) => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
-
 
 const loading = ref(false)
 
