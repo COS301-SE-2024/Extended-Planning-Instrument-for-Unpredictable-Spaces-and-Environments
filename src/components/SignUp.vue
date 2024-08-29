@@ -304,7 +304,7 @@ const signUp = async () => {
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
         // Add more images as needed
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }

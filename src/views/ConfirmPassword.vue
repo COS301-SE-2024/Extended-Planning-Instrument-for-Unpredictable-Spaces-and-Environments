@@ -257,7 +257,7 @@ onMounted(() => {
         v-if="dialogVisible"
         imagePath="/Members/Photos/Login _ landing page.png"
         altText="Alternative Image"
-        title="Contact Support"
+        title="Help Menu"
         :contacts="[
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -272,7 +272,7 @@ onMounted(() => {
         { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }

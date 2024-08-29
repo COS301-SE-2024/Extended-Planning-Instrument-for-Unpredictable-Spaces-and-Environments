@@ -234,7 +234,7 @@ const loading = ref(false)
     <DialogComponent
       v-if="showDialog"
       :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }

@@ -250,7 +250,7 @@ const signInWithProvider = async (provider) => {
         v-if="showDialog"
         imagePath="/Members/Photos/Login _ landing page.png"
         altText="Alternative Image"
-        title="Contact Support"
+        title="Help Menu"
         :contacts="[
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -266,7 +266,7 @@ const signInWithProvider = async (provider) => {
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
         // Add more images as needed
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
