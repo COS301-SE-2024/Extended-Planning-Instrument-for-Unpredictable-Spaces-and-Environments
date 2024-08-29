@@ -245,26 +245,11 @@ const signInWithProvider = async (provider) => {
       </div> -->
     </div>
 
-    <div>
-      <DialogComponent
-        v-if="showDialog"
-        imagePath="/Members/Photos/Login _ landing page.png"
-        altText="Alternative Image"
-        title="Help Menu"
-        :contacts="[
-          { name: 'Call', phone: '+27 12 345 6789', underline: true },
-          { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
-        ]"
-        :dialogVisible="showDialog"
-        @close-dialog="toggleDialog"
-      />
-    </div>
     <DialogComponent
       v-if="showDialog"
       :images="[
         { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
-        // Add more images as needed
       ]"
       title="Help Menu"
       :contacts="[
