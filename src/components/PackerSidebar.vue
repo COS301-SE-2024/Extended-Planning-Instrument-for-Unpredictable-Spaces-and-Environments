@@ -103,12 +103,12 @@ async function printQRcode() {
   if (!packingResults.value) {
     alert('Please select a Shipment to pack first')
   } else {
-    console.log(packingResults.value)
+    // console.log(packingResults.value)
     await createPDF(packingResults.value.data.boxes)
   }
 }
 
-const containerDimensions = [1000, 1930, 1200]
+const containerDimensions = [1200, 1930, 1000]
 
 const packingResults = ref(null)
 const shipmentsToPack = ref(null)
@@ -147,11 +147,12 @@ const runPackingAlgo = async (shipmentId) => {
       })
     })
     const responsedata = await response.json()
-    if (responsedata.error === 'File retrieval failed') {
+    console.log('ERROR ', responsedata.error)
+    if (responsedata.error) {
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      console.log(responsedata.boxes)
       packingResults.value = responsedata.boxes
+      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
     }
   } catch (e) {
     console.error('failure to fetch solution', e)
@@ -180,21 +181,21 @@ async function uploadSolution(shipmentId, containerDimensions) {
 
     const result = data
     console.log('Sending in result', result)
-    console.log(
-      'BODY',
-      JSON.stringify({
-        shipmentID: shipmentId,
-        containerSize: containerDimensions,
-        boxes: result
-      })
-    )
+    // console.log(
+    //   'BODY',
+    //   JSON.stringify({
+    //     shipmentID: shipmentId,
+    //     containerSize: containerDimensions,
+    //     boxes: result
+    //   })
+    // )
     const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/uploadSolution', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        shipmentID: 7,
+        shipmentID: shipmentId,
         containerSize: containerDimensions,
         boxes: result
       })
@@ -216,6 +217,8 @@ async function uploadSolution(shipmentId, containerDimensions) {
         console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
       }
       packingResults.value = responsedata.boxes
+      console.log('Packing Results:', packingResults.value)
+      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
     }
   } catch (error) {
     console.error('Error in getSolution:', error)

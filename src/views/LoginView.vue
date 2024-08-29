@@ -7,8 +7,6 @@ import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 
 // let localUser
-const dialogVisible = ref(false)
-
 const emailError = ref(false)
 const passwordError = ref(false)
 

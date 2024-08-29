@@ -15,6 +15,7 @@ const truckpackingData = ref(null)
 let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
 const activeShipment = ref(null)
+const loading = ref(false)
 
 const toast = useToast()
 const isDark = useDark()
@@ -30,22 +31,22 @@ let userName
 async function getUsername() {
   const { data } = await supabase.auth.getSession()
   userName = data.session.user.identities[0].identity_data.name
-  console.log(userName)
+  // console.log(userName)
 }
 
 onMounted(() => {
   watch(
     [packingData, shipments],
     ([newPackingData, newShipments]) => {
-      console.log('PACKING SOLUTION RECEIVED FROM Sidebar', newPackingData)
-      console.log('Shipments:', newShipments)
+      // console.log('PACKING SOLUTION RECEIVED FROM Sidebar', newPackingData)
+      // console.log('Shipments:', newShipments)
       if (newPackingData.length > 0 && newShipments.length > 0 && activeShipment.value) {
         CONTAINER_SIZE = [1000, 1930, 1200]
         nextTick(() => {
           const activePackingData = newPackingData.find(
             (data) => data.shipmentId === activeShipment.value
           )
-          if (activePackingData && activePackingData.data && activePackingData.data.boxes) {
+          if (activePackingData) {
             initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
           } else {
             console.error(`No valid packing data found for active shipment ${activeShipment.value}`)
@@ -154,7 +155,8 @@ function getColorForWeight(weight, minWeight, maxWeight) {
 //   }
 // }
 
-let scene
+let scene, camera, renderer, controls
+
 function initThreeJS(containerId, isDark, packingDataType) {
   const container = document.getElementById(containerId)
   if (!container) {
@@ -162,8 +164,13 @@ function initThreeJS(containerId, isDark, packingDataType) {
     return
   }
 
+  // Cleanup the previous scene if it exists
+  if (scene) {
+    cleanupThreeJS()
+  }
+
   scene = new THREE.Scene()
-  const camera = new THREE.PerspectiveCamera(
+  camera = new THREE.PerspectiveCamera(
     75,
     container.clientWidth / container.clientHeight,
     0.1,
@@ -171,12 +178,12 @@ function initThreeJS(containerId, isDark, packingDataType) {
   )
   camera.position.set(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
   renderer.setClearColor(isDark ? 0x000000 : 0xffffff)
   container.appendChild(renderer.domElement)
 
-  const controls = new OrbitControls(camera, renderer.domElement)
+  controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
   controls.dampingFactor = 0.25
   controls.screenSpacePanning = false
@@ -195,8 +202,9 @@ function initThreeJS(containerId, isDark, packingDataType) {
   createContainer(scene, CONTAINER_SIZE)
 
   // Create boxes from packing data
-  if (packingDataType && packingDataType.data && packingDataType.data.boxes) {
-    createBoxesFromData(scene, packingDataType.data.boxes)
+  console.log(packingDataType)
+  if (packingDataType) {
+    createBoxesFromData(scene, packingDataType)
   } else {
     console.error('Invalid packing data structure:', packingDataType)
   }
@@ -220,6 +228,31 @@ function initThreeJS(containerId, isDark, packingDataType) {
   })
 }
 
+function cleanupThreeJS() {
+  // Dispose of scene objects
+  scene.traverse((object) => {
+    if (object.geometry) object.geometry.dispose()
+    if (object.material) {
+      if (Array.isArray(object.material)) {
+        object.material.forEach((material) => material.dispose())
+      } else {
+        object.material.dispose()
+      }
+    }
+  })
+
+  renderer.dispose()
+
+  const container = renderer.domElement.parentElement
+  if (container) {
+    container.removeChild(renderer.domElement)
+  }
+
+  scene = null
+  camera = null
+  renderer = null
+  controls = null
+}
 function createContainer(scene, CONTAINER_SIZE) {
   console.log('Creating container', CONTAINER_SIZE)
 
@@ -421,17 +454,13 @@ const trackFunctionOptions = [
   { text: 'bounding box', value: paintBoundingBox }
 ]
 const trackFunctionSelected = ref(trackFunctionOptions[1])
-const images = ref([
-  { src: 'https://example.com/image1.jpg', alt: 'Image 1' },
-  { src: 'https://example.com/image2.jpg', alt: 'Image 2' },
-  { src: 'https://example.com/image3.jpg', alt: 'Image 3' }
-])
 
+let counter = 0
 const handleJsonData = (json) => {
   const newPackingData = json._isRef ? json.value : json
-  console.log('Received packing data:', newPackingData)
+  // console.log('Received packing data:', newPackingData)
 
-  if (!newPackingData || !newPackingData.data || !newPackingData.data.boxes) {
+  if (!newPackingData) {
     console.error('Invalid packing data received:', newPackingData)
     toast.add({
       severity: 'error',
@@ -442,23 +471,14 @@ const handleJsonData = (json) => {
     return
   }
 
-  // Find if there's already data for this shipment
-  const existingIndex = packingData.value.findIndex(
-    (data) => data.shipmentId === newPackingData.shipmentId
-  )
-  if (existingIndex !== -1) {
-    // Update existing data
-    packingData.value[existingIndex] = newPackingData
-  } else {
-    // Add new data
-    packingData.value.push(newPackingData)
-  }
-  console.log('Packing data updated:', packingData.value)
+  packingData.value[counter++] = newPackingData
+  loading.value = false
 }
 
 const handleShipmentsLoaded = (loadedShipments) => {
+  loading.value = true
   shipments.value = loadedShipments
-  console.log('Shipments loaded:', shipments.value)
+  // console.log('Shipments loaded:', shipments.value)
 }
 
 function toggleShipment(shipmentId) {
@@ -467,17 +487,24 @@ function toggleShipment(shipmentId) {
   } else {
     activeShipment.value = shipmentId
     nextTick(() => {
-      const activePackingData = packingData.value.find((data) => data.shipmentId === shipmentId)
-      if (activePackingData && activePackingData.data && activePackingData.data.boxes) {
-        initThreeJS(`three-container-${shipmentId}`, isDark.value, activePackingData)
+      // Find the index in the packingData array based on the shipment ID
+      const shipmentIndex = shipments.value.findIndex((shipment) => shipment.id === shipmentId)
+      // console.log('HELOOOOOOOOOOOOOOO: ', shipmentIndex)
+      if (shipmentIndex !== -1) {
+        const activePackingData = packingData.value[shipmentIndex]
+        if (activePackingData) {
+          initThreeJS(`three-container-${shipmentId}`, isDark.value, activePackingData)
+        } else {
+          console.error(`No valid packing data found for shipment ${shipmentId}`)
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `Unable to display packing for shipment ${shipmentId}`,
+            life: 3000
+          })
+        }
       } else {
-        console.error(`No valid packing data found for shipment ${shipmentId}`)
-        toast.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: `Unable to display packing for shipment ${shipmentId}`,
-          life: 3000
-        })
+        console.error(`Shipment with ID ${shipmentId} not found`)
       }
     })
   }
@@ -492,10 +519,22 @@ function toggleShipment(shipmentId) {
     ]"
   >
     <PackerSidebar @handle-json="handleJsonData" @shipments-loaded="handleShipmentsLoaded" />
-
+    <!-- <div
+      class="loading-new"
+      v-if="loading"
+      :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
+    >
+      <ProgressSpinner
+        style="width: 150px; height: 150px"
+        strokeWidth="4"
+        animationDuration=".5s"
+        aria-label="Custom ProgressSpinner"
+      />
+    </div> -->
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', 'h-[100vh]']">
       <div class="flex flex-wrap justify-center gap-4 p-4">
         <Button
+          v-if="!loading"
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
@@ -780,5 +819,16 @@ const toggleDialog = () => {
 .p-dialog-mask {
   background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
   z-index: 9998 !important; /* Ensure it is above other elements */
+}
+
+.loading-new {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  z-index: 9999999999999999999999999;
 }
 </style>
