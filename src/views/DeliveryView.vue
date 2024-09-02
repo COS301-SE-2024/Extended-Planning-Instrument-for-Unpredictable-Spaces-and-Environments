@@ -318,7 +318,7 @@ const updateDeliveryStatus = async () => {
 function save(shipmentid) {
   if (signaturePad.value) {
     const { data } = signaturePad.value.saveSignature()
-    uploadSigntaure(data, shipmentid)
+    uploadSignature(data, shipmentid)
     if (pendingLocations.value.length > 0) {
       pendingLocations.value.shift() // Remove the first (current) destination
       if (pendingLocations.value.length > 0) {
