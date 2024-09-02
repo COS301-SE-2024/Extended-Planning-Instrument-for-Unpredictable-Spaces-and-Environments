@@ -11,7 +11,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
 const packingData = ref([]) // Changed to an array
-const truckpackingData = ref(null)
+const truckpackingData = ref([])
 let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
 const activeShipment = ref(null)
@@ -23,6 +23,7 @@ const isDark = useDark()
 const numberShipments = ref(null)
 const truckSize = [2350, 2390, 5898]
 const isNewSceneVisible = ref(false)
+const cratePacked = ref(false)
 
 const shipments = ref([])
 
@@ -69,14 +70,11 @@ async function getShipmentByID() {
 
     isNewSceneVisible.value = true
 
-    CONTAINER_SIZE[0] = truckSize[0]
-    CONTAINER_SIZE[1] = truckSize[1]
-    CONTAINER_SIZE[2] = truckSize[2]
-
     await CreateJSONBoxes(shipments.value, CONTAINER_SIZE)
-
+    cratePacked.value = true
+    console.log('result of packing pallets', truckpackingData)
     nextTick(() => {
-      initThreeJS('new-three-container', isDark.value, truckpackingData)
+      initThreeJS('new-three-container', isDark.value, truckpackingData.value[0])
     })
   } else {
     console.log('No shipments available to process.')
@@ -84,8 +82,8 @@ async function getShipmentByID() {
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
   const width = CONTAINER_SIZE[0]
-  const height = CONTAINER_SIZE[2]
-  const length = CONTAINER_SIZE[3]
+  const height = CONTAINER_SIZE[1]
+  const length = CONTAINER_SIZE[2]
   const volume = width * height * length
 
   // Generate the JSON object
@@ -97,7 +95,9 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
     Volume: volume,
     Weight: 10000
   }))
-  truckpackingData.value = await geneticAlgorithm(shipmentJson, CONTAINER_SIZE, 150, 300, 0.01).data
+  console.log('sending in boxes', shipmentJson)
+  console.log('container Dimensions', truckSize)
+  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 300, 0.01).data
 }
 
 function getColorForWeight(weight, minWeight, maxWeight) {
@@ -156,15 +156,20 @@ function initThreeJS(containerId, isDark, packingDataType) {
   scene.add(directionalLight)
 
   // Create container
-  createContainer(scene, CONTAINER_SIZE)
-
-  // Create boxes from packing data
-  // console.log(packingDataType)
-  if (packingDataType) {
-    createBoxesFromData(scene, packingDataType)
+  if (cratePacked.value) {
+    createContainer(scene, truckSize)
+    console.log('sending in trucpackingData')
+    createBoxesFromData(scene, packingDataType.boxes)
   } else {
-    console.error('Invalid packing data structure:', packingDataType)
+    createContainer(scene, CONTAINER_SIZE)
+    createBoxesFromData(scene, packingDataType)
   }
+
+  // if (packingDataType) {
+  //   createBoxesFromData(scene, packingDataType)
+  // } else {
+  //   console.error('Invalid packing data structure:', packingDataType)
+  // }
 
   // Add scale
   addScale(scene, CONTAINER_SIZE)
@@ -232,10 +237,19 @@ function createContainer(scene, CONTAINER_SIZE) {
 }
 
 function createBoxesFromData(scene, boxesData) {
-  if (!boxesData || !Array.isArray(boxesData)) {
+  console.log('createBoxesFromData', boxesData)
+
+  // Check if boxesData is a Vue ref and extract the actual value
+  if (boxesData && boxesData.__v_isRef) {
+    boxesData = boxesData._value
+  }
+
+  // Further check if boxesData is an array and contains valid data
+  if (!boxesData || !Array.isArray(boxesData) || boxesData.length === 0) {
     console.error('Invalid boxes data:', boxesData)
     return
   }
+
   const weights = boxesData.map((box) => box.weight)
   const minWeight = Math.min(...weights)
   const maxWeight = Math.max(...weights)
@@ -427,8 +441,6 @@ const handleJsonData = (json) => {
     })
     return
   }
-  console.log('Recieved Data:', newPackingData)
-  console.log('storing it at index:', counter)
   packingData.value[counter++] = newPackingData
   loading.value = false
 }
@@ -443,16 +455,14 @@ function toggleShipment(shipmentId) {
   if (activeShipment.value === shipmentId) {
     activeShipment.value = null
   } else {
+    cratePacked.value = false
     activeShipment.value = shipmentId
     nextTick(() => {
-      console.log('packing data contains', packingData.value)
       // Find the index in the packingData array based on the shipment ID
       const shipmentIndex = shipments.value.findIndex((shipment) => shipment.id === shipmentId)
-      console.log('shipmentIndex: ' + shipmentIndex)
       if (shipmentIndex !== -1) {
         const activePackingData = packingData.value[shipmentIndex]
         if (activePackingData) {
-          console.log('Adding the following to the scene', activePackingData)
           initThreeJS(`three-container-${shipmentId}`, isDark.value, activePackingData)
         } else {
           console.error(`No valid packing data found for shipment ${shipmentId}`)

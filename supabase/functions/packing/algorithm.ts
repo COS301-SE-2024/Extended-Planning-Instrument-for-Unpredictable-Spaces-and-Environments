@@ -350,6 +350,7 @@ export function geneticAlgorithm(
     return { data: { fitness: 0, boxes: [] } }
   }
   const boxes = boxesData.map((data) => new Box(data))
+  console.log('Boxes', boxes)
   let population = initializePopulation(popSize, boxes)
 
   let bestContainer: Container | null = null
@@ -395,6 +396,13 @@ export function geneticAlgorithm(
     if (currentIterations >= 16) {
       break
     }
+  }
+  console.log('Current iterations', currentIterations)
+  console.log('Current best Container', bestContainer)
+
+  if (!bestContainer) {
+    console.error('No valid container was found during the genetic algorithm execution.')
+    return { data: { fitness: 0, boxes: [] } }
   }
 
   const finalSolution = {

@@ -131,7 +131,6 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 
   toggleDialog()
   for (const shipment of shipmentsToPack.value) {
-    console.log('calling fetch for shipmentID', shipment.id)
     await runPackingAlgo(shipment.id)
   }
 }
@@ -164,7 +163,6 @@ const runPackingAlgo = async (shipmentId) => {
       await uploadSolution(shipmentId, containerDimensions)
     } else {
       packingResults.value = responsedata.boxes
-      console.log('received from API', packingResults.value)
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
     }
   } catch (e) {
@@ -193,7 +191,6 @@ async function uploadSolution(shipmentId, containerDimensions) {
     }
 
     const result = data
-    console.log('Sending in result', result)
 
     const response = await fetch(
       'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
@@ -226,7 +223,6 @@ async function uploadSolution(shipmentId, containerDimensions) {
         console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
       }
       packingResults.value = responsedata.boxes
-      console.log('Packing Results:', packingResults.value)
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
     }
   } catch (error) {
