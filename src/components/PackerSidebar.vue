@@ -131,6 +131,7 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 
   toggleDialog()
   for (const shipment of shipmentsToPack.value) {
+    console.log('calling fetch for shipmentID', shipment.id)
     await runPackingAlgo(shipment.id)
   }
 }
@@ -147,11 +148,11 @@ const runPackingAlgo = async (shipmentId) => {
       })
     })
     const responsedata = await response.json()
-    console.log('ERROR ', responsedata.error)
     if (responsedata.error) {
       await uploadSolution(shipmentId, containerDimensions)
     } else {
       packingResults.value = responsedata.boxes
+      console.log('recieved from api', packingResults.value)
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
     }
   } catch (e) {
@@ -170,7 +171,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
     })
 
     if (error) {
-      console.error('PACKING API ERROR: ', error)
+      console.error('Error fetching packages for shipment: ', error)
       return
     }
 
@@ -181,14 +182,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
 
     const result = data
     console.log('Sending in result', result)
-    // console.log(
-    //   'BODY',
-    //   JSON.stringify({
-    //     shipmentID: shipmentId,
-    //     containerSize: containerDimensions,
-    //     boxes: result
-    //   })
-    // )
+
     const response = await fetch('https://my-flask-app-wj7u4v5cka-bq.a.run.app/uploadSolution', {
       method: 'POST',
       headers: {

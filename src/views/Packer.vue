@@ -19,7 +19,6 @@ const loading = ref(false)
 
 const toast = useToast()
 const isDark = useDark()
-const activeIndex = ref(0)
 
 const numberShipments = ref(null)
 const truckSize = [2350, 2390, 5898]
@@ -31,21 +30,19 @@ let userName
 async function getUsername() {
   const { data } = await supabase.auth.getSession()
   userName = data.session.user.identities[0].identity_data.name
-  // console.log(userName)
 }
 
 onMounted(() => {
   watch(
     [packingData, shipments],
     ([newPackingData, newShipments]) => {
-      // console.log('PACKING SOLUTION RECEIVED FROM Sidebar', newPackingData)
-      // console.log('Shipments:', newShipments)
       if (newPackingData.length > 0 && newShipments.length > 0 && activeShipment.value) {
         CONTAINER_SIZE = [1000, 1930, 1200]
         nextTick(() => {
           const activePackingData = newPackingData.find(
             (data) => data.shipmentId === activeShipment.value
           )
+          console.log('This is active packing data', activePackingData)
           if (activePackingData) {
             initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
           } else {
@@ -96,9 +93,9 @@ async function getShipmentByID() {
   }
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
-  const width = 1000
-  const height = 1930
-  const length = 1200
+  const width = CONTAINER_SIZE[0]
+  const height = CONTAINER_SIZE[2]
+  const length = CONTAINER_SIZE[3]
   const volume = width * height * length
 
   // Generate the JSON object
@@ -202,7 +199,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
   createContainer(scene, CONTAINER_SIZE)
 
   // Create boxes from packing data
-  console.log(packingDataType)
+  // console.log(packingDataType)
   if (packingDataType) {
     createBoxesFromData(scene, packingDataType)
   } else {
@@ -470,7 +467,8 @@ const handleJsonData = (json) => {
     })
     return
   }
-
+  console.log('Recieved Data:', newPackingData)
+  console.log('storing it at index:', counter)
   packingData.value[counter++] = newPackingData
   loading.value = false
 }
@@ -487,12 +485,14 @@ function toggleShipment(shipmentId) {
   } else {
     activeShipment.value = shipmentId
     nextTick(() => {
+      console.log('packing data contains', packingData.value)
       // Find the index in the packingData array based on the shipment ID
       const shipmentIndex = shipments.value.findIndex((shipment) => shipment.id === shipmentId)
-      // console.log('HELOOOOOOOOOOOOOOO: ', shipmentIndex)
+      console.log('shipmentIndex: ' + shipmentIndex)
       if (shipmentIndex !== -1) {
         const activePackingData = packingData.value[shipmentIndex]
         if (activePackingData) {
+          console.log('Adding the following to the scene', activePackingData)
           initThreeJS(`three-container-${shipmentId}`, isDark.value, activePackingData)
         } else {
           console.error(`No valid packing data found for shipment ${shipmentId}`)
@@ -532,9 +532,8 @@ function toggleShipment(shipmentId) {
       />
     </div> -->
     <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', 'h-[100vh]']">
-      <div class="flex flex-wrap justify-center gap-4 p-4">
+      <div v-if="!loading" class="flex flex-wrap justify-center gap-4 p-4">
         <Button
-          v-if="!loading"
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
