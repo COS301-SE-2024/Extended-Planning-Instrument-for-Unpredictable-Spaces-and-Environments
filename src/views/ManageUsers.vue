@@ -124,6 +124,17 @@ const fetchUsers = async () => {
 }
 const DelteUser = async () => {
   loadingDel.value = true
+  if (selectedUser.value.Email === currentUser.value.email) {
+    loadingDel.value = false
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'You are not allowed delete yourself',
+      life: 10000
+    })
+    return
+  }
+
   const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
   console.log(sanitizedEmail)
   try {
