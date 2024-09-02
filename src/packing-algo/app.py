@@ -50,7 +50,7 @@ def get_solution():
         solution_json = genetic_algorithm(box_data, (container_width, container_height, container_depth), sio)
         solution_string = json.dumps(solution_json)
 
-        file_name = f"{shipment_id}_{int(time.time())}.json"
+        file_name = f"shipment_{shipment_id}.json"
         file_path = f"solutions/{file_name}"
 
         response = supabase.storage.from_("solutions").upload(file_path, solution_string.encode('utf-8'))
@@ -72,7 +72,7 @@ def get_solution2():
         if shipment_id is None:
             return jsonify({"error": "shipmentID is required"}), 400
 
-        file_name = f"{shipment_id}.json"
+        file_name = f"shipment_{shipment_id}.json"
         file_path = f"solutions/{file_name}"
 
         files = supabase.storage.from_("solutions").list()
