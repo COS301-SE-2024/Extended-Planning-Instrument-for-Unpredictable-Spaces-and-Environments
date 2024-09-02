@@ -206,7 +206,7 @@ const updateShipmentStartTime = async (shipmentID) => {
   }
 }
 
-const encryptionKey = Deno.env.get('ENCRYPTION_KEY') || 'default_key'; // Use Deno.env.get for environment variables, or a fallback key
+const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
 const uploadSignature = async (signature, shipmentID) => {
   try {
     // Log the incoming Data URL for debugging
