@@ -87,7 +87,7 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
   const volume = width * height * length
 
   // Generate the JSON object
-  const shipmentJson = data.map((shipment, index) => ({
+  const shipmentJson = data.map((shipment) => ({
     id: shipment.id,
     Width: width,
     Height: height,
@@ -155,7 +155,6 @@ function initThreeJS(containerId, isDark, packingDataType) {
   directionalLight.position.set(1, 1, 1)
   scene.add(directionalLight)
 
-  // Create container
   if (cratePacked.value) {
     createContainer(scene, truckSize)
     console.log('sending in trucpackingData')
@@ -165,13 +164,6 @@ function initThreeJS(containerId, isDark, packingDataType) {
     createBoxesFromData(scene, packingDataType)
   }
 
-  // if (packingDataType) {
-  //   createBoxesFromData(scene, packingDataType)
-  // } else {
-  //   console.error('Invalid packing data structure:', packingDataType)
-  // }
-
-  // Add scale
   addScale(scene, CONTAINER_SIZE)
 
   function animate() {

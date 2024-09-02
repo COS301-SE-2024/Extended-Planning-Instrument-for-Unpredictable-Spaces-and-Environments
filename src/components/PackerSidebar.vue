@@ -1,9 +1,8 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
-import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm.ts'
 import { createPDF } from '@/QRcodeGenerator'
 import { FilterMatchMode } from 'primevue/api'
 
