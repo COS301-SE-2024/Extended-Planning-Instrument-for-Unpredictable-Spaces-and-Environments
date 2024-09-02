@@ -62,34 +62,24 @@ onMounted(() => {
 })
 
 async function getShipmentByID() {
-  const { data, error2 } = await supabase.functions.invoke('core', {
-    body: JSON.stringify({
-      type: 'getShipmentByDeliveryID',
-      deliveryID: 1
-    }),
-    method: 'POST'
-  })
+  if (shipments.value && Array.isArray(shipments.value)) {
+    numberShipments.value = shipments.value.length
 
-  if (error2) {
-    console.log('Error fetching shipments by ID: ', error2)
+    console.log('Number of shipments: ', numberShipments.value)
+
+    isNewSceneVisible.value = true
+
+    CONTAINER_SIZE[0] = truckSize[0]
+    CONTAINER_SIZE[1] = truckSize[1]
+    CONTAINER_SIZE[2] = truckSize[2]
+
+    await CreateJSONBoxes(shipments.value, CONTAINER_SIZE)
+
+    nextTick(() => {
+      initThreeJS('new-three-container', isDark.value, truckpackingData)
+    })
   } else {
-    if (data && Array.isArray(data.data)) {
-      numberShipments.value = data.data.length
-
-      console.log('Number of shipments: ', numberShipments.value)
-
-      isNewSceneVisible.value = true
-
-      CONTAINER_SIZE[0] = truckSize[0]
-      CONTAINER_SIZE[1] = truckSize[1]
-      CONTAINER_SIZE[2] = truckSize[2]
-
-      await CreateJSONBoxes(data.data, CONTAINER_SIZE)
-
-      nextTick(() => {
-        initThreeJS('new-three-container', isDark.value, truckpackingData)
-      })
-    }
+    console.log('No shipments available to process.')
   }
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
@@ -121,36 +111,6 @@ function getColorForWeight(weight, minWeight, maxWeight) {
 
   return `rgb(${red}, ${green}, 0)`
 }
-// function cleanupThreeJS(containerId) {
-//   const container = document.getElementById(containerId)
-//   if (container) {
-//     while (container.firstChild) {
-//       container.removeChild(container.firstChild)
-//     }
-//   }
-
-//   if (window.threeJSScenes && window.threeJSScenes[containerId]) {
-//     const scene = window.threeJSScenes[containerId].scene
-//     const renderer = window.threeJSScenes[containerId].renderer
-
-//     // Dispose of scene objects
-//     scene.traverse((object) => {
-//       if (object.geometry) object.geometry.dispose()
-//       if (object.material) {
-//         if (Array.isArray(object.material)) {
-//           object.material.forEach((material) => material.dispose())
-//         } else {
-//           object.material.dispose()
-//         }
-//       }
-//     })
-
-//     // Dispose of renderer
-//     renderer.dispose()
-
-//     delete window.threeJSScenes[containerId]
-//   }
-// }
 
 let scene, camera, renderer, controls
 
