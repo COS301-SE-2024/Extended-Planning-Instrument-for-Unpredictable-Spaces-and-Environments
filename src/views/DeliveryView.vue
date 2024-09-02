@@ -318,7 +318,7 @@ const updateDeliveryStatus = async () => {
 function save(shipmentid) {
   if (signaturePad.value) {
     const { data } = signaturePad.value.saveSignature()
-    uploadSigntaure(data, shipmentid)
+    uploadSignature(data, shipmentid)
     if (pendingLocations.value.length > 0) {
       pendingLocations.value.shift() // Remove the first (current) destination
       if (pendingLocations.value.length > 0) {
@@ -392,6 +392,13 @@ const updateTimelineEvent = (updatedShipment) => {
     }
   }
 }
+
+const isPopiAccepted = ref(false);
+const isPopiDialogVisible = ref(false);
+
+const showPopiInfo = () => {
+  isPopiDialogVisible.value = true;
+};
 
 const startNewDelivery = () => {
   showStartNewDeliveryOverlay.value = false
@@ -514,6 +521,7 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
+  
     <DeliverySidebar
       @handle-delivery="handleDeliveryFromSidebar"
       @start-new-delivery="startNewDelivery"
@@ -525,6 +533,7 @@ export default {
         'w-full  text-white flex-col mb-10'
       ]"
     >
+    
       <div
         :class="[
           isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-100 text-black',
@@ -658,9 +667,73 @@ export default {
             :options="option2"
             v-else
           />
+          <!-- Checkbox and Link -->
+                    <div class="flex justify-center items-center mt-4">
+            <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2">
+            <br><br>
+            <label for="acceptPopi" class="text-sm">
+              I accept the 
+              <a href="#" @click="showPopiInfo" class="underline text-blue-500">POPI information
+              </a>.
+            
+            </label>
+          </div>
+
+          <!-- POPI Information Dialog -->
+          <Dialog v-model:visible="isPopiDialogVisible" :modal="true" :closable="true">
+            <div class="p-4">
+              <h2 class="text-xl font-bold mb-4">POPI Information</h2>
+              
+              <!-- Why We Store Signatures -->
+              <h3 class="text-lg font-semibold mt-2">Why We Store Your Signature</h3>
+              <p class="text-sm mb-4">
+                Your signature is collected and stored to verify the authenticity of deliveries and to ensure that the 
+                correct recipient has received the goods. This is part of our commitment to maintaining high standards 
+                of security and accuracy in our delivery processes. By storing your signature, we can prevent fraud, 
+                resolve disputes, and improve the overall delivery experience.
+              </p>
+              
+              <!-- How Long We Store It -->
+              <h3 class="text-lg font-semibold mt-2">How Long We Will Store Your Signature</h3>
+              <p class="text-sm mb-4">
+                We retain your signature for a period of 2 years, which is the minimum period required by law 
+                or our internal policies. After this period, your signature will be securely deleted from our systems.
+                This retention period allows us to meet legal obligations and ensure that we can provide support in case 
+                of any future queries or disputes regarding your delivery.
+              </p>
+              
+              <!-- How We Protect It -->
+              <h3 class="text-lg font-semibold mt-2">How We Protect Your Signature</h3>
+              <p class="text-sm mb-4">
+                Protecting your personal information is our top priority. Your signature is encrypted using 
+                industry-standard encryption protocols both in transit and at rest. Only authorized personnel 
+                have access to this information, and we regularly review our security practices to ensure that 
+                your data remains safe from unauthorized access, loss, or misuse.
+              </p>
+              
+              <!-- Where We Store It -->
+              <h3 class="text-lg font-semibold mt-2">Where We Store Your Signature</h3>
+              <p class="text-sm mb-4">
+                Your signature is stored securely in our supabase servers located in New York. 
+                These servers comply with all relevant data protection regulations and are managed by trusted service providers 
+                who adhere to strict security standards. We ensure that all data storage practices meet the requirements of the 
+                POPI Act and other applicable laws.
+              </p>
+              
+              <!-- Close Button -->
+              <button
+                @click="isPopiDialogVisible = false"
+                class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+              >
+                Close
+              </button>
+            </div>
+          </Dialog>
+
 
           <div>
             <Button
+            :disabled="!isPopiAccepted"
               class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
               @click="save(selectedShipmentId)"
               >Save</Button
