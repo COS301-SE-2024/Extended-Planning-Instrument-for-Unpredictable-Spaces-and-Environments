@@ -9,6 +9,7 @@ import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import { useToggleDialog } from '../components/packerDialog'
 
 const packingData = ref([]) // Changed to an array
 const truckpackingData = ref([])
@@ -24,8 +25,11 @@ const numberShipments = ref(null)
 const truckSize = [2350, 2390, 5898]
 const isNewSceneVisible = ref(false)
 const cratePacked = ref(false)
+const remainingShipmentToPack = ref(null)
 
 const shipments = ref([])
+
+const { showStartPackingOvererlay, toggleDialog } = useToggleDialog()
 
 let userName
 async function getUsername() {
@@ -33,7 +37,16 @@ async function getUsername() {
   userName = data.session.user.identities[0].identity_data.name
 }
 
+function startNewDelivery() {
+  toggleDialog()
+}
+
 onMounted(() => {
+  const savedProgress = localStorage.getItem('packingProgress')
+  if (savedProgress) {
+    showStartPackingOvererlay.value = !showStartPackingOvererlay.value
+  }
+
   watch(
     [packingData, shipments],
     ([newPackingData, newShipments]) => {
@@ -493,7 +506,29 @@ function toggleShipment(shipmentId) {
         aria-label="Custom ProgressSpinner"
       />
     </div> -->
-    <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', 'h-[100vh]']">
+
+    <div
+      v-if="showStartPackingOvererlay"
+      :class="[
+        isDark ? 'dark text-neutral-400' : 'light text-neutral-800',
+        'h-[100vh] flex flex-col items-center justify-center my-10'
+      ]"
+    >
+      <h2 class="text-4xl mb-4">Please Click To Start Packing A New Delivery</h2>
+      <Button
+        @click="startNewDelivery"
+        class="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600"
+      >
+        Start New Delivery
+      </Button>
+      <p
+        @click="toggleDialog"
+        class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      >
+        Help
+      </p>
+    </div>
+    <div v-else :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', 'h-[100vh]']">
       <div v-if="!loading" class="flex flex-wrap justify-center gap-4 p-4">
         <Button
           v-for="shipment in shipments"
@@ -519,7 +554,7 @@ function toggleShipment(shipmentId) {
         </Button>
       </div>
 
-      <div class="flex justify-center mt-4">
+      <div v-if="remainingShipmentToPack < numberShipments" class="flex justify-center mt-4">
         <Button
           class="w-[98%] bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
           @click="getShipmentByID"
@@ -542,7 +577,6 @@ function toggleShipment(shipmentId) {
           ]"
         ></div>
       </div>
-
       <p
         @click="toggleDialog"
         class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"

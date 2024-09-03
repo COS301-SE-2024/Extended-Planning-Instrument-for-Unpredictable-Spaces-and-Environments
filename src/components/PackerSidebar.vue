@@ -5,6 +5,14 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
 import { FilterMatchMode } from 'primevue/api'
+import { useToggleDialog } from './packerDialog'
+import Dialog from 'primevue/dialog'
+
+const containerDimensions = [1200, 1930, 1000]
+
+const packingResults = ref({})
+const shipmentsToPack = ref(null)
+const showShipmentSelection = ref(false)
 
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -31,10 +39,9 @@ const filteredShipments = computed(() => {
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
-const dialogVisible = ref(false)
-const toggleDialog = () => {
-  dialogVisible.value = !dialogVisible.value
-}
+// const dialogVisible = ref(false)
+
+const { dialogVisible, toggleStartNewPacking, toggleDialog } = useToggleDialog()
 
 async function logout() {
   const { error } = await supabase.auth.signOut()
@@ -98,20 +105,23 @@ const items = [
   }
 ]
 
-async function printQRcode() {
-  if (!packingResults.value) {
-    alert('Please select a Shipment to pack first')
-  } else {
-    // console.log(packingResults.value)
-    await createPDF(packingResults.value.data.boxes)
+function printQRcode() {
+  if (Object.keys(packingResults.value).length === 0) {
+    alert('No shipments have been packed yet.')
+    return
   }
+  showShipmentSelection.value = true
 }
 
-const containerDimensions = [1200, 1930, 1000]
-
-const packingResults = ref(null)
-const shipmentsToPack = ref(null)
-
+async function printSelectedShipment(shipmentId) {
+  const selectedResult = packingResults.value[shipmentId]
+  if (selectedResult) {
+    await createPDF(selectedResult)
+    showShipmentSelection.value = false
+  } else {
+    console.error(`No packing result found for shipment ${shipmentId}`)
+  }
+}
 async function fetchShipmentsFromDelivery(DeliveryID) {
   const { data, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
@@ -161,8 +171,8 @@ const runPackingAlgo = async (shipmentId) => {
     if (errorObj && errorObj.error) {
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      packingResults.value = responsedata.boxes
-      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
+      packingResults.value[shipmentId] = responsedata.boxes
+      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (e) {
     console.error('Failure to fetch solution', e)
@@ -231,6 +241,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
 
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
+  toggleStartNewPacking()
 }
 
 onMounted(() => {
@@ -299,6 +310,24 @@ onMounted(() => {
         </div>
       </template>
     </Menubar>
+    <Dialog
+      v-model:visible="showShipmentSelection"
+      header="Select Shipment to Print"
+      :modal="true"
+      :closable="true"
+      class="w-[50vw]"
+    >
+      <div class="flex flex-wrap justify-center gap-4">
+        <Button
+          v-for="shipmentId in Object.keys(packingResults)"
+          :key="shipmentId"
+          :label="`Print Shipment #${shipmentId}`"
+          class="m-2"
+          @click="printSelectedShipment(shipmentId)"
+        />
+      </div>
+    </Dialog>
+
     <Dialog
       header="Edit User Profile"
       v-model:visible="dialogVisible"

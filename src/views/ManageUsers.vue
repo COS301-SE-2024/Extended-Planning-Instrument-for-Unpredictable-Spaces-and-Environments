@@ -129,7 +129,7 @@ const DelteUser = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'You are not allowed delete yourself',
+      detail: 'You are not allowed delete yourself, deleting employees need to be authorized',
       life: 10000
     })
     return

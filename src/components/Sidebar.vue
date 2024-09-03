@@ -537,6 +537,7 @@ const processShipment = async () => {
                 throw new Error('Failed to insert package')
               }
             }
+
             toast.add({
               severity: 'success',
               summary: 'Success',
