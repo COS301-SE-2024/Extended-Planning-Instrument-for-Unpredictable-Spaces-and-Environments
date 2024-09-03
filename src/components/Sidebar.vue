@@ -543,6 +543,10 @@ const processShipment = async () => {
               detail: 'Shipments and packages inserted successfully',
               life: 4000
             })
+            const { error: deleteError } = await deleteCSV(supabase, selectedFile.value.name)
+            if (deleteError) {
+              console.error('Error deleting the CSV file:', deleteError)
+            }
           }
         }
       }
