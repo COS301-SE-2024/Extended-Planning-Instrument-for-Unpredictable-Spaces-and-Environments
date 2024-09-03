@@ -320,16 +320,23 @@ onMounted(() => {
       header="Select Shipment to Print"
       :modal="true"
       :closable="true"
-      class="w-[50vw]"
+      class="w-[50%]"
     >
-      <div class="flex flex-wrap justify-center gap-4">
+      <div class="flex flex-wrap justify-center gap-4 m-2">
         <Button
           v-for="shipmentId in Object.keys(packingResults)"
           :key="shipmentId"
           :label="`Print Shipment #${shipmentId}`"
-          class="m-2"
+          class="my-4 px-4 py-2 bg-orange-500 text-gray-200 rounded flex items-center"
           @click="printSelectedShipment(shipmentId)"
         />
+      </div>
+      <div class="flex flex-wrap justify-center">
+        <Button
+          @click="showShipmentSelection = !showShipmentSelection"
+          class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+          >Close</Button
+        >
       </div>
     </Dialog>
 
