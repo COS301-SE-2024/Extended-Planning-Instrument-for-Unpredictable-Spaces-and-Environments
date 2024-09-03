@@ -1,7 +1,7 @@
 <script setup>
 // DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref, onMounted } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -9,7 +9,6 @@ import DialogComponent from '@/components/DialogComponent.vue'
 // let localUser
 const emailError = ref(false)
 const passwordError = ref(false)
-
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
@@ -21,13 +20,53 @@ const email = ref('')
 const password = ref('')
 const router = useRouter()
 
+const failedAttempts = ref(0)
+const cooldownEndTime = ref(0)
+const cooldownMessage = ref('')
+
+// Computed property to check if the cooldown is active
+const isCooldownActive = computed(() => {
+  return Date.now() < cooldownEndTime.value
+})
+
+// Watch the cooldown end time and update the countdown message
+watchEffect(() => {
+  if (isCooldownActive.value) {
+    const interval = setInterval(() => {
+      const remainingTime = Math.ceil((cooldownEndTime.value - Date.now()) / 1000)
+      cooldownMessage.value = `Too many failed attempts. Please wait ${Math.floor(remainingTime / 60)} minutes and ${remainingTime % 60} seconds before trying again.`
+
+      if (!isCooldownActive.value) {
+        clearInterval(interval)
+      }
+    }, 1000)
+  } else {
+    cooldownMessage.value = ''
+  }
+})
+
 const signIn = async () => {
+  const currentTime = Date.now()
+
+  if (isCooldownActive.value) {
+    return
+  }
+
+  if (failedAttempts.value >= 10) {
+    alert("You have exceeded the maximum number of attempts. Please reset your password.")
+    router.push({ name: 'forgot-password' }) // Redirect to password reset page
+    return
+  }
+
   const { user, error } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value
   })
+  
   if (error) {
     console.log(error)
+    failedAttempts.value++
+    
     if (error.message.includes('email')) {
       emailError.value = true
       passwordError.value = false
@@ -39,10 +78,17 @@ const signIn = async () => {
       emailError.value = true
       passwordError.value = true
     }
+
+    if (failedAttempts.value >= 3) {
+      let cooldownMinutes = Math.pow(2, failedAttempts.value - 3) * 10
+      cooldownEndTime.value = Date.now() + cooldownMinutes * 60000
+    }
+    
     // You might want to set a more specific error message here
     console.error(error.message)
   } else {
     console.log('User signed in:', user)
+    failedAttempts.value = 0 // Reset failed attempts on successful login
     router.push({ name: 'callback' })
   }
 }
@@ -158,8 +204,9 @@ const signInWithProvider = async (provider) => {
           @input="passwordError = false"
           @blur="validatePassword"
         />
-        <div v-if="passwordError" class="w-full bg-red-200 border-red-500 border-2 rounded-md mt-8">
+        <div v-if="passwordError || isCooldownActive" class="w-full bg-red-200 border-red-500 border-2 rounded-md mt-8">
           <p class="text-red-500 p-4">Incorrect email or password.</p>
+          <p v-if="cooldownMessage" class="text-red-500 p-4">{{ cooldownMessage }}</p>
         </div>
 
         <router-link to="/forgot-password" class="mt-6 text-center text-md text-orange-500">
@@ -168,6 +215,8 @@ const signInWithProvider = async (provider) => {
         <button
           type="submit"
           class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition-transform duration-300 ease-in-out transform hover:translate-y-[-4px]"
+          :disabled="isCooldownActive"
+          :class="isCooldownActive ? 'opacity-50 cursor-not-allowed' : ''"
         >
           Sign In
         </button>
@@ -224,23 +273,6 @@ const signInWithProvider = async (provider) => {
       >
         Help
       </p>
-      <!-- <div class="flex items-center justify-center">
-        <div
-          @click="toggleDark"
-          :class="[
-            isDark ? 'text-white bg-neutral-900' : 'text-neutral-800 bg-gray-200 shadow-sm',
-            'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-          ]"
-        >
-          <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-            <span v-if="isDark">Light Mode</span>
-            <span v-else>Dark Mode</span>
-          </p>
-          <button class="focus:outline-none">
-            <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-          </button>
-        </div>
-      </div> -->
     </div>
 
     <DialogComponent
@@ -270,6 +302,7 @@ const toggleDialog = () => {
   showDialog.value = !showDialog.value
 }
 </script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
