@@ -177,21 +177,29 @@ class GeneticAlgorithmSolver:
             self.iteration_count += 1
 
     def select_parents(self, population, fitness, num_parents):
+        if len(population) <= 1:
+            return population
+
         ranks = np.argsort(np.argsort(fitness))
         rank_sum = np.sum(ranks)
         if rank_sum == 0:
-            raise ValueError("Sum of ranks is zero, check ranking method.")
-        selection_probs = ranks / rank_sum
-        parents_indices = self.rng.choice(len(population), size=num_parents, replace=False, p=selection_probs)
+            selection_probs = np.ones(len(population)) / len(population)
+        else:
+            selection_probs = ranks / rank_sum
+        parents_indices = self.rng.choice(len(population), size=min(num_parents, len(population)), replace=False, p=selection_probs)
         return [population[idx] for idx in parents_indices]
 
     def crossover(self, parent1, parent2):
+        if len(parent1) <= 1:
+            return parent1, parent2  
         crossover_point = self.rng.randint(0, len(parent1))
         child1 = parent1[:crossover_point] + [b for b in parent2 if b not in parent1[:crossover_point]]
         child2 = parent2[:crossover_point] + [b for b in parent1 if b not in parent2[:crossover_point]]
         return child1, child2
 
     def mutate(self, individual, mutation_rate):
+        if len(individual) <= 1:
+            return
         for i in range(len(individual)):
             if self.rng.random() < mutation_rate:
                 j = self.rng.randint(0, len(individual) - 1)
