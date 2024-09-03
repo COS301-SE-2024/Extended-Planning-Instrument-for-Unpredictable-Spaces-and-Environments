@@ -341,32 +341,50 @@ const onDetect = (result) => {
   console.log('QR code detected:', result)
 
   try {
-    // Parse the rawValue field which contains the actual JSON data
-    console.log(result[0])
-    console.log(result[0].rawValue.id)
-
     const parsedData = JSON.parse(result[0].rawValue)
+    console.log('Parsed QR data:', parsedData)
 
-    // Now parsedData contains the JSON object, and you can access the id
-
-    // Assume packingData.value contains the current boxes in the scene
-    if (packingData.value && Array.isArray(packingData.value.boxes)) {
-      packingData.value.boxes.forEach((box) => {
-        // Find the box in the Three.js scene with the matching ID
-        const matchingBox = scene.getObjectByName(`box-${box.id}`)
-        console.log(box.id === parsedData.id)
-        if (matchingBox) {
-          if (box.id === parsedData.id) {
-            // Set the color to purple for the matching box
-            matchingBox.material.color.set('rgb(128, 0, 128)')
-            matchingBox.material.opacity = 1.0 // Fully opaque
-          } else {
-            // Set the color to white and lower opacity for other boxes
-            matchingBox.material.color.set(0xffffff) // White color
-            matchingBox.material.opacity = 0.1 // Lower opacity
-          }
-        }
+    if (!activeShipment.value) {
+      console.error('No active shipment selected')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No active shipment selected',
+        life: 3000
       })
+      return
+    }
+
+    console.log('Active Shipment:', activeShipment.value)
+    // if (!activePackingData || !Array.isArray(activePackingData.boxes)) {
+    //   console.error('No valid packing data found for active shipment')
+    //   toast.add({
+    //     severity: 'error',
+    //     summary: 'Error',
+    //     detail: 'No valid packing data for active shipment',
+    //     life: 3000
+    //   })
+    //   return
+    // }
+
+    activePackingData.boxes.forEach((box) => {
+      const matchingBox = scene.getObjectByName(`box-${box.id}`)
+      console.log(`Comparing box ID ${box.id} with parsed ID ${parsedData.id}`)
+
+      if (matchingBox) {
+        if (box.id === parsedData.id) {
+          matchingBox.material.color.set('rgb(128, 0, 128)') // Purple for matching box
+          matchingBox.material.opacity = 1.0 // Fully opaque
+        } else {
+          matchingBox.material.color.set(0xffffff) // White for non-matching boxes
+          matchingBox.material.opacity = 0.1 // Lower opacity
+        }
+      }
+    })
+
+    // Render the scene to reflect the changes
+    if (renderer) {
+      renderer.render(scene, camera)
     }
   } catch (error) {
     console.error('Failed to parse QR code:', error)
@@ -514,7 +532,7 @@ function toggleShipment(shipmentId) {
         'h-[100vh] flex flex-col items-center justify-center my-10'
       ]"
     >
-      <h2 class="text-4xl mb-4">Please Click To Start Packing A New Delivery</h2>
+      <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
       <Button
         @click="startNewDelivery"
         class="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600"
