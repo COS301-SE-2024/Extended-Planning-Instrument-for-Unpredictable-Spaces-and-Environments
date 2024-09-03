@@ -11,7 +11,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog } from '../components/packerDialog'
 
-const packingData = ref([]) // Changed to an array
+const packingData = ref([])
 const truckpackingData = ref([])
 let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
@@ -333,12 +333,25 @@ const onError = (error) => {
   console.error('QR code scanning error:', error)
 }
 
+function checkAllBoxesScanned() {
+  const activePackingData = packingData.value.find(
+    (data) => data.shipmentId === activeShipment.value
+  )
+
+  if (activePackingData && activePackingData.boxes.every((box) => box.scanned)) {
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'All boxes for this shipment have been scanned!',
+      life: 3000
+    })
+  }
+}
+
 const onDetect = (result) => {
   setTimeout(() => {
     dialogVisible.value = false
   }, 750)
-  toast.add({ severity: 'success', summary: 'Success', detail: 'QR code detected!', life: 3000 })
-  console.log('QR code detected:', result)
 
   try {
     const parsedData = JSON.parse(result[0].rawValue)
@@ -355,33 +368,54 @@ const onDetect = (result) => {
       return
     }
 
-    console.log('Active Shipment:', activeShipment.value)
-    // if (!activePackingData || !Array.isArray(activePackingData.boxes)) {
-    //   console.error('No valid packing data found for active shipment')
-    //   toast.add({
-    //     severity: 'error',
-    //     summary: 'Error',
-    //     detail: 'No valid packing data for active shipment',
-    //     life: 3000
-    //   })
-    //   return
-    // }
+    const shipmentIndex = shipments.value.findIndex(
+      (shipment) => shipment.id === activeShipment.value
+    )
 
-    activePackingData.boxes.forEach((box) => {
-      const matchingBox = scene.getObjectByName(`box-${box.id}`)
-      console.log(`Comparing box ID ${box.id} with parsed ID ${parsedData.id}`)
+    if (shipmentIndex !== -1) {
+      const activePackingData = packingData.value[shipmentIndex]
 
-      if (matchingBox) {
-        if (box.id === parsedData.id) {
-          matchingBox.material.color.set('rgb(128, 0, 128)') // Purple for matching box
-          matchingBox.material.opacity = 1.0 // Fully opaque
+      if (Array.isArray(activePackingData.boxes)) {
+        const box = activePackingData.boxes.find((box) => box.id === parsedData.id)
+
+        if (box && !box.scanned) {
+          const matchingBox = scene.getObjectByName(`box-${box.id}`)
+
+          if (matchingBox) {
+            box.scanned = true
+            remainingShipmentToPack.value -= 1
+
+            matchingBox.material.color.set('rgb(128, 0, 128)')
+            matchingBox.material.opacity = 1.0
+
+            toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'QR code scanned and Box detected!',
+              life: 3000
+            })
+
+            // Check if all boxes are scanned and update status
+            checkAllBoxesScanned()
+          }
         } else {
-          matchingBox.material.color.set(0xffffff) // White for non-matching boxes
-          matchingBox.material.opacity = 0.1 // Lower opacity
+          toast.add({
+            severity: 'info',
+            summary: 'Already Scanned',
+            detail: 'This box has already been scanned.',
+            life: 3000
+          })
         }
+      } else {
+        console.error('Invalid activePackingData structure:', activePackingData)
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Invalid packing data structure',
+          life: 3000
+        })
       }
-    })
-
+    }
     // Render the scene to reflect the changes
     if (renderer) {
       renderer.render(scene, camera)
@@ -464,6 +498,13 @@ const handleJsonData = (json) => {
     })
     return
   }
+  console.log('Received packing data:', newPackingData)
+
+  const updatedData = newPackingData.map((box) => ({
+    ...box,
+    scanned: false
+  }))
+
   packingData.value[counter++] = newPackingData
   loading.value = false
 }

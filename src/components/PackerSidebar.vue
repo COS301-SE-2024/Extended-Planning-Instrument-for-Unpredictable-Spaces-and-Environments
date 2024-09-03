@@ -201,6 +201,8 @@ async function uploadSolution(shipmentId, containerDimensions) {
 
     const result = data
 
+    console.log('Sending in Packages', result)
+
     const response = await fetch(
       'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
       {
@@ -216,6 +218,9 @@ async function uploadSolution(shipmentId, containerDimensions) {
       }
     )
     const responsedata = await response.json()
+
+    console.log('RESPONSEDATA FROM UPDLOAD', responsedata)
+
     if (responsedata == null) {
       console.error('Failed to upload solution', responsedata)
     } else {
