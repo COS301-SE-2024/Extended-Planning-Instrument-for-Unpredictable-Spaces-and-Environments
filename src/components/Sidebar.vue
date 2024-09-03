@@ -545,7 +545,7 @@ const processShipment = async () => {
             })
 
             const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('core', {
-              body: JSON.stringify({ type: 'deleteFile', fileName: selectedFile.value.name }),
+              body: JSON.stringify({ type: 'deleteCSV', fileName: selectedFile.value.name }),
               method: 'POST'
             });
 
