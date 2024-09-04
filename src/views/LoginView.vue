@@ -1,7 +1,7 @@
 <script setup>
 // DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -45,6 +45,14 @@ watchEffect(() => {
   }
 })
 
+// Load the cooldownEndTime from localStorage when the component mounts
+onMounted(() => {
+  const storedCooldownEndTime = localStorage.getItem('cooldownEndTime')
+  if (storedCooldownEndTime) {
+    cooldownEndTime.value = parseInt(storedCooldownEndTime, 10)
+  }
+})
+
 const signIn = async () => {
   const currentTime = Date.now()
 
@@ -82,6 +90,9 @@ const signIn = async () => {
     if (failedAttempts.value >= 3) {
       let cooldownMinutes = Math.pow(2, failedAttempts.value - 3) * 10
       cooldownEndTime.value = Date.now() + cooldownMinutes * 60000
+
+      // Save the cooldownEndTime to localStorage
+      localStorage.setItem('cooldownEndTime', cooldownEndTime.value.toString())
     }
     
     // You might want to set a more specific error message here
@@ -89,6 +100,10 @@ const signIn = async () => {
   } else {
     console.log('User signed in:', user)
     failedAttempts.value = 0 // Reset failed attempts on successful login
+
+    // Clear the cooldownEndTime from localStorage on successful login
+    localStorage.removeItem('cooldownEndTime')
+
     router.push({ name: 'callback' })
   }
 }
@@ -112,6 +127,7 @@ const signInWithProvider = async (provider) => {
   }
 }
 </script>
+
 
 <template>
   <div
