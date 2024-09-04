@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
 import { FilterMatchMode } from 'primevue/api'
-import { useToggleDialog } from './packerDialog'
+import { isLoading, useToggleDialog } from './packerDialog'
 import Dialog from 'primevue/dialog'
 
 const containerDimensions = [1200, 1930, 1000]
@@ -42,6 +42,8 @@ const router = useRouter() // Use the router instance
 // const dialogVisible = ref(false)
 
 const { dialogVisible, toggleStartNewPacking, toggleDialog } = useToggleDialog()
+
+const { loadingShipments, startLoading, stopLoading } = isLoading()
 
 async function logout() {
   const { error } = await supabase.auth.signOut()
@@ -123,6 +125,8 @@ async function printSelectedShipment(shipmentId) {
   }
 }
 async function fetchShipmentsFromDelivery(DeliveryID) {
+  startLoading()
+  toggleDialog()
   const { data, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
       type: 'getShipmentByDeliveryID',
@@ -137,8 +141,6 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 
   shipmentsToPack.value = data.data
   emit('shipmentsLoaded', shipmentsToPack.value)
-
-  toggleDialog()
   for (const shipment of shipmentsToPack.value) {
     await runPackingAlgo(shipment.id)
   }
@@ -174,6 +176,7 @@ const runPackingAlgo = async (shipmentId) => {
       packingResults.value[shipmentId] = responsedata.boxes
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
+    stopLoading()
   } catch (e) {
     console.error('Failure to fetch solution', e)
   }
@@ -327,14 +330,14 @@ onMounted(() => {
           v-for="shipmentId in Object.keys(packingResults)"
           :key="shipmentId"
           :label="`Print Shipment #${shipmentId}`"
-          class="my-4 px-4 py-2 bg-orange-500 text-gray-200 rounded flex items-center"
+          class="my-4 px-4 py-2 bg-orange-500 text-gray-200 rounded-lg flex items-center"
           @click="printSelectedShipment(shipmentId)"
         />
       </div>
       <div class="flex flex-wrap justify-center">
         <Button
           @click="showShipmentSelection = !showShipmentSelection"
-          class="text-lg justify-center px-4 py-2 w-full bg-red-800"
+          class="text-lg text-gray-200 justify-center px-4 py-2 w-full rounded-lg bg-red-800"
           >Close</Button
         >
       </div>
@@ -375,7 +378,7 @@ onMounted(() => {
         </div>
         <p class="text-3xl mb-2">Current Shipments:</p>
       </div>
-      <div v-if="isLoading">Loading shipments...</div>
+      <div v-if="loadingShipments">Loading shipments...</div>
       <div v-else-if="errorMessage">{{ errorMessage }}</div>
       <div v-else class="pb-12">
         <!-- Adjust padding to avoid overlap -->

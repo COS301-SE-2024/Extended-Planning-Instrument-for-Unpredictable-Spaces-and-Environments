@@ -1,6 +1,6 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import * as THREE from 'three'
 import PackerSidebar from '@/components/PackerSidebar.vue'
 import { supabase } from '../supabase'
@@ -9,14 +9,14 @@ import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
-import { useToggleDialog } from '../components/packerDialog'
+import { useToggleDialog, isLoading } from '../components/packerDialog'
+import ProgressSpinner from 'primevue/progressspinner'
 
 const packingData = ref([])
 const truckpackingData = ref([])
 let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
 const activeShipment = ref(null)
-const loading = ref(false)
 
 const toast = useToast()
 const isDark = useDark()
@@ -31,10 +31,18 @@ const shipments = ref([])
 
 const { showStartPackingOvererlay, toggleDialog } = useToggleDialog()
 
-let userName
-async function getUsername() {
-  const { data } = await supabase.auth.getSession()
-  userName = data.session.user.identities[0].identity_data.name
+const { loadingShipments } = isLoading()
+
+const showHelpDialog = ref(false)
+
+const isScannedBoxesCollapsed = ref(false)
+
+const toggleDialogHelp = () => {
+  showHelpDialog.value = !showHelpDialog.value
+}
+
+const toggleScannedBoxes = () => {
+  isScannedBoxesCollapsed.value = !isScannedBoxesCollapsed.value
 }
 
 function startNewDelivery() {
@@ -46,6 +54,21 @@ onMounted(() => {
   if (savedProgress) {
     showStartPackingOvererlay.value = !showStartPackingOvererlay.value
   }
+  watch(isDark, (newValue) => {
+    if (scene && renderer) {
+      // Update background color
+      renderer.setClearColor(newValue ? 0x000000 : 0xffffff)
+
+      // Traverse the scene to update the wireframe color
+      scene.traverse((object) => {
+        if (object.type === 'LineSegments') {
+          // Look for wireframe objects
+          object.material.color.set(newValue ? 0xffffff : 0x000000) // Set wireframe color based on theme
+          object.material.needsUpdate = true // Mark the material for update
+        }
+      })
+    }
+  })
 
   watch(
     [packingData, shipments],
@@ -57,7 +80,7 @@ onMounted(() => {
             (data) => data.shipmentId === activeShipment.value
           )
           console.log('This is active packing data', activePackingData)
-          if (activePackingData) {
+          if (activePackingData && activePackingData.length > 0) {
             initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
           } else {
             console.error(`No valid packing data found for active shipment ${activeShipment.value}`)
@@ -77,10 +100,6 @@ onMounted(() => {
 
 async function getShipmentByID() {
   if (shipments.value && Array.isArray(shipments.value)) {
-    numberShipments.value = shipments.value.length
-
-    console.log('Number of shipments: ', numberShipments.value)
-
     isNewSceneVisible.value = true
 
     await CreateJSONBoxes(shipments.value, CONTAINER_SIZE)
@@ -108,14 +127,12 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
     Volume: volume,
     Weight: 10000
   }))
-  console.log('sending in boxes', shipmentJson)
-  console.log('container Dimensions', truckSize)
   truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 300, 0.01).data
 }
 
 function getColorForWeight(weight, minWeight, maxWeight) {
   if (minWeight === maxWeight) {
-    return 'rgb(128, 0, 128)' // Purple color when all boxes have the same weight
+    return '#facc15'
   }
 
   const normalizedWeight = (weight - minWeight) / (maxWeight - minWeight)
@@ -146,8 +163,11 @@ function initThreeJS(containerId, isDark, packingDataType) {
     0.1,
     10000
   )
-  camera.position.set(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
-
+  if (cratePacked.value) {
+    camera.position.set(truckSize[0], truckSize[1], truckSize[2])
+  } else {
+    camera.position.set(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
+  }
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
   renderer.setClearColor(isDark ? 0x000000 : 0xffffff)
@@ -159,21 +179,12 @@ function initThreeJS(containerId, isDark, packingDataType) {
   controls.screenSpacePanning = false
   controls.maxPolarAngle = Math.PI / 2
 
-  // Add ambient light
-  const ambientLight = new THREE.AmbientLight(0x404040)
-  scene.add(ambientLight)
-
-  // Add directional light
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
-  directionalLight.position.set(1, 1, 1)
-  scene.add(directionalLight)
-
   if (cratePacked.value) {
-    createContainer(scene, truckSize)
+    createContainer(scene, truckSize, isDark.value)
     console.log('sending in trucpackingData')
     createBoxesFromData(scene, packingDataType.boxes)
   } else {
-    createContainer(scene, CONTAINER_SIZE)
+    createContainer(scene, CONTAINER_SIZE, isDark.value)
     createBoxesFromData(scene, packingDataType)
   }
 
@@ -220,14 +231,14 @@ function cleanupThreeJS() {
   renderer = null
   controls = null
 }
-function createContainer(scene, CONTAINER_SIZE) {
+function createContainer(scene, CONTAINER_SIZE, isDark) {
   console.log('Creating container', CONTAINER_SIZE)
 
   const geometry = new THREE.BoxGeometry(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
-  const material = new THREE.MeshPhongMaterial({
-    color: 0xcccccc,
+  const material = new THREE.MeshBasicMaterial({
+    color: '#64748b',
     transparent: true,
-    opacity: 0.2,
+    opacity: 0.3,
     side: THREE.BackSide
   })
   const mesh = new THREE.Mesh(geometry, material)
@@ -236,7 +247,7 @@ function createContainer(scene, CONTAINER_SIZE) {
 
   // Add wireframe
   const edgesGeometry = new THREE.EdgesGeometry(geometry)
-  const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+  const edgesMaterial = new THREE.LineBasicMaterial({ color: isDark ? 0xffffff : 0x000000 })
   const wireframe = new THREE.LineSegments(edgesGeometry, edgesMaterial)
   mesh.add(wireframe)
 }
@@ -261,7 +272,7 @@ function createBoxesFromData(scene, boxesData) {
 
   boxesData.forEach((box) => {
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.length)
-    const material = new THREE.MeshPhongMaterial({
+    const material = new THREE.MeshBasicMaterial({
       color: new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight)),
       transparent: true,
       opacity: 0.7
@@ -333,18 +344,22 @@ const onError = (error) => {
   console.error('QR code scanning error:', error)
 }
 
-function checkAllBoxesScanned() {
-  const activePackingData = packingData.value.find(
-    (data) => data.shipmentId === activeShipment.value
-  )
+function checkAllBoxesScanned(shipmentIndex) {
+  const currentSoln = packingData.value[shipmentIndex]
 
-  if (activePackingData && activePackingData.boxes.every((box) => box.scanned)) {
+  if (currentSoln && Array.isArray(currentSoln) && currentSoln.every((box) => box.scanned)) {
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'All boxes for this shipment have been scanned!',
       life: 3000
     })
+    console.log('Everything is scanned')
+    remainingShipmentToPack.value += 1
+    console.log('Remaining shipment to pack:', remainingShipmentToPack.value)
+    console.log('Total shipments', numberShipments.value)
+  } else {
+    console.log('Not all boxes have been scanned yet or invalid data structure.')
   }
 }
 
@@ -355,7 +370,6 @@ const onDetect = (result) => {
 
   try {
     const parsedData = JSON.parse(result[0].rawValue)
-    console.log('Parsed QR data:', parsedData)
 
     if (!activeShipment.value) {
       console.error('No active shipment selected')
@@ -375,37 +389,58 @@ const onDetect = (result) => {
     if (shipmentIndex !== -1) {
       const activePackingData = packingData.value[shipmentIndex]
 
-      if (Array.isArray(activePackingData.boxes)) {
-        const box = activePackingData.boxes.find((box) => box.id === parsedData.id)
-
-        if (box && !box.scanned) {
+      if (Array.isArray(activePackingData)) {
+        activePackingData.forEach((box) => {
           const matchingBox = scene.getObjectByName(`box-${box.id}`)
 
-          if (matchingBox) {
-            box.scanned = true
-            remainingShipmentToPack.value -= 1
+          if (box.scanned) {
+            if (box.id === parsedData.id) {
+              toast.add({
+                severity: 'info',
+                summary: 'Already Scanned',
+                detail: 'This box has already been scanned.',
+                life: 3000
+              })
+              return
+            } else {
+              matchingBox.material.color.set('#16a34a')
+              matchingBox.material.opacity = 1.0
 
-            matchingBox.material.color.set('rgb(128, 0, 128)')
-            matchingBox.material.opacity = 1.0
+              const wireframe = matchingBox.children.find(
+                (child) => child instanceof THREE.LineSegments
+              )
+              if (wireframe) {
+                wireframe.material.color.set('#000000')
+              }
+            }
+          } else {
+            if (box.id === parsedData.id) {
+              matchingBox.material.color.set('#c084fc')
+              matchingBox.material.opacity = 1.0
+              box.scanned = true
 
-            toast.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'QR code scanned and Box detected!',
-              life: 3000
-            })
+              toast.add({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'QR code scanned and Box detected!',
+                life: 3000
+              })
 
-            // Check if all boxes are scanned and update status
-            checkAllBoxesScanned()
+              checkAllBoxesScanned(shipmentIndex)
+              console.log('After checking if all scanned', packingData.value[shipmentIndex])
+            } else {
+              matchingBox.material.color.set('#cbd5e1')
+              matchingBox.material.opacity = 0.1
+
+              const wireframe = matchingBox.children.find(
+                (child) => child instanceof THREE.LineSegments
+              )
+              if (wireframe) {
+                wireframe.material.color.set('#27272a')
+              }
+            }
           }
-        } else {
-          toast.add({
-            severity: 'info',
-            summary: 'Already Scanned',
-            detail: 'This box has already been scanned.',
-            life: 3000
-          })
-        }
+        })
       } else {
         console.error('Invalid activePackingData structure:', activePackingData)
         toast.add({
@@ -505,14 +540,12 @@ const handleJsonData = (json) => {
     scanned: false
   }))
 
-  packingData.value[counter++] = newPackingData
-  loading.value = false
+  packingData.value[counter++] = updatedData
 }
 
 const handleShipmentsLoaded = (loadedShipments) => {
-  loading.value = true
   shipments.value = loadedShipments
-  // console.log('Shipments loaded:', shipments.value)
+  numberShipments.value = shipments.value.length
 }
 
 function toggleShipment(shipmentId) {
@@ -543,34 +576,71 @@ function toggleShipment(shipmentId) {
     })
   }
 }
+
+const scannedBoxes = computed(() => {
+  if (!activeShipment.value) return []
+  const shipmentIndex = shipments.value.findIndex(
+    (shipment) => shipment.id === activeShipment.value
+  )
+  if (shipmentIndex === -1) return []
+  return packingData.value[shipmentIndex].filter((box) => box.scanned)
+})
+
+function highlightBox(boxId) {
+  const box = scene.getObjectByName(`box-${boxId}`)
+  if (box) {
+    // Store original color
+    if (!box.userData.originalColor) {
+      box.userData.originalColor = box.material.color.getHex()
+    }
+
+    box.material.color.set('#ef4444')
+    // Reset color after 2 seconds
+    setTimeout(() => {
+      box.material.color.setHex(box.userData.originalColor)
+      renderer.render(scene, camera)
+    }, 4000)
+
+    renderer.render(scene, camera)
+  }
+}
 </script>
 
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-200 text-black',
+      isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-100 text-black',
       ' h-full flex flex-col shadow-lg'
     ]"
   >
     <PackerSidebar @handle-json="handleJsonData" @shipments-loaded="handleShipmentsLoaded" />
-    <!-- <div
+    <div
       class="loading-new"
-      v-if="loading"
+      v-if="loadingShipments"
       :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
     >
+      <img
+        :src="
+          isDark
+            ? '/Members/Photos/Logos/Logo-Light-Transparent.svg'
+            : '/Members/Photos/Logos/Logo-Dark-Transparent.svg'
+        "
+        class="logo"
+        alt="Logo"
+      />
       <ProgressSpinner
         style="width: 150px; height: 150px"
         strokeWidth="4"
         animationDuration=".5s"
         aria-label="Custom ProgressSpinner"
       />
-    </div> -->
+    </div>
 
     <div
       v-if="showStartPackingOvererlay"
       :class="[
         isDark ? 'dark text-neutral-400' : 'light text-neutral-800',
-        'h-[100vh] flex flex-col items-center justify-center my-10'
+        'h-[100vh] flex flex-col items-center justify-center'
       ]"
     >
       <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
@@ -588,7 +658,7 @@ function toggleShipment(shipmentId) {
       </p>
     </div>
     <div v-else :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-800', 'h-[100vh]']">
-      <div v-if="!loading" class="flex flex-wrap justify-center gap-4 p-4">
+      <div v-if="!loadingShipments" class="flex flex-wrap justify-center gap-4 p-4">
         <Button
           v-for="shipment in shipments"
           :key="shipment.id"
@@ -601,9 +671,7 @@ function toggleShipment(shipmentId) {
           Show Shipment #{{ shipment.id }}
         </Button>
       </div>
-
       <div v-if="activeShipment" class="mt-4">
-        <div :id="`three-container-${activeShipment}`" class="w-full h-[80vh] mb-4"></div>
         <Button
           class="w-full bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
           @click="dialogVisible = true"
@@ -613,12 +681,71 @@ function toggleShipment(shipmentId) {
         </Button>
       </div>
 
-      <div v-if="remainingShipmentToPack < numberShipments" class="flex justify-center mt-4">
+      <div v-if="activeShipment" class="mt-4 flex">
+        <div
+          :class="isScannedBoxesCollapsed ? 'w-16' : 'w-1/4'"
+          class="transition-all duration-300 bg-gray-100 p-4 overflow-y-auto max-h-[80vh]"
+        >
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-bold mb-2" v-if="!isScannedBoxesCollapsed">Scanned Boxes</h3>
+            <button
+              @click="toggleScannedBoxes"
+              class="bg-orange-500 text-white p-2 rounded"
+              :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
+            >
+              <i class="pi pi-chevron-left"></i>
+            </button>
+          </div>
+          <ul v-if="!isScannedBoxesCollapsed">
+            <li
+              v-for="box in scannedBoxes"
+              :key="box.id"
+              @click="highlightBox(box.id)"
+              class="cursor-pointer hover:bg-gray-200 p-2 rounded"
+            >
+              Box {{ box.id }}
+            </li>
+          </ul>
+        </div>
+
+        <div :id="`three-container-${activeShipment}`" class="w-3/4 h-[80vh] mb-4 relative">
+          <div class="absolute top-2 right-2 bg-white p-2 shadow-lg rounded">
+            <div class="flex items-center mb-1">
+              <span class="w-4 h-4 inline-block mr-2" style="background-color: #16a34a"></span>
+              <span>Previously Scanned</span>
+            </div>
+            <div class="flex items-center mb-1">
+              <span class="w-4 h-4 inline-block mr-2" style="background-color: #c084fc"></span>
+              <span>Newly Scanned</span>
+            </div>
+            <div class="flex items-center mb-1">
+              <span
+                class="w-4 h-4 inline-block mr-2"
+                style="background-color: #cbd5e1; opacity: 0.3"
+              ></span>
+              <span>Unscanned</span>
+            </div>
+            <div class="flex items-center mb-1">
+              <span
+                class="w-4 h-4 inline-block mr-2"
+                style="background-color: #ef4444; opacity: 1"
+              ></span>
+              <span>highlighted</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="numberShipments && remainingShipmentToPack === numberShipments"
+        class="flex justify-center mt-4"
+      >
         <Button
-          class="w-[98%] bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
+          class="w-full bg-green-800 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-"
           @click="getShipmentByID"
         >
           Confirm Shipment
+          <i class="pi pi-check indent-2"></i>
         </Button>
       </div>
       <div
@@ -637,7 +764,7 @@ function toggleShipment(shipmentId) {
         ></div>
       </div>
       <p
-        @click="toggleDialog"
+        @click="toggleDialogHelp"
         class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help
@@ -646,7 +773,7 @@ function toggleShipment(shipmentId) {
   </div>
   <div>
     <DialogComponent
-      v-if="showDialog"
+      v-if="showHelpDialog"
       :images="[
         { src: '/Members/Photos/main dashboard (packer).png', alt: 'Alternative Image 1' },
         { src: '/Members/Photos/packer-nav.png', alt: 'Alternative Image 2' },
@@ -657,8 +784,8 @@ function toggleShipment(shipmentId) {
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
       ]"
-      :dialogVisible="showDialog"
-      @close-dialog="toggleDialog"
+      :dialogVisible="showHelpDialog"
+      @close-dialog="toggleDialogHelp"
     />
   </div>
   <Dialog
@@ -694,14 +821,24 @@ export default {
     DialogComponent
   }
 }
-const showDialog = ref(false)
-const toggleDialog = () => {
-  showDialog.value = !showDialog.value
-}
 </script>
+<style scoped>
+.rotate-180 {
+  transform: rotate(180deg);
+}
+</style>
+
 <style>
 /* General styles */
 /* General styles for light mode */
+.qrcode-stream video {
+  transform: scaleX(-1);
+}
+
+.logo {
+  width: 500px; /* Adjust size as needed */
+  margin-bottom: 20px; /* Space between logo and spinner */
+}
 
 .light .custom-accordion .p-accordion-header .p-accordion-header-link {
   background-color: white;
@@ -883,6 +1020,6 @@ const toggleDialog = () => {
   height: 100vh;
   position: relative;
   overflow: hidden;
-  z-index: 9999999999999999999999999;
+  z-index: 99999;
 }
 </style>
