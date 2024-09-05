@@ -10,14 +10,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog, isLoading } from '../components/packerDialog'
 import ProgressSpinner from 'primevue/progressspinner'
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 
 const packingData = ref([])
 const truckpackingData = ref([])
 let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
 const activeShipment = ref(null)
+const iscurrentShipmentPacked = ref(false)
 
 const toast = useToast()
 const isDark = useDark()
@@ -26,7 +25,7 @@ const numberShipments = ref(null)
 const truckSize = [2350, 2390, 5898]
 const isNewSceneVisible = ref(false)
 const cratePacked = ref(false)
-const remainingShipmentToPack = ref(null)
+const remainingShipmentToPack = ref(0)
 
 const shipments = ref([])
 
@@ -56,12 +55,6 @@ function startNewDelivery() {
   toggleDialog()
 }
 
-let font
-const loader = new FontLoader()
-loader.load('/path/to/fonts/helvetiker_regular.typeface.json', (loadedFont) => {
-  font = loadedFont
-})
-
 onMounted(() => {
   const savedProgress = localStorage.getItem('packingProgress')
   if (savedProgress) {
@@ -69,7 +62,7 @@ onMounted(() => {
   }
   watch(isDark, (newValue) => {
     if (scene && renderer) {
-      renderer.setClearColor(newValue ? 0x000000 : 0xffffff)
+      renderer.setClearColor(newValue ? '#262626' : 0xffffff)
 
       scene.traverse((object) => {
         if (object.type === 'LineSegments') {
@@ -147,31 +140,6 @@ function getColorForWeight(weight, minWeight, maxWeight) {
   return `rgb(${red}, ${green}, 0)`
 }
 
-function createLabel(scene, text, position, isDark) {
-  if (!font) {
-    console.error('Font is not loaded yet.')
-    return
-  }
-
-  const textGeometry = new TextGeometry(text, {
-    font: font,
-    size: 50, // Adjust the size according to your container scale
-    height: 5, // Depth of the text
-    curveSegments: 12
-  })
-
-  const textMaterial = new THREE.MeshBasicMaterial({
-    color: isDark ? 0xffffff : 0x000000 // Adjust color based on the theme
-  })
-
-  const textMesh = new THREE.Mesh(textGeometry, textMaterial)
-
-  textMesh.position.set(position.x, position.y, position.z)
-  textMesh.lookAt(0, 0, 0) // Optional: Rotate the text to face the center of the scene
-
-  scene.add(textMesh)
-}
-
 let scene, camera, renderer, controls
 
 function initThreeJS(containerId, isDark, packingDataType) {
@@ -200,7 +168,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
   }
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.setClearColor(isDark ? '#171717' : 0xffffff)
+  renderer.setClearColor(isDark ? '#262626' : 0xffffff)
   container.appendChild(renderer.domElement)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -385,12 +353,19 @@ function checkAllBoxesScanned(shipmentIndex) {
       detail: 'All boxes for this shipment have been scanned!',
       life: 3000
     })
-    remainingShipmentToPack.value += 1
+    iscurrentShipmentPacked.value = true
   } else {
+    iscurrentShipmentPacked.value = false
     console.log('Not all boxes have been scanned yet or invalid data structure.')
   }
 }
+const checkIfBoxIdInRange = (scannedBoxId, activePackingData) => {
+  const boxIds = activePackingData.map((box) => box.id)
+  const minBoxId = Math.min(...boxIds)
+  const maxBoxId = Math.max(...boxIds)
 
+  return scannedBoxId >= minBoxId && scannedBoxId <= maxBoxId
+}
 const onDetect = (result) => {
   setTimeout(() => {
     dialogVisible.value = false
@@ -413,10 +388,21 @@ const onDetect = (result) => {
     const shipmentIndex = shipments.value.findIndex(
       (shipment) => shipment.id === activeShipment.value
     )
-    let found = false
     if (shipmentIndex !== -1) {
       const activePackingData = packingData.value[shipmentIndex]
       if (Array.isArray(activePackingData)) {
+        const isValidBox = checkIfBoxIdInRange(parsedData.id, activePackingData)
+
+        if (!isValidBox) {
+          toast.add({
+            severity: 'warn',
+            summary: 'Wrong Box detected',
+            detail: `The Box ${parsedData.id} is not part of the valid range for shipment ${activeShipment.value}`,
+            life: 3000
+          })
+          return
+        }
+
         activePackingData.forEach((box) => {
           const matchingBox = scene.getObjectByName(`box-${box.id}`)
 
@@ -446,7 +432,6 @@ const onDetect = (result) => {
               matchingBox.material.opacity = 1.0
               box.scanned = true
 
-              found = true
               const wireframe = matchingBox.children.find(
                 (child) => child instanceof THREE.LineSegments
               )
@@ -463,6 +448,7 @@ const onDetect = (result) => {
 
               checkAllBoxesScanned(shipmentIndex)
             } else {
+              // not the box so make it opace
               matchingBox.material.color.set('#f0f9ff')
               matchingBox.material.opacity = 0.1
 
@@ -484,15 +470,6 @@ const onDetect = (result) => {
           life: 3000
         })
       }
-    }
-
-    if (found) {
-      toast.add({
-        severity: 'warn',
-        summary: 'Wrong Box detected',
-        detail: `The Box ${parsedData.id} is not part of shipment ${activeShipment.value}`,
-        life: 3000
-      })
     }
 
     if (renderer) {
@@ -706,6 +683,11 @@ function highlightBox(boxId) {
     renderer.render(scene, camera)
   }
 }
+
+function resetShipment() {
+  iscurrentShipmentPacked.value = false
+  remainingShipmentToPack.value += 1
+}
 </script>
 
 <template>
@@ -773,29 +755,17 @@ function highlightBox(boxId) {
           Show Shipment #{{ shipment.id }}
         </Button>
       </div>
-      <div
-        v-if="numberShipments && remainingShipmentToPack === numberShipments"
-        class="flex justify-center mt-4"
-      >
-        <Button
-          class="w-full bg-green-800 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-"
-          @click="getShipmentByID"
-        >
-          Confirm Shipment
-          <i class="pi pi-check indent-2"></i>
-        </Button>
-      </div>
+
       <div
         v-if="activeShipment && numberShipments && remainingShipmentToPack !== numberShipments"
         class="mt-4"
       >
-        <Button
-          class="w-full bg-purple-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
-          @click="dialogVisible = true"
+        <h3
+          class="text-center text-3xl mb-4"
+          :class="[isDark ? 'bg-[#171717] text-neutral-200' : 'light text-neutral-800']"
         >
-          <span>Scan Barcode</span>
-          <i class="pi pi-barcode"></i>
-        </Button>
+          {{ remainingShipmentToPack }} / {{ numberShipments }} Shipments to Pack
+        </h3>
       </div>
 
       <div v-if="activeShipment" class="mt-4 flex">
@@ -826,6 +796,32 @@ function highlightBox(boxId) {
               {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
             </li>
           </ul>
+          <Button
+            class="w-full bg-violet-500 text-white mt-6 rounded-xl p-2 flex items-center justify-center space-x-2"
+            @click="dialogVisible = true"
+          >
+            <span>Scan Barcode</span>
+            <i class="pi pi-barcode"></i>
+          </Button>
+          <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
+            <Button
+              @click="resetShipment"
+              class="w-full p-2 mt-2 rounded-xl justify-center bg-green-700 text-white"
+              >Confirm Pallet</Button
+            >
+          </div>
+          <div
+            v-if="numberShipments && remainingShipmentToPack === numberShipments"
+            class="flex justify-center mt-4"
+          >
+            <Button
+              class="w-full bg-green-800 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-"
+              @click="getShipmentByID"
+            >
+              Confirm Shipment
+              <i class="pi pi-check indent-2"></i>
+            </Button>
+          </div>
         </div>
         <div :class="['flex-grow h-[80vh] mb-4 relative']">
           <div
