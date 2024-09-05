@@ -3,7 +3,6 @@ import { useDark } from '@vueuse/core'
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import * as THREE from 'three'
 import PackerSidebar from '@/components/PackerSidebar.vue'
-import { supabase } from '../supabase'
 import { QrcodeStream } from 'vue-qrcode-reader'
 import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -11,6 +10,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog, isLoading } from '../components/packerDialog'
 import ProgressSpinner from 'primevue/progressspinner'
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 
 const packingData = ref([])
 const truckpackingData = ref([])
@@ -37,6 +38,12 @@ const showHelpDialog = ref(false)
 
 const isScannedBoxesCollapsed = ref(false)
 
+const isKeyVisible = ref(true)
+
+function toggleKeyVisibility() {
+  isKeyVisible.value = !isKeyVisible.value
+}
+
 const toggleDialogHelp = () => {
   showHelpDialog.value = !showHelpDialog.value
 }
@@ -49,6 +56,12 @@ function startNewDelivery() {
   toggleDialog()
 }
 
+let font
+const loader = new FontLoader()
+loader.load('/path/to/fonts/helvetiker_regular.typeface.json', (loadedFont) => {
+  font = loadedFont
+})
+
 onMounted(() => {
   const savedProgress = localStorage.getItem('packingProgress')
   if (savedProgress) {
@@ -56,13 +69,10 @@ onMounted(() => {
   }
   watch(isDark, (newValue) => {
     if (scene && renderer) {
-      // Update background color
       renderer.setClearColor(newValue ? 0x000000 : 0xffffff)
 
-      // Traverse the scene to update the wireframe color
       scene.traverse((object) => {
         if (object.type === 'LineSegments') {
-          // Look for wireframe objects
           object.material.color.set(newValue ? 0xffffff : 0x000000) // Set wireframe color based on theme
           object.material.needsUpdate = true // Mark the material for update
         }
@@ -84,12 +94,6 @@ onMounted(() => {
             initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
           } else {
             console.error(`No valid packing data found for active shipment ${activeShipment.value}`)
-            toast.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: `Unable to display packing for shipment ${activeShipment.value}`,
-              life: 3000
-            })
           }
         })
       }
@@ -106,6 +110,7 @@ async function getShipmentByID() {
     cratePacked.value = true
     console.log('result of packing pallets', truckpackingData)
     nextTick(() => {
+      cleanupThreeJS()
       initThreeJS('new-three-container', isDark.value, truckpackingData.value[0])
     })
   } else {
@@ -142,6 +147,31 @@ function getColorForWeight(weight, minWeight, maxWeight) {
   return `rgb(${red}, ${green}, 0)`
 }
 
+function createLabel(scene, text, position, isDark) {
+  if (!font) {
+    console.error('Font is not loaded yet.')
+    return
+  }
+
+  const textGeometry = new TextGeometry(text, {
+    font: font,
+    size: 50, // Adjust the size according to your container scale
+    height: 5, // Depth of the text
+    curveSegments: 12
+  })
+
+  const textMaterial = new THREE.MeshBasicMaterial({
+    color: isDark ? 0xffffff : 0x000000 // Adjust color based on the theme
+  })
+
+  const textMesh = new THREE.Mesh(textGeometry, textMaterial)
+
+  textMesh.position.set(position.x, position.y, position.z)
+  textMesh.lookAt(0, 0, 0) // Optional: Rotate the text to face the center of the scene
+
+  scene.add(textMesh)
+}
+
 let scene, camera, renderer, controls
 
 function initThreeJS(containerId, isDark, packingDataType) {
@@ -170,7 +200,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
   }
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.setClearColor(isDark ? 0x000000 : 0xffffff)
+  renderer.setClearColor(isDark ? '#171717' : 0xffffff)
   container.appendChild(renderer.domElement)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -180,12 +210,11 @@ function initThreeJS(containerId, isDark, packingDataType) {
   controls.maxPolarAngle = Math.PI / 2
 
   if (cratePacked.value) {
-    createContainer(scene, truckSize, isDark.value)
-    console.log('sending in trucpackingData')
-    createBoxesFromData(scene, packingDataType.boxes)
+    createContainer(scene, truckSize, isDark)
+    createBoxesFromData(scene, packingDataType.boxes, true)
   } else {
-    createContainer(scene, CONTAINER_SIZE, isDark.value)
-    createBoxesFromData(scene, packingDataType)
+    createContainer(scene, CONTAINER_SIZE, isDark)
+    createBoxesFromData(scene, packingDataType, false)
   }
 
   addScale(scene, CONTAINER_SIZE)
@@ -252,9 +281,7 @@ function createContainer(scene, CONTAINER_SIZE, isDark) {
   mesh.add(wireframe)
 }
 
-function createBoxesFromData(scene, boxesData) {
-  console.log('createBoxesFromData', boxesData)
-
+function createBoxesFromData(scene, boxesData, truckPacked) {
   // Check if boxesData is a Vue ref and extract the actual value
   if (boxesData && boxesData.__v_isRef) {
     boxesData = boxesData._value
@@ -281,13 +308,17 @@ function createBoxesFromData(scene, boxesData) {
     mesh.position.set(box.x + box.width / 2, box.y + box.height / 2, box.z + box.length / 2)
 
     // Set the name of the mesh to identify it later
-    mesh.name = `box-${box.id}`
+    if (truckPacked) {
+      mesh.name = `shipment-${box.id}`
+    } else {
+      mesh.name = `box-${box.id}`
+    }
 
     scene.add(mesh)
 
     // Add wireframe
     const edgesGeometry = new THREE.EdgesGeometry(geometry)
-    const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+    const edgesMaterial = new THREE.LineBasicMaterial({ color: isDark ? 0xffffff : 0x000000 })
     const wireframe = new THREE.LineSegments(edgesGeometry, edgesMaterial)
     mesh.add(wireframe)
   })
@@ -354,10 +385,7 @@ function checkAllBoxesScanned(shipmentIndex) {
       detail: 'All boxes for this shipment have been scanned!',
       life: 3000
     })
-    console.log('Everything is scanned')
     remainingShipmentToPack.value += 1
-    console.log('Remaining shipment to pack:', remainingShipmentToPack.value)
-    console.log('Total shipments', numberShipments.value)
   } else {
     console.log('Not all boxes have been scanned yet or invalid data structure.')
   }
@@ -385,10 +413,9 @@ const onDetect = (result) => {
     const shipmentIndex = shipments.value.findIndex(
       (shipment) => shipment.id === activeShipment.value
     )
-
+    let found = false
     if (shipmentIndex !== -1) {
       const activePackingData = packingData.value[shipmentIndex]
-
       if (Array.isArray(activePackingData)) {
         activePackingData.forEach((box) => {
           const matchingBox = scene.getObjectByName(`box-${box.id}`)
@@ -419,6 +446,14 @@ const onDetect = (result) => {
               matchingBox.material.opacity = 1.0
               box.scanned = true
 
+              found = true
+              const wireframe = matchingBox.children.find(
+                (child) => child instanceof THREE.LineSegments
+              )
+              if (wireframe) {
+                wireframe.material.color.set('#27272a')
+              }
+
               toast.add({
                 severity: 'success',
                 summary: 'Success',
@@ -427,16 +462,15 @@ const onDetect = (result) => {
               })
 
               checkAllBoxesScanned(shipmentIndex)
-              console.log('After checking if all scanned', packingData.value[shipmentIndex])
             } else {
-              matchingBox.material.color.set('#cbd5e1')
+              matchingBox.material.color.set('#f0f9ff')
               matchingBox.material.opacity = 0.1
 
               const wireframe = matchingBox.children.find(
                 (child) => child instanceof THREE.LineSegments
               )
               if (wireframe) {
-                wireframe.material.color.set('#27272a')
+                wireframe.material.color.set('#f0f9ff')
               }
             }
           }
@@ -451,7 +485,16 @@ const onDetect = (result) => {
         })
       }
     }
-    // Render the scene to reflect the changes
+
+    if (found) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Wrong Box detected',
+        detail: `The Box ${parsedData.id} is not part of shipment ${activeShipment.value}`,
+        life: 3000
+      })
+    }
+
     if (renderer) {
       renderer.render(scene, camera)
     }
@@ -578,24 +621,83 @@ function toggleShipment(shipmentId) {
 }
 
 const scannedBoxes = computed(() => {
-  if (!activeShipment.value) return []
-  const shipmentIndex = shipments.value.findIndex(
-    (shipment) => shipment.id === activeShipment.value
-  )
-  if (shipmentIndex === -1) return []
-  return packingData.value[shipmentIndex].filter((box) => box.scanned)
+  if (isNewSceneVisible.value) {
+    return shipments.value.map((shipment) => ({
+      id: shipment.id,
+      type: 'shipment'
+    }))
+  } else if (activeShipment.value) {
+    const shipmentIndex = shipments.value.findIndex(
+      (shipment) => shipment.id === activeShipment.value
+    )
+    if (shipmentIndex === -1) return []
+    return packingData.value[shipmentIndex]
+      .filter((box) => box.scanned)
+      .map((box) => ({
+        id: box.id,
+        type: 'box'
+      }))
+  }
+  return []
 })
+
+function highlightItem(id, type) {
+  if (type === 'box') {
+    highlightBox(id)
+  } else if (type === 'shipment') {
+    highlightShipment(id)
+  }
+}
+
+function highlightShipment(shipmentId) {
+  if (!scene || !isNewSceneVisible.value) return
+
+  const shipmentObject = scene.getObjectByName(`shipment-${shipmentId}`)
+
+  if (shipmentObject) {
+    if (!shipmentObject.userData.originalColor) {
+      shipmentObject.userData.originalColor = shipmentObject.material.color.getHex()
+    }
+
+    shipmentObject.material.color.set('#ef4444')
+    shipmentObject.material.opacity = 1.0
+
+    // Ensure wireframe color is correct
+    shipmentObject.children.forEach((child) => {
+      if (child instanceof THREE.LineSegments) {
+        child.material.color.set(isDark.value ? 0xffffff : 0x000000)
+      }
+    })
+
+    setTimeout(() => {
+      shipmentObject.material.color.setHex(shipmentObject.userData.originalColor)
+      shipmentObject.material.opacity = 0.7
+      renderer.render(scene, camera)
+    }, 4000)
+
+    renderer.render(scene, camera)
+  } else {
+    console.warn(`Shipment with ID ${shipmentId} not found in the scene.`)
+  }
+}
 
 function highlightBox(boxId) {
   const box = scene.getObjectByName(`box-${boxId}`)
   if (box) {
-    // Store original color
     if (!box.userData.originalColor) {
       box.userData.originalColor = box.material.color.getHex()
     }
 
     box.material.color.set('#ef4444')
-    // Reset color after 2 seconds
+    box.material.opacity = 1.0
+
+    // Ensure wireframe color is correct
+    box.children.forEach((child) => {
+      if (child instanceof THREE.LineSegments) {
+        child.material.color.set(isDark.value ? 0xffffff : 0x000000)
+      }
+    })
+
     setTimeout(() => {
       box.material.color.setHex(box.userData.originalColor)
       renderer.render(scene, camera)
@@ -671,71 +773,6 @@ function highlightBox(boxId) {
           Show Shipment #{{ shipment.id }}
         </Button>
       </div>
-      <div v-if="activeShipment" class="mt-4">
-        <Button
-          class="w-full bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
-          @click="dialogVisible = true"
-        >
-          <span>Scan Barcode</span>
-          <i class="pi pi-barcode"></i>
-        </Button>
-      </div>
-
-      <div v-if="activeShipment" class="mt-4 flex">
-        <div
-          :class="isScannedBoxesCollapsed ? 'w-16' : 'w-1/4'"
-          class="transition-all duration-300 bg-gray-100 p-4 overflow-y-auto max-h-[80vh]"
-        >
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-bold mb-2" v-if="!isScannedBoxesCollapsed">Scanned Boxes</h3>
-            <button
-              @click="toggleScannedBoxes"
-              class="bg-orange-500 text-white p-2 rounded"
-              :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
-            >
-              <i class="pi pi-chevron-left"></i>
-            </button>
-          </div>
-          <ul v-if="!isScannedBoxesCollapsed">
-            <li
-              v-for="box in scannedBoxes"
-              :key="box.id"
-              @click="highlightBox(box.id)"
-              class="cursor-pointer hover:bg-gray-200 p-2 rounded"
-            >
-              Box {{ box.id }}
-            </li>
-          </ul>
-        </div>
-
-        <div :id="`three-container-${activeShipment}`" class="w-3/4 h-[80vh] mb-4 relative">
-          <div class="absolute top-2 right-2 bg-white p-2 shadow-lg rounded">
-            <div class="flex items-center mb-1">
-              <span class="w-4 h-4 inline-block mr-2" style="background-color: #16a34a"></span>
-              <span>Previously Scanned</span>
-            </div>
-            <div class="flex items-center mb-1">
-              <span class="w-4 h-4 inline-block mr-2" style="background-color: #c084fc"></span>
-              <span>Newly Scanned</span>
-            </div>
-            <div class="flex items-center mb-1">
-              <span
-                class="w-4 h-4 inline-block mr-2"
-                style="background-color: #cbd5e1; opacity: 0.3"
-              ></span>
-              <span>Unscanned</span>
-            </div>
-            <div class="flex items-center mb-1">
-              <span
-                class="w-4 h-4 inline-block mr-2"
-                style="background-color: #ef4444; opacity: 1"
-              ></span>
-              <span>highlighted</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div
         v-if="numberShipments && remainingShipmentToPack === numberShipments"
         class="flex justify-center mt-4"
@@ -749,23 +786,103 @@ function highlightBox(boxId) {
         </Button>
       </div>
       <div
-        v-if="isNewSceneVisible"
-        :class="[
-          isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-200 text-black',
-          ' h-full flex flex-col shadow-lg'
-        ]"
+        v-if="activeShipment && numberShipments && remainingShipmentToPack !== numberShipments"
+        class="mt-4"
       >
+        <Button
+          class="w-full bg-purple-500 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
+          @click="dialogVisible = true"
+        >
+          <span>Scan Barcode</span>
+          <i class="pi pi-barcode"></i>
+        </Button>
+      </div>
+
+      <div v-if="activeShipment" class="mt-4 flex">
         <div
-          :id="'new-three-container'"
           :class="[
-            'w-full mb-4',
-            { 'h-[80vh]': isNewSceneVisible, 'h-[300px]': !isNewSceneVisible }
+            isDark ? 'bg-zinc-800 text-neutral-200' : 'bg-gray-100 text-neutral-800',
+            isScannedBoxesCollapsed ? 'w-16' : 'w-1/4',
+            'transition-all duration-300 p-4 overflow-y-auto max-h-[80vh] shadow-inner'
           ]"
-        ></div>
+        >
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-bold mb-2" v-if="!isScannedBoxesCollapsed">Scanned Boxes</h3>
+            <button
+              @click="toggleScannedBoxes"
+              class="bg-orange-500 text-white p-2 rounded"
+              :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
+            >
+              <i class="pi pi-chevron-left"></i>
+            </button>
+          </div>
+          <ul v-if="!isScannedBoxesCollapsed">
+            <li
+              v-for="item in scannedBoxes"
+              :key="item.id"
+              @click="highlightItem(item.id, item.type)"
+              class="cursor-pointer hover:bg-gray-200 p-2 rounded"
+            >
+              {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
+            </li>
+          </ul>
+        </div>
+        <div :class="['flex-grow h-[80vh] mb-4 relative']">
+          <div
+            v-if="isNewSceneVisible"
+            :class="[
+              isDark ? 'dark bg-neutral-950 text-white' : 'bg-gray-200 text-black',
+              'h-full flex flex-col relative'
+            ]"
+          >
+            <div id="new-three-container" class="w-full h-full"></div>
+          </div>
+          <div v-else :id="`three-container-${activeShipment}`" class="w-full h-full">
+            <div
+              v-if="isKeyVisible"
+              :class="[
+                isDark ? 'bg-zinc-800 text-neutral-400' : 'bg-white text-neutral-800',
+                'absolute top-2 right-12 p-2 shadow-lg rounded z-20'
+              ]"
+            >
+              <div class="flex items-center mb-1">
+                <span class="w-4 h-4 inline-block mr-2" style="background-color: #16a34a"></span>
+                <span>Placed and/or Scanned</span>
+              </div>
+              <div class="flex items-center mb-1">
+                <span class="w-4 h-4 inline-block mr-2" style="background-color: #c084fc"></span>
+                <span>Newly Scanned</span>
+              </div>
+              <div class="flex items-center mb-1">
+                <span
+                  class="w-4 h-4 inline-block mr-2"
+                  style="background-color: #facc15; opacity: 1"
+                ></span>
+                <span>Unscanned</span>
+              </div>
+              <div class="flex items-center mb-1">
+                <span
+                  class="w-4 h-4 inline-block mr-2"
+                  style="background-color: #ef4444; opacity: 1"
+                ></span>
+                <span>Highlighted</span>
+              </div>
+            </div>
+            <button
+              @click="toggleKeyVisibility"
+              :class="[
+                isDark ? 'bg-neutral-700 text-white' : 'bg-gray-200 text-black',
+                'absolute top-2 right-2 p-2 rounded-full shadow-lg z-30'
+              ]"
+            >
+              <i :class="isKeyVisible ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+            </button>
+          </div>
+        </div>
       </div>
       <p
         @click="toggleDialogHelp"
-        class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        class="flex items-center justify-center mt-2 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help
       </p>
