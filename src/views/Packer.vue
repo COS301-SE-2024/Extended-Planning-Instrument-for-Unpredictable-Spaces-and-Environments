@@ -10,6 +10,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog, isLoading } from '../components/packerDialog'
 import ProgressSpinner from 'primevue/progressspinner'
+import { supabase } from '../supabase.js'
 
 const packingData = ref([])
 const truckpackingData = ref([])
@@ -52,13 +53,132 @@ const toggleScannedBoxes = () => {
 }
 
 function startNewDelivery() {
+  packingData.value = []
+  shipments.value = []
+  activeShipment.value = null
+
+  // Reset UI states
+  showStartPackingOvererlay.value = false
+  isNewSceneVisible.value = false
+  cratePacked.value = false
   toggleDialog()
 }
 
-onMounted(() => {
+const updateShipmentStatus = async (shipmentID, status) => {
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentStatus',
+        shipmentId: shipmentID,
+        newStatus: status
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for updating Status for shipment ${shipmentID}:`, error)
+    }
+  } catch (error) {
+    console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
+  }
+}
+
+// {
+//     "type": "updateShipmentStartTime",
+//     "shipmentId": "4",
+//     "newStartTime": "2024-08-19 14:35:00"
+
+// }
+
+const updateShipmentEndTime = async (shipmentID) => {
+  const currentDateTime = new Date()
+  const formattedTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ')
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentEndTime',
+        shipmentId: shipmentID,
+        newEndTime: formattedTime
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
+    }
+  } catch (error) {
+    console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
+  }
+}
+
+function saveProgress() {
+  const progressData = {
+    packingData: packingData.value,
+    activeShipment: activeShipment.value,
+    remainingShipmentToPack: remainingShipmentToPack.value,
+    shipments: shipments.value,
+    iscurrentShipmentPacked: iscurrentShipmentPacked.value
+  }
+  localStorage.setItem('packingProgress', JSON.stringify(progressData))
+}
+
+function loadProgress() {
   const savedProgress = localStorage.getItem('packingProgress')
   if (savedProgress) {
-    showStartPackingOvererlay.value = !showStartPackingOvererlay.value
+    const progressData = JSON.parse(savedProgress)
+    packingData.value = progressData.packingData
+    activeShipment.value = progressData.activeShipment
+    remainingShipmentToPack.value = progressData.remainingShipmentToPack
+    shipments.value = progressData.shipments
+    iscurrentShipmentPacked.value = progressData.iscurrentShipmentPacked
+    numberShipments.value = shipments.value.length
+    toggleShipment(activeShipment.value)
+    return true
+  }
+  return false
+}
+
+function closeDelivery() {
+  localStorage.removeItem('packingProgress')
+
+  packingData.value = []
+  activeShipment.value = null
+  remainingShipmentToPack.value = 0
+  shipments.value = []
+  iscurrentShipmentPacked.value = false
+  numberShipments.value = null
+  isNewSceneVisible.value = false
+  cratePacked.value = false
+
+  cleanupThreeJS()
+
+  showStartPackingOvererlay.value = true
+
+  dialogVisible.value = false
+  isScannedBoxesCollapsed.value = false
+
+  startNewDelivery()
+
+  toast.add({
+    severity: 'success',
+    summary: 'Delivery Closed',
+    detail: 'All progress has been reset. You can start a new delivery.',
+    life: 3000
+  })
+}
+
+onMounted(() => {
+  if (loadProgress()) {
+    showStartPackingOvererlay.value = false
+
+    nextTick(() => {
+      if (activeShipment.value) {
+        const activePackingData = packingData.value.find(
+          (data) => data.shipmentId === activeShipment.value
+        )
+        if (activePackingData) {
+          initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
+        }
+      }
+    })
   }
   watch(isDark, (newValue) => {
     if (scene && renderer) {
@@ -109,6 +229,7 @@ async function getShipmentByID() {
   } else {
     console.log('No shipments available to process.')
   }
+  saveProgress()
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
   const width = CONTAINER_SIZE[0]
@@ -475,6 +596,7 @@ const onDetect = (result) => {
     if (renderer) {
       renderer.render(scene, camera)
     }
+    saveProgress()
   } catch (error) {
     console.error('Failed to parse QR code:', error)
     toast.add({ severity: 'error', summary: 'Error', detail: 'Invalid QR code format', life: 3000 })
@@ -685,8 +807,12 @@ function highlightBox(boxId) {
 }
 
 function resetShipment() {
+  console.log('remaingBoxes', remainingShipmentToPack.value)
   iscurrentShipmentPacked.value = false
   remainingShipmentToPack.value += 1
+  updateShipmentStatus(activeShipment.value, 'Shipped')
+  updateShipmentEndTime(activeShipment.value)
+  saveProgress()
 }
 </script>
 
@@ -760,6 +886,15 @@ function resetShipment() {
         v-if="activeShipment && numberShipments && remainingShipmentToPack !== numberShipments"
         class="mt-4"
       >
+        <div v-if="remainingShipmentToPack === numberShipments" class="flex justify-center mt-4">
+          <Button
+            class="w-full bg-red-600 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
+            @click="closeDelivery"
+          >
+            Close Delivery
+            <i class="pi pi-times indent-2"></i>
+          </Button>
+        </div>
         <h3
           class="text-center text-3xl mb-4"
           :class="[isDark ? 'bg-[#171717] text-neutral-200' : 'light text-neutral-800']"

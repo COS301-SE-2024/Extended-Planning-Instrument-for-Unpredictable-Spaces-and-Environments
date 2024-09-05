@@ -74,6 +74,44 @@ const getAllProcessing = async () => {
   }
 }
 
+const updateShipmentStatus = async (shipmentID, status) => {
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentStatus',
+        shipmentId: shipmentID,
+        newStatus: status
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for updating Status for shipment ${shipmentID}:`, error)
+    }
+  } catch (error) {
+    console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
+  }
+}
+
+const updateShipmentStartTime = async (shipmentID) => {
+  const currentDateTime = new Date()
+  const formattedTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ')
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentStartTime',
+        shipmentId: shipmentID,
+        newStartTime: formattedTime
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
+    }
+  } catch (error) {
+    console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
+  }
+}
+
 const items = [
   {
     label: 'Start New Shipment',
@@ -143,6 +181,8 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
   emit('shipmentsLoaded', shipmentsToPack.value)
   for (const shipment of shipmentsToPack.value) {
     await runPackingAlgo(shipment.id)
+    updateShipmentStatus(shipment.id, 'Processing')
+    updateShipmentStartTime(shipment.id)
   }
 }
 
