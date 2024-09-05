@@ -908,20 +908,36 @@ function resetShipment() {
           :class="[
             isDark ? 'bg-zinc-800 text-neutral-200' : 'bg-gray-100 text-neutral-800',
             isScannedBoxesCollapsed ? 'w-16' : 'w-1/4',
-            'transition-all duration-300 p-4 overflow-y-auto max-h-[80vh] shadow-inner'
+            'transition-all duration-300   p-4 overflow-y-auto max-h-[80vh] shadow-inner'
           ]"
         >
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-bold mb-2" v-if="!isScannedBoxesCollapsed">
-              Scanned Boxes : Shipment {{ activeShipment }}
-            </h3>
+          <div class="flex flex-wrap flex-col justify-between items-center">
+            <div
+              v-if="
+                activeShipment &&
+                numberShipments &&
+                !isScannedBoxesCollapsed &&
+                remainingShipmentToPack !== numberShipments
+              "
+              class="mt-4"
+            >
+              <h3
+                class="text-center sm:text-xl text-sm mb-4 font-bold"
+                :class="[isDark ? ' text-neutral-200' : 'light text-neutral-800']"
+              >
+                {{ remainingShipmentToPack }} / {{ numberShipments }} Shipments to Pack
+              </h3>
+            </div>
             <button
               @click="toggleScannedBoxes"
-              class="bg-orange-500 text-white p-2 rounded"
+              class="bg-orange-500 text-white p-2 rounded w-full mb-4"
               :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
             >
               <i class="pi pi-chevron-left"></i>
             </button>
+            <h3 class="sm:text-lg text-sm font-bold mb-2" v-if="!isScannedBoxesCollapsed">
+              Scanned Boxes : Shipment {{ activeShipment }}
+            </h3>
           </div>
           <ul v-if="!isScannedBoxesCollapsed">
             <li
@@ -934,11 +950,11 @@ function resetShipment() {
             </li>
           </ul>
           <Button
-            class="w-full bg-violet-500 text-white mt-6 rounded-xl p-2 flex items-center justify-center space-x-2"
+            class="sm:text-lg text-sm w-full bg-violet-500 text-white mt-2 rounded-xl p-2 flex items-center justify-center"
             @click="dialogVisible = true"
             v-if="!isScannedBoxesCollapsed"
           >
-            <span>Scan Barcode</span>
+            <span class="hidden sm:inline sm:p-2 sm:text-lg text-sm">Scan Barcode</span>
             <i class="pi pi-barcode"></i>
           </Button>
           <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
