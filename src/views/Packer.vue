@@ -777,7 +777,9 @@ function resetShipment() {
           ]"
         >
           <div class="flex justify-between items-center">
-            <h3 class="text-lg font-bold mb-2" v-if="!isScannedBoxesCollapsed">Scanned Boxes</h3>
+            <h3 class="text-lg font-bold mb-2" v-if="!isScannedBoxesCollapsed">
+              Scanned Boxes : Shipment {{ activeShipment }}
+            </h3>
             <button
               @click="toggleScannedBoxes"
               class="bg-orange-500 text-white p-2 rounded"
@@ -799,6 +801,7 @@ function resetShipment() {
           <Button
             class="w-full bg-violet-500 text-white mt-6 rounded-xl p-2 flex items-center justify-center space-x-2"
             @click="dialogVisible = true"
+            v-if="!isScannedBoxesCollapsed"
           >
             <span>Scan Barcode</span>
             <i class="pi pi-barcode"></i>

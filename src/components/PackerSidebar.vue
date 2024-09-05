@@ -259,7 +259,7 @@ onMounted(() => {
 
 <template>
   <div :class="[isDark ? 'dark packer-sidebar' : 'light packer-sidebar', 'h-full']">
-    <Menubar :model="items" class="w-full specific-menubar">
+    <Menubar :model="items" class="w-full specific-menubar v-1">
       <template #start>
         <svg
           width="35"
@@ -348,7 +348,7 @@ onMounted(() => {
       v-model:visible="dialogVisible"
       :modal="true"
       :closable="false"
-      class="z-100000 w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4"
+      class="z-9999 w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4"
     >
       <div
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
