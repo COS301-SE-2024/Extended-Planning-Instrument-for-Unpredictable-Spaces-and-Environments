@@ -730,12 +730,12 @@ function resetShipment() {
       <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
       <Button
         @click="startNewDelivery"
-        class="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600"
+        class="bg-orange-500 mb-4 text-white px-4 py-2 rounded-xl hover:bg-orange-600"
       >
         Start New Delivery
       </Button>
       <p
-        @click="toggleDialog"
+        @click="toggleDialogHelp"
         class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help

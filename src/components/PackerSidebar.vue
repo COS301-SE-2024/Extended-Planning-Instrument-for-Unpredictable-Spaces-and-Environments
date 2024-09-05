@@ -348,7 +348,7 @@ onMounted(() => {
       v-model:visible="dialogVisible"
       :modal="true"
       :closable="false"
-      class="z-100000 w-[auto] p-4 h-[auto] relative mt-10 mb-10"
+      class="z-100000 w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4"
     >
       <div
         :class="[isDark ? ' text-white border-white' : ' text-black border-black', 'border-b-2']"
