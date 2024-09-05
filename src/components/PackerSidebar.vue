@@ -294,29 +294,6 @@ onMounted(() => {
           ></i>
         </a>
       </template>
-      <template #end>
-        <div class="flex items-center gap-2">
-          <div class="w-full md:w-[300px]">
-            <div
-              :class="[
-                isDark
-                  ? 'border-neutral-500 bg-neutral-950 text-white'
-                  : 'border-gray-500 bg-white text-black',
-                'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-orange-600'
-              ]"
-            >
-              <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-              <InputText
-                placeholder="Search"
-                :class="[
-                  isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-                  'focus:outline-none focus:ring-0'
-                ]"
-              />
-            </div>
-          </div>
-        </div>
-      </template>
     </Menubar>
     <Dialog
       v-model:visible="showShipmentSelection"
