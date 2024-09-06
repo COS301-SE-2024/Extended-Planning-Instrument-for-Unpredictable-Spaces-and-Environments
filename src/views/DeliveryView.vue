@@ -209,15 +209,8 @@ const updateShipmentStartTime = async (shipmentID) => {
 const encryptionKey = import.meta.env.ENCRYPTION_KEY;
 const uploadSignature = async (signature, shipmentID) => {
   try {
-    // Log the incoming Data URL for debugging
-    console.log('Original Signature Data URL:', signature);
-
     // Encrypt the signature
     const encryptedSignature = encryptData(signature, encryptionKey);
-
-    // Log the encrypted signature for debugging
-    console.log('Encrypted Signature:', encryptedSignature);
-
     // Call the API function to upload the signature
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
