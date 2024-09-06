@@ -7,7 +7,8 @@
 
 <script>
 import { ref, onMounted, watch } from 'vue'
-import { Loader } from '@googlemaps/js-api-loader'
+// import { Loader } from '@googlemaps/js-api-loader'
+import loader from '../googleMapsLoader.js'
 // import { useDark } from '@vueuse/core'
 
 const startingPosition = ref(null)
@@ -39,14 +40,6 @@ export default {
     let map = null
     let google = null
     // let watchId = null
-
-    // console.log('HERE IS PROPS FROM MAPS', props)
-
-    const loader = new Loader({
-      apiKey: 'AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g',
-      version: 'weekly',
-      libraries: ['places']
-    })
 
     const getLocation = () => {
       return new Promise((resolve, reject) => {

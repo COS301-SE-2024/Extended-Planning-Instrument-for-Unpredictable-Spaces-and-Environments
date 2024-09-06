@@ -1,4 +1,3 @@
-<!-- DELIVERYVIEW.VUE -->
 <script setup>
 import { useDark } from '@vueuse/core'
 import 'primeicons/primeicons.css'
@@ -7,10 +6,13 @@ import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
 import { supabase } from '@/supabase'
-import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
+import loader from '../googleMapsLoader.js'
+import CryptoJS from 'crypto-js';
+
 
 const isDark = useDark()
 
@@ -24,6 +26,17 @@ const mapDestination = ref(null)
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
+}
+function saveDeliveryProgress() {
+  const deliveryData = {
+    currentDelivery: currentDelivery.value,
+    shipmentsByDelivery: shipmentsByDelivery.value,
+    pendingLocations: pendingLocations.value,
+    currentDestination: currentDestination.value,
+    timelineEvents: timelineEvents.value,
+    activeShipmentIndex: activeShipmentIndex.value
+  }
+  localStorage.setItem('deliveryProgress', JSON.stringify(deliveryData))
 }
 
 const togglePopUpDialog = () => {
@@ -51,6 +64,36 @@ const updateScreenSize = () => {
 const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
 const signaturePad = ref(null)
+let google = null
+
+async function sortLocationsByDistance(origins, destinations) {
+  if (!google) {
+    google = window.google
+  }
+  const service = new google.maps.DistanceMatrixService()
+  const request = {
+    origins: [origins],
+    destinations: destinations,
+    travelMode: google.maps.TravelMode.DRIVING
+  }
+
+  return new Promise((resolve, reject) => {
+    service.getDistanceMatrix(request, (response, status) => {
+      if (status === google.maps.DistanceMatrixStatus.OK) {
+        const distanceList = []
+        for (let i = 0; i < response.rows[0].elements.length; i++) {
+          const distance = response.rows[0].elements[i].distance.value // distance in meters
+          distanceList.push([destinations[i], distance])
+        }
+        // Sort by distance (ascending)
+        distanceList.sort((a, b) => a[1] - b[1])
+        resolve(distanceList.map(([location]) => location))
+      } else {
+        reject(`Error: ${status}`)
+      }
+    })
+  })
+}
 
 const getShipmentByDeliveryId = async () => {
   try {
@@ -67,13 +110,26 @@ const getShipmentByDeliveryId = async () => {
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
-      shipmentsByDelivery.value[currentDelivery.value.id].push(...data.data)
 
-      if (data.data.length > 0 && data.data[0].Destination) {
-        mapDestination.value = data.data[0].Destination
+      const destinations = data.data.map((shipment) => shipment.Destination)
+      const origin = 'University of Pretoria'
+
+      const sortedLocations = await sortLocationsByDistance(origin, destinations)
+      const sortedShipments = sortedLocations.map((location) => {
+        return data.data.find((shipment) => shipment.Destination === location)
+      })
+
+      shipmentsByDelivery.value[currentDelivery.value.id] = sortedShipments
+
+      if (sortedLocations.length > 0) {
+        mapDestination.value = sortedLocations[0]
       }
+
       identifyPendingLocations()
       updateTimelineEvents()
+
+      // Save progress
+      saveDeliveryProgress()
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -118,7 +174,7 @@ const handleDeliveryFromSidebar = (delivery) => {
 
 const upDateShipmentStatus = async (shipmentId) => {
   try {
-    const { /*data,*/ error } = await supabase.functions.invoke('core', {
+    const { error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateShipmentStatus',
         shipmentId: shipmentId,
@@ -128,7 +184,6 @@ const upDateShipmentStatus = async (shipmentId) => {
     })
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
-    } else {
     }
   } catch (error) {
     console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
@@ -138,7 +193,7 @@ const upDateShipmentStatus = async (shipmentId) => {
 const updateShipmentStartTime = async (shipmentID) => {
   const currentDate = new Date().toISOString()
 
-  const { data, error } = await supabase.functions.invoke('core', {
+  const { error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
       type: 'updateShipmentStartTime',
       deliveryId: shipmentID,
@@ -148,41 +203,59 @@ const updateShipmentStartTime = async (shipmentID) => {
   })
   if (error) {
     console.error(`API Error for updating EndTime for delivery`, error)
-  } else {
   }
 }
 
-const uploadSigntaure = async (signature, shipmentID) => {
+const encryptionKey = import.meta.env.ENCRYPTION_KEY;
+const uploadSignature = async (signature, shipmentID) => {
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    // Log the incoming Data URL for debugging
+    console.log('Original Signature Data URL:', signature);
+
+    // Encrypt the signature
+    const encryptedSignature = encryptData(signature, encryptionKey);
+
+    // Log the encrypted signature for debugging
+    console.log('Encrypted Signature:', encryptedSignature);
+
+    // Call the API function to upload the signature
+    const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
-        dataURL: signature
+        dataURL: encryptedSignature
       }),
       method: 'POST'
-    })
-    if (error) {
-      console.error(`API Error for uploading signature`, error)
-    } else {
-      const currentDate = new Date().toISOString()
+    });
 
-      const { data, error } = await supabase.functions.invoke('core', {
-        body: JSON.stringify({
-          type: 'updateShipmentEndTime',
-          deliveryId: shipmentID,
-          newEndTime: currentDate
-        }),
-        method: 'POST'
-      })
-      if (error) {
-        console.error(`API Error for updating EndTime for delivery`, error)
-      } else {
-      }
+    if (uploadError) {
+      console.error('API Error for uploading signature:', uploadError);
+      return;
+    }
+
+    // Update the shipment end time after successful upload
+    const currentDate = new Date().toISOString();
+    const { error: updateError } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateShipmentEndTime',
+        deliveryId: shipmentID,
+        newEndTime: currentDate
+      }),
+      method: 'POST'
+    });
+
+    if (updateError) {
+      console.error('API Error for updating EndTime for delivery:', updateError);
     }
   } catch (error) {
-    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+    console.error('Error uploading signature or updating shipment:', error);
   }
+};
+
+// Helper function to encrypt data
+function encryptData(data, key) {
+  return CryptoJS.AES.encrypt(data, key).toString();
 }
+
 
 const openDialog = (item) => {
   dialogVisible.value = true
@@ -191,6 +264,17 @@ const openDialog = (item) => {
     id: item.shipment_id,
     destination: item.destination,
     status: item.status
+  }
+}
+const completeDelivery = async () => {
+  try {
+    await addDeliveryEndTime()
+    await updateDeliveryStatus()
+    alert('All destinations visited')
+    // Clear the saved delivery progress
+    localStorage.removeItem('deliveryProgress')
+  } catch (error) {
+    console.error('Error completing delivery:', error)
   }
 }
 
@@ -213,10 +297,28 @@ const addDeliveryEndTime = async () => {
   }
 }
 
+const updateDeliveryStatus = async () => {
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryStatus',
+        deliveryId: currentDelivery.value.id,
+        newStatus: 'Completed'
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log('API Error updating delivery status:', error)
+    }
+  } catch (error) {
+    console.error('Error updating delivery status', error)
+  }
+}
+
 function save(shipmentid) {
   if (signaturePad.value) {
     const { data } = signaturePad.value.saveSignature()
-    uploadSigntaure(data, shipmentid)
+    uploadSignature(data, shipmentid)
     if (pendingLocations.value.length > 0) {
       pendingLocations.value.shift() // Remove the first (current) destination
       if (pendingLocations.value.length > 0) {
@@ -233,8 +335,12 @@ function save(shipmentid) {
         currentDestination.value = ''
         upDateShipmentStatus(shipmentid)
         mapDestination.value = 'University of Pretoria'
-        alert('All destinations visited')
+
         addDeliveryEndTime()
+        updateDeliveryStatus()
+
+        // Call completeDelivery here
+        completeDelivery()
       }
     }
     activeShipmentIndex.value++
@@ -287,6 +393,13 @@ const updateTimelineEvent = (updatedShipment) => {
   }
 }
 
+const isPopiAccepted = ref(false);
+const isPopiDialogVisible = ref(false);
+
+const showPopiInfo = () => {
+  isPopiDialogVisible.value = true;
+};
+
 const startNewDelivery = () => {
   showStartNewDeliveryOverlay.value = false
   currentDelivery.value = null
@@ -296,6 +409,8 @@ const startNewDelivery = () => {
   timelineEvents.value = []
   confirmedShipments.value = new Set()
   mapDestination.value = null
+
+  saveDeliveryProgress()
 
   if (timelineEvents.value.length > 0) {
     const firstShipmentId = timelineEvents.value[0].shipment_id
@@ -354,13 +469,27 @@ const openInGoogleMaps = () => {
   }
 }
 onMounted(() => {
+  const savedProgress = localStorage.getItem('deliveryProgress')
+  if (savedProgress) {
+    const deliveryData = JSON.parse(savedProgress)
+    currentDelivery.value = deliveryData.currentDelivery
+    shipmentsByDelivery.value = deliveryData.shipmentsByDelivery
+    pendingLocations.value = deliveryData.pendingLocations
+    currentDestination.value = deliveryData.currentDestination
+    timelineEvents.value = deliveryData.timelineEvents
+    activeShipmentIndex.value = deliveryData.activeShipmentIndex
+    showStartNewDeliveryOverlay.value = !showStartNewDeliveryOverlay.value
+  }
+
   window.addEventListener('resize', updateScreenSize)
   setupSubscription()
 })
+
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize)
 })
 </script>
+
 <script>
 export default {
   name: 'MySignaturePad',
@@ -392,6 +521,7 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
+  
     <DeliverySidebar
       @handle-delivery="handleDeliveryFromSidebar"
       @start-new-delivery="startNewDelivery"
@@ -403,6 +533,7 @@ export default {
         'w-full  text-white flex-col mb-10'
       ]"
     >
+    
       <div
         :class="[
           isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-200 text-black',
@@ -536,9 +667,73 @@ export default {
             :options="option2"
             v-else
           />
+          <!-- Checkbox and Link -->
+                    <div class="flex justify-center items-center mt-4">
+            <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2">
+            <br><br>
+            <label for="acceptPopi" class="text-sm">
+              I accept the 
+              <a href="#" @click="showPopiInfo" class="underline text-blue-500">POPI information
+              </a>.
+            
+            </label>
+          </div>
+
+          <!-- POPI Information Dialog -->
+          <Dialog v-model:visible="isPopiDialogVisible" :modal="true" :closable="true">
+            <div class="p-4">
+              <h2 class="text-xl font-bold mb-4">POPI Information</h2>
+              
+              <!-- Why We Store Signatures -->
+              <h3 class="text-lg font-semibold mt-2">Why We Store Your Signature</h3>
+              <p class="text-sm mb-4">
+                Your signature is collected and stored to verify the authenticity of deliveries and to ensure that the 
+                correct recipient has received the goods. This is part of our commitment to maintaining high standards 
+                of security and accuracy in our delivery processes. By storing your signature, we can prevent fraud, 
+                resolve disputes, and improve the overall delivery experience.
+              </p>
+              
+              <!-- How Long We Store It -->
+              <h3 class="text-lg font-semibold mt-2">How Long We Will Store Your Signature</h3>
+              <p class="text-sm mb-4">
+                We retain your signature for a period of 2 years, which is the minimum period required by law 
+                or our internal policies. After this period, your signature will be securely deleted from our systems.
+                This retention period allows us to meet legal obligations and ensure that we can provide support in case 
+                of any future queries or disputes regarding your delivery.
+              </p>
+              
+              <!-- How We Protect It -->
+              <h3 class="text-lg font-semibold mt-2">How We Protect Your Signature</h3>
+              <p class="text-sm mb-4">
+                Protecting your personal information is our top priority. Your signature is encrypted using 
+                industry-standard encryption protocols both in transit and at rest. Only authorized personnel 
+                have access to this information, and we regularly review our security practices to ensure that 
+                your data remains safe from unauthorized access, loss, or misuse.
+              </p>
+              
+              <!-- Where We Store It -->
+              <h3 class="text-lg font-semibold mt-2">Where We Store Your Signature</h3>
+              <p class="text-sm mb-4">
+                Your signature is stored securely in our supabase servers located in New York. 
+                These servers comply with all relevant data protection regulations and are managed by trusted service providers 
+                who adhere to strict security standards. We ensure that all data storage practices meet the requirements of the 
+                POPI Act and other applicable laws.
+              </p>
+              
+              <!-- Close Button -->
+              <button
+                @click="isPopiDialogVisible = false"
+                class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+              >
+                Close
+              </button>
+            </div>
+          </Dialog>
+
 
           <div>
             <Button
+            :disabled="!isPopiAccepted"
               class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
               @click="save(selectedShipmentId)"
               >Save</Button
