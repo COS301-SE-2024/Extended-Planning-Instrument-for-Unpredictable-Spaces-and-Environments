@@ -82,12 +82,23 @@ const updateShipmentStatus = async (shipmentID, status) => {
   }
 }
 
-// {
-//     "type": "updateShipmentStartTime",
-//     "shipmentId": "4",
-//     "newStartTime": "2024-08-19 14:35:00"
-
-// }
+const updateDeliveryStatus = async (deliveryID, status) => {
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryStatus',
+        deliveryId: deliveryID,
+        newStatus: status
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for updating Status for delivery ${deliveryID}:`, error)
+    }
+  } catch (error) {
+    console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
+  }
+}
 
 const updateShipmentEndTime = async (shipmentID) => {
   const currentDateTime = new Date()
@@ -115,7 +126,9 @@ function saveProgress() {
     activeShipment: activeShipment.value,
     remainingShipmentToPack: remainingShipmentToPack.value,
     shipments: shipments.value,
-    iscurrentShipmentPacked: iscurrentShipmentPacked.value
+    iscurrentShipmentPacked: iscurrentShipmentPacked.value,
+    truckpackingData: truckpackingData.value,
+    cratePacked: cratePacked.value
   }
   localStorage.setItem('packingProgress', JSON.stringify(progressData))
 }
@@ -130,7 +143,15 @@ function loadProgress() {
     shipments.value = progressData.shipments
     iscurrentShipmentPacked.value = progressData.iscurrentShipmentPacked
     numberShipments.value = shipments.value.length
-    toggleShipment(activeShipment.value)
+    truckpackingData.value = progressData.truckpackingData
+    cratePacked.value = progressData.cratePacked
+
+    if (cratePacked.value) {
+      getShipmentByID()
+    } else {
+      toggleShipment(activeShipment.value)
+    }
+
     return true
   }
   return false
@@ -138,6 +159,9 @@ function loadProgress() {
 
 function closeDelivery() {
   localStorage.removeItem('packingProgress')
+  updateDeliveryStatus(shipments.value[0].Delivery_id, 'Shipped')
+
+  cleanupThreeJS()
 
   packingData.value = []
   activeShipment.value = null
@@ -147,15 +171,11 @@ function closeDelivery() {
   numberShipments.value = null
   isNewSceneVisible.value = false
   cratePacked.value = false
-
-  cleanupThreeJS()
+  truckpackingData.value = []
 
   showStartPackingOvererlay.value = true
-
   dialogVisible.value = false
   isScannedBoxesCollapsed.value = false
-
-  startNewDelivery()
 
   toast.add({
     severity: 'success',
@@ -308,11 +328,6 @@ function initThreeJS(containerId, isDark, packingDataType) {
 
   addScale(scene, CONTAINER_SIZE)
 
-  function animate() {
-    requestAnimationFrame(animate)
-    controls.update()
-    renderer.render(scene, camera)
-  }
   animate()
 
   window.addEventListener('resize', () => {
@@ -324,24 +339,48 @@ function initThreeJS(containerId, isDark, packingDataType) {
   })
 }
 
+let animationFrameId
+
+function animate() {
+  animationFrameId = requestAnimationFrame(animate)
+  if (controls) {
+    controls.update()
+  }
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera)
+  }
+}
+
 function cleanupThreeJS() {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+
   // Dispose of scene objects
-  scene.traverse((object) => {
-    if (object.geometry) object.geometry.dispose()
-    if (object.material) {
-      if (Array.isArray(object.material)) {
-        object.material.forEach((material) => material.dispose())
-      } else {
-        object.material.dispose()
+  if (scene) {
+    scene.traverse((object) => {
+      if (object.geometry) object.geometry.dispose()
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach((material) => material.dispose())
+        } else {
+          object.material.dispose()
+        }
       }
+    })
+  }
+
+  if (renderer) {
+    renderer.dispose()
+    const container = renderer.domElement.parentElement
+    if (container) {
+      container.removeChild(renderer.domElement)
     }
-  })
+  }
 
-  renderer.dispose()
-
-  const container = renderer.domElement.parentElement
-  if (container) {
-    container.removeChild(renderer.domElement)
+  if (controls) {
+    controls.dispose()
   }
 
   scene = null
@@ -349,6 +388,7 @@ function cleanupThreeJS() {
   renderer = null
   controls = null
 }
+
 function createContainer(scene, CONTAINER_SIZE, isDark) {
   console.log('Creating container', CONTAINER_SIZE)
 
@@ -388,8 +428,16 @@ function createBoxesFromData(scene, boxesData, truckPacked) {
 
   boxesData.forEach((box) => {
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.length)
+
+    let color
+    if (box.scanned) {
+      color = '#16a34a'
+    } else {
+      color = getColorForWeight(box.weight, minWeight, maxWeight)
+    }
+
     const material = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(getColorForWeight(box.weight, minWeight, maxWeight)),
+      color: new THREE.Color(color),
       transparent: true,
       opacity: 0.7
     })
@@ -807,9 +855,13 @@ function highlightBox(boxId) {
 }
 
 function resetShipment() {
-  console.log('remaingBoxes', remainingShipmentToPack.value)
-  iscurrentShipmentPacked.value = false
-  remainingShipmentToPack.value += 1
+  if (numberShipments.value === remainingShipmentToPack.value) {
+    iscurrentShipmentPacked.value = true
+  } else {
+    iscurrentShipmentPacked.value = false
+    remainingShipmentToPack.value += 1
+  }
+
   updateShipmentStatus(activeShipment.value, 'Shipped')
   updateShipmentEndTime(activeShipment.value)
   saveProgress()
@@ -882,27 +934,6 @@ function resetShipment() {
         </Button>
       </div>
 
-      <div
-        v-if="activeShipment && numberShipments && remainingShipmentToPack !== numberShipments"
-        class="mt-4"
-      >
-        <div v-if="remainingShipmentToPack === numberShipments" class="flex justify-center mt-4">
-          <Button
-            class="w-full bg-red-600 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
-            @click="closeDelivery"
-          >
-            Close Delivery
-            <i class="pi pi-times indent-2"></i>
-          </Button>
-        </div>
-        <h3
-          class="text-center text-3xl mb-4"
-          :class="[isDark ? 'bg-[#171717] text-neutral-200' : 'light text-neutral-800']"
-        >
-          {{ remainingShipmentToPack }} / {{ numberShipments }} Shipments to Pack
-        </h3>
-      </div>
-
       <div v-if="activeShipment" class="mt-4 flex">
         <div
           :class="[
@@ -950,9 +981,9 @@ function resetShipment() {
             </li>
           </ul>
           <Button
-            class="sm:text-lg text-sm w-full bg-violet-500 text-white mt-2 rounded-xl p-2 flex items-center justify-center"
+            class="sm:text-lg text-sm w-full bg-violet-500 text-white mt-2 rounded-md flex items-center justify-center"
             @click="dialogVisible = true"
-            v-if="!isScannedBoxesCollapsed"
+            v-if="!isScannedBoxesCollapsed && remainingShipmentToPack !== numberShipments"
           >
             <span class="hidden sm:inline sm:p-2 sm:text-lg text-sm">Scan Barcode</span>
             <i class="pi pi-barcode"></i>
@@ -960,20 +991,34 @@ function resetShipment() {
           <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
             <Button
               @click="resetShipment"
-              class="w-full p-2 mt-2 rounded-xl justify-center bg-green-700 text-white"
+              class="w-full p-2 mt-2 rounded-md justify-center bg-green-700 text-white"
               >Confirm Pallet</Button
             >
           </div>
           <div
-            v-if="numberShipments && remainingShipmentToPack === numberShipments"
+            v-if="
+              !cratePacked &&
+              numberShipments &&
+              !isScannedBoxesCollapsed &&
+              remainingShipmentToPack === numberShipments
+            "
             class="flex justify-center mt-4"
           >
             <Button
-              class="w-full bg-green-800 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-"
+              class="w-full bg-orange-500 text-gray-200 rounded-md p-2 flex items-center justify-center space-x-"
               @click="getShipmentByID"
             >
               Confirm Shipment
               <i class="pi pi-check indent-2"></i>
+            </Button>
+          </div>
+          <div v-if="!isScannedBoxesCollapsed && cratePacked" class="flex justify-center mt-4">
+            <Button
+              class="w-full bg-red-600 text-gray-200 rounded-xl p-2 flex items-center justify-center space-x-2"
+              @click="closeDelivery"
+            >
+              Close Delivery
+              <i class="pi pi-times indent-2"></i>
             </Button>
           </div>
         </div>

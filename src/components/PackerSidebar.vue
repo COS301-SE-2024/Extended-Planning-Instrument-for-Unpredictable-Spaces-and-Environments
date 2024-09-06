@@ -92,6 +92,24 @@ const updateShipmentStatus = async (shipmentID, status) => {
   }
 }
 
+const updateDeliveryStatus = async (deliveryID, status) => {
+  try {
+    const { error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'updateDeliveryStatus',
+        deliveryId: deliveryID,
+        newStatus: status
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.log(`API Error for updating Status for delivery ${deliveryID}:`, error)
+    }
+  } catch (error) {
+    console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
+  }
+}
+
 const updateShipmentStartTime = async (shipmentID) => {
   const currentDateTime = new Date()
   const formattedTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -118,6 +136,7 @@ const items = [
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
       toggleDialog()
+      getAllProcessing()
     }
   },
 
@@ -165,6 +184,8 @@ async function printSelectedShipment(shipmentId) {
 async function fetchShipmentsFromDelivery(DeliveryID) {
   startLoading()
   toggleDialog()
+
+  updateDeliveryStatus(DeliveryID, 'Processing')
   const { data, error } = await supabase.functions.invoke('core', {
     body: JSON.stringify({
       type: 'getShipmentByDeliveryID',
@@ -347,14 +368,14 @@ onMounted(() => {
           v-for="shipmentId in Object.keys(packingResults)"
           :key="shipmentId"
           :label="`Print Shipment #${shipmentId}`"
-          class="my-4 px-4 py-2 bg-orange-500 text-gray-200 rounded-lg flex items-center"
+          class="my-4 px-4 py-2 bg-orange-500 text-gray-100 rounded-lg flex items-center"
           @click="printSelectedShipment(shipmentId)"
         />
       </div>
       <div class="flex flex-wrap justify-center">
         <Button
           @click="showShipmentSelection = !showShipmentSelection"
-          class="text-lg text-gray-200 justify-center px-4 py-2 w-full rounded-lg bg-red-800"
+          class="text-lg text-gray-100 justify-center px-4 py-2 w-full rounded-lg bg-red-600"
           >Close</Button
         >
       </div>
