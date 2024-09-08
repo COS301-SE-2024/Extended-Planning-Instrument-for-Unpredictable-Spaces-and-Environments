@@ -167,7 +167,7 @@ def handle_run_packing_algorithm(data):
     python_executable = sys.executable  # This will get the current Python interpreter path
 
     # Define the relative path to the packing.py script
-    script_path = os.path.join(os.path.dirname(__file__), 'packing.py')
+    script_path = os.path.join(os.path.dirname(__file__), 'DemoDayAlgo.py')
 
     try:
         # Pass the dimensions as command-line arguments to packing.py
