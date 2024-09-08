@@ -32,7 +32,7 @@ const shipments = ref([])
 
 const { showStartPackingOvererlay, toggleDialog } = useToggleDialog()
 
-const { loadingShipments } = isLoading()
+const { loadingShipments, startLoading, stopLoading } = isLoading()
 
 const showHelpDialog = ref(false)
 
@@ -217,7 +217,7 @@ onMounted(() => {
     [packingData, shipments],
     ([newPackingData, newShipments]) => {
       if (newPackingData.length > 0 && newShipments.length > 0 && activeShipment.value) {
-        CONTAINER_SIZE = [1000, 1930, 1200]
+        CONTAINER_SIZE = [1200, 1930, 1000]
         nextTick(() => {
           const activePackingData = newPackingData.find(
             (data) => data.shipmentId === activeShipment.value
@@ -246,10 +246,10 @@ async function getShipmentByID() {
       cleanupThreeJS()
       initThreeJS('new-three-container', isDark.value, truckpackingData.value[0])
     })
+    saveProgress()
   } else {
     console.log('No shipments available to process.')
   }
-  saveProgress()
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
   const width = CONTAINER_SIZE[0]
@@ -711,8 +711,6 @@ const trackFunctionSelected = ref(trackFunctionOptions[1])
 let counter = 0
 const handleJsonData = (json) => {
   const newPackingData = json._isRef ? json.value : json
-  // console.log('Received packing data:', newPackingData)
-
   if (!newPackingData) {
     console.error('Invalid packing data received:', newPackingData)
     toast.add({
@@ -731,6 +729,8 @@ const handleJsonData = (json) => {
   }))
 
   packingData.value[counter++] = updatedData
+
+  saveProgress()
 }
 
 const handleShipmentsLoaded = (loadedShipments) => {
@@ -866,6 +866,84 @@ function resetShipment() {
   updateShipmentEndTime(activeShipment.value)
   saveProgress()
 }
+
+async function generateNewSolution(shipmentID) {
+  startLoading()
+  try {
+    const { error } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'deleteSavedSoln',
+        shipmentId: shipmentID
+      }),
+      method: 'POST'
+    })
+
+    if (error) {
+      console.log(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
+      return
+    } else {
+      console.log(`Successfully deleted saved solution for shiment`)
+      const { data, error2 } = await supabase.functions.invoke('packing', {
+        body: JSON.stringify({
+          type: 'getPackages',
+          ShipmentID: shipmentID
+        }),
+        method: 'POST'
+      })
+
+      if (error2) {
+        console.error('Error fetching packages for shipment: ', error)
+        return
+      }
+
+      if (!data || !data.data) {
+        console.error('Invalid data structure received:', data)
+        return
+      }
+
+      const result = data
+
+      const response = await fetch(
+        'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            shipmentID: shipmentID,
+            containerSize: CONTAINER_SIZE,
+            boxes: result
+          })
+        }
+      )
+      const responsedata = await response.json()
+      console.log('Here is the new solution', responsedata)
+
+      if (responsedata == null) {
+        console.error('Failed to upload solution', responsedata)
+      } else {
+        const { error: updateError } = await supabase.functions.invoke('packing', {
+          body: JSON.stringify({
+            type: 'updateFitnessValue',
+            ShipmentId: shipmentID,
+            newFitnessValue: parseFloat(responsedata.fitness)
+          }),
+          method: 'POST'
+        })
+
+        if (updateError) {
+          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        }
+        handleJsonData(responsedata.boxes)
+      }
+    }
+  } catch (error) {
+    console.error('Error in generateNewSolution:', error)
+  } finally {
+    stopLoading()
+  }
+}
 </script>
 
 <template>
@@ -933,8 +1011,15 @@ function resetShipment() {
           Show Shipment #{{ shipment.id }}
         </Button>
       </div>
-
-      <div v-if="activeShipment" class="mt-4 flex">
+      <div v-if="activeShipment && !loadingShipments" class="mt-4 flex flex-row justify-center">
+        <Button
+          @click="generateNewSolution(activeShipment)"
+          class="mb-4 w-1/8 bg-blue-500 p-2 rounded-xl"
+        >
+          Generate New Solution
+        </Button>
+      </div>
+      <div v-if="activeShipment && !loadingShipments" class="mt-4 flex">
         <div
           :class="[
             isDark ? 'bg-zinc-800 text-neutral-200' : 'bg-gray-100 text-neutral-800',

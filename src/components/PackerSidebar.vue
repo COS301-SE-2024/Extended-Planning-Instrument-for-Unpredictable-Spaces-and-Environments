@@ -205,6 +205,7 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
     updateShipmentStatus(shipment.id, 'Processing')
     updateShipmentStartTime(shipment.id)
   }
+  stopLoading()
 }
 
 const runPackingAlgo = async (shipmentId) => {
@@ -237,7 +238,6 @@ const runPackingAlgo = async (shipmentId) => {
       packingResults.value[shipmentId] = responsedata.boxes
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
-    stopLoading()
   } catch (e) {
     console.error('Failure to fetch solution', e)
   }
@@ -282,8 +282,6 @@ async function uploadSolution(shipmentId, containerDimensions) {
       }
     )
     const responsedata = await response.json()
-
-    console.log('RESPONSEDATA FROM UPDLOAD', responsedata)
 
     if (responsedata == null) {
       console.error('Failed to upload solution', responsedata)
