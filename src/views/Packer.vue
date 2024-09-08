@@ -121,6 +121,7 @@ const updateShipmentEndTime = async (shipmentID) => {
 }
 
 function saveProgress() {
+  localStorage.removeItem('packingProgress')
   const progressData = {
     packingData: packingData.value,
     activeShipment: activeShipment.value,
@@ -936,6 +937,7 @@ async function generateNewSolution(shipmentID) {
           console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
         }
         handleJsonData(responsedata.boxes)
+        toggleShipment(shipmentID)
       }
     }
   } catch (error) {
