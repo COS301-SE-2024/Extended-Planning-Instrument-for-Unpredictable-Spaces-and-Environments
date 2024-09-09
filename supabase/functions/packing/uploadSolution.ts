@@ -1,19 +1,28 @@
-export async function uploadSolution(supabase: any, shipmentId: bigint, solution: String) {
-  if (!solution) {
-    console.error('Solution is undefined')
-    return { error: 'Solution is undefined' }
+export async function uploadSolution(supabase: any, jsonObject: object) {
+  try {
+    // Log the incoming JSON object for debugging
+    console.log('Incoming JSON Object:', jsonObject);
+
+    // Convert the JSON object to a Blob format
+    const jsonBlob = new Blob([JSON.stringify(jsonObject)], { type: 'application/json' });
+
+    // Generate a unique file name
+    const fileName = `solution_${Date.now()}.json`;
+
+    // Upload the JSON file to the 'solutions' bucket in Supabase
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('solutions')
+      .upload(`solutions/${fileName}`, jsonBlob);
+
+    if (uploadError) {
+      console.error('Error uploading solution:', uploadError);
+      return { error: 'Failed to upload solution' };
+    }
+
+    console.log('Solution uploaded successfully:', uploadData);
+    return { data: uploadData };
+  } catch (error) {
+    console.error('Error processing solution:', error);
+    return { error: 'Error processing solution' };
   }
-
-  const solutionString = JSON.stringify(solution)
-  const { data, error } = await supabase
-    .from('Shipment')
-    .update({ Solution: solutionString })
-    .eq('id', shipmentId)
-
-  if (error) {
-    console.error('Error updating fitness value', error)
-    return { error: 'Failed to update fitness value' }
-  }
-
-  return { data: 'sucessfull inserted record' }
 }
