@@ -10,7 +10,7 @@
     <rect width="1243" height="200" fill="#696969" x="391"/>
     <rect width="1634" height="200" fill="url(#a)"/>
   </g>
-  <g aria-hidden="true" fill="#fff" text-anchor="start" font-family="Verdana,DejaVu Sans,sans-serif" font-size="110">
+  <g fill="#fff" text-anchor="start" font-family="Verdana,DejaVu Sans,sans-serif" font-size="110">
     <text x="60" y="148" textLength="291" fill="#000" opacity="0.25">Tests</text>
     <text x="50" y="138" textLength="291">Tests</text>
     <text x="446" y="148" textLength="1143" fill="#000" opacity="0.25">unknown (unknown)</text>

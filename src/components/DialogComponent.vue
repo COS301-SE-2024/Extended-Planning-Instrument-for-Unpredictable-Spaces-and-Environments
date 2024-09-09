@@ -1,14 +1,23 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import Carousel from 'primevue/carousel'
+import { computed, ref } from 'vue'
 
 const isDark = useDark()
+const fullScreenImage = ref(null)
 
 const emit = defineEmits(['close-dialog'])
 
 const closeDialog = () => {
   console.log('CLOSING')
   emit('close-dialog')
+}
+
+const showFullScreen = (image) => {
+  fullScreenImage.value = image
+}
+
+const closeFullScreen = () => {
+  fullScreenImage.value = null
 }
 
 // Props for dynamic content
@@ -30,58 +39,127 @@ const props = defineProps({
     required: true
   }
 })
+
+const dialogClass = computed(() => [
+  isDark.value ? 'dark bg-gray-900' : 'light bg-gray-100',
+  'w-full max-w-full md:max-w-5xl',
+  'h-full md:h-auto md:max-h-[95vh]',
+  'fixed inset-0 md:relative',
+  'flex flex-col',
+  'rounded-lg shadow-2xl'
+])
+
+const titleClass = computed(() => [
+  isDark.value ? 'text-white' : 'text-gray-800',
+  'font-bold text-2xl md:text-3xl',
+  'mb-2 pb-2',
+  'border-b-2',
+  isDark.value ? 'border-gray-700' : 'border-gray-300'
+])
 </script>
 
 <template>
-  <Dialog :class="[isDark ? 'dark' : 'light', 'w-full max-w-2xl']" :visible="dialogVisible">
-    <div @click="closeDialog" class="w-[5px] cursor-pointer items-left align-left">
+  <Dialog :class="dialogClass" :visible="dialogVisible" :modal="true" :closable="false">
+    <div class="flex justify-between items-center p-4 md:p-6">
+      <h2 :class="titleClass">
+        {{ title }}
+      </h2>
       <Button
+        @click="closeDialog"
         icon="pi pi-times"
-        iconPos="left"
         :class="[
-          isDark ? 'text-red' : 'text-red',
-          'my-4 text-white bg-red-500 rounded-md font-semibold p-button-text p-2'
+          isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800',
+          'p-button-rounded p-button-text',
+          'transition-colors duration-200 text-lg'
         ]"
       />
     </div>
-    <Carousel
-      :value="images"
-      :numVisible="1"
-      :numScroll="1"
-      orientation="horizontal"
-      containerClass="flex items-center"
-    >
-      <template #item="slotProps">
-        <div class="rounded">
-          <div class="relative mx-auto">
-            <img :src="slotProps.data.src" :alt="slotProps.data.alt" class="w-full rounded" />
+    <div class="flex-grow overflow-y-auto px-4 md:px-6 pb-4 md:pb-6">
+      <div class="space-y-6 w-full">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div
+            v-for="(image, index) in images"
+            :key="index"
+            class="relative group cursor-pointer"
+            @click="showFullScreen(image)"
+          >
+            <img
+              :src="image.src"
+              :alt="image.alt"
+              class="w-full h-40 object-cover rounded-lg shadow-md transition-transform duration-300 transform hover:scale-105"
+            />
+            <div
+              class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
+            >
+              <span class="text-white text-sm font-bold">View Full Screen</span>
+            </div>
           </div>
         </div>
-      </template>
-    </Carousel>
-    <div class="items-center align-center">
-      <h2
-        :class="[
-          isDark ? 'text-white' : 'text-neutral-800',
-          'mx-2 font-bold text-xl text-center mt-4'
-        ]"
-      >
-        {{ title }}
-      </h2>
-      <template v-for="(person, index) in contacts" :key="index">
-        <p
-          :class="[
-            isDark ? 'text-white' : 'text-neutral-800',
-            'mx-2 text-center font-bold mt-2',
-            person.underline ? 'underline' : ''
-          ]"
-        >
-          {{ person.name }}
-        </p>
-        <p :class="[isDark ? 'text-white' : 'text-neutral-800', 'mx-2 text-center mt-2']">
-          {{ person.phone }}
-        </p>
-      </template>
+        <div class="w-full">
+          <div
+            class="bg-gradient-to-br from-orange-500 to-violet-900 rounded-lg p-4 md:p-6 shadow-lg"
+          >
+            <div class="flex items-center mb-4">
+              <img
+                src="../assets/Photos/truck.png"
+                alt="Truck"
+                class="w-16 h-16 mr-4 animate-bounce"
+              />
+              <div class="flex flex-col">
+                <h3 class="text-white text-xl md:text-2xl font-bold mb-1">Get in Touch</h3>
+                <p class="text-white text-sm md:text-base leading-tight">
+                  Need a hand? We're here to help!
+                </p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <template v-for="(person, index) in contacts" :key="index">
+                <div
+                  class="bg-white bg-opacity-20 rounded-lg p-4 transition-all duration-300 hover:bg-opacity-30 hover:shadow-md"
+                >
+                  <p class="text-white font-bold text-lg mb-2">
+                    {{ person.name }}
+                  </p>
+                  <a
+                    :href="
+                      person.name === 'Call' ? `tel:${person.phone}` : `mailto:${person.phone}`
+                    "
+                    class="text-white text-sm md:text-base hover:text-yellow-300 transition-colors duration-200 flex items-center"
+                  >
+                    <i
+                      :class="['pi', person.name === 'Call' ? 'pi-phone' : 'pi-envelope', 'mr-2']"
+                    ></i>
+                    {{ person.phone }}
+                  </a>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </Dialog>
+  <Dialog
+    v-if="fullScreenImage"
+    :visible="!!fullScreenImage"
+    :modal="true"
+    :closable="false"
+    class="p-0 m-0 w-screen h-screen flex items-center justify-center bg-white"
+    :contentStyle="{ padding: '0', margin: '0', width: '100vw', height: '100vh' }"
+  >
+    <img
+      :src="fullScreenImage.src"
+      :alt="fullScreenImage.alt"
+      class="max-w-full max-h-full w-full h-full object-contain"
+    />
+    <Button
+      @click="closeFullScreen"
+      icon="pi pi-times"
+      class="absolute top-4 right-4 p-button-rounded p-button-text text-white hover:text-gray-300 transition-colors duration-200 text-2xl z-50"
+    />
+  </Dialog>
 </template>
+
+<style scoped>
+/* Add any additional styles here if needed */
+</style>

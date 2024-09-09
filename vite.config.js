@@ -31,7 +31,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(dirname, 'src'),
-    },
+      '@': path.resolve(dirname, './src'),
+      'source-map-js': 'source-map',
+      path: 'rollup-plugin-node-polyfills/polyfills/path',
+      url: 'rollup-plugin-node-polyfills/polyfills/url'
+    }
   },
+  optimizeDeps: {
+    exclude: ['fs']
+  }
 })
