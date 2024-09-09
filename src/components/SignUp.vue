@@ -4,7 +4,10 @@ import { useDark } from '@vueuse/core'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
-const dialogVisible = ref(false)
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const isDark = useDark()
 const router = useRouter()
@@ -53,7 +56,6 @@ const signUp = async () => {
       password: password.value
     })
     if (error) {
-      alert(error.message)
       console.log(error.message)
       if (error.message == 'User already registered') {
         emailDuplicate.value = true
@@ -61,7 +63,12 @@ const signUp = async () => {
       }
     } else {
       console.log('User signed up:', user)
-      alert('Sign up successful!')
+      toast.add({
+        severity: 'success',
+        summary: 'Successfully signed up',
+        detail: user,
+        life: 10000
+      })
       const { data, error } = await supabase.functions.invoke('core', {
         body: {
           type: 'insertUser',
@@ -90,40 +97,57 @@ const signUp = async () => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      isDark ? 'dark bg-neutral-900' : 'bg-gray-200',
+      'min-h-screen flex flex-col items-center justify-center font-inter'
     ]"
   >
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
+        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sm:rounded-xl sm:shadow-xl',
+        'flex flex-col justify-center'
       ]"
     >
-      <div class="flex items-center justify-center">
+      <!-- Logo container -->
+      <div
+        :class="[
+          'flex items-start justify-start w-full', // Align left on smaller screens
+          'sm:items-center sm:justify-center' // Center on larger screens
+        ]"
+        style="margin-bottom: 1rem"
+      >
         <img
           v-if="isDark"
           src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
         <img
           v-else
           src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
       </div>
-      <p
-        :class="[isDark ? 'text-white' : ' text-neutral-800 ', 'text-3xl flex items-center  mb-2 ']"
+
+      <!-- Text container -->
+      <div
+        :class="[
+          'flex flex-col w-full mb-6',
+          'items-start justify-start text-left', // Align text left on smaller screens
+          'sm:items-center sm:text-center' // Center text on larger screens
+        ]"
       >
-        Create your new account
-      </p>
-      <h2 class="mb-10 text-gray-500 dark:text-gray-400 text-left">
-        Join us and revolutionize logistics efficiency.
-      </h2>
+        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
+          Create your new account
+        </p>
+        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+          Join us and revolutionize logistics efficiency.
+        </p>
+      </div>
 
       <form @submit.prevent="signUp" class="sign-up-form">
         <div class="form-group">
@@ -197,6 +221,7 @@ const signUp = async () => {
         <p v-if="emailDuplicate" class="text-red-500 text-sm mb-4">
           This email has already been registered.
         </p>
+
         <div class="form-group w-full">
           <label
             for="password"
@@ -231,7 +256,7 @@ const signUp = async () => {
               </ul>
             </template>
           </Password>
-          <p v-if="passwordError" class="text-red-500 text-sm mt-2">
+          <p v-if="passwordError" class="text-red-500 text-sm mt-6">
             Password must be at least 8 characters long and include one lowercase, one uppercase,
             and one numeric character.
           </p>
@@ -247,28 +272,31 @@ const signUp = async () => {
           <router-link to="/" class="text-orange-500">Login</router-link>
         </p>
       </form>
-    </div>
-    <div
-      @click="toggleDark"
-      :class="[
-        isDark ? 'text-white bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm',
-        'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-      ]"
-    >
-      <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-        <span v-if="isDark">Light Mode</span>
-        <span v-else>Dark Mode</span>
+      <p
+        @click="toggleDialog"
+        class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      >
+        Help
       </p>
-      <button class="focus:outline-none">
-        <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-      </button>
+      <!-- <div class="flex items-center justify-center">
+        <div
+          @click="toggleDark"
+          :class="[
+            isDark ? 'text-white bg-neutral-900' : 'text-neutral-800 bg-gray-200 shadow-sm',
+            'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
+          ]"
+        >
+          <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
+            <span v-if="isDark">Light Mode</span>
+            <span v-else>Dark Mode</span>
+          </p>
+          <button class="focus:outline-none">
+            <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
+          </button>
+        </div>
+      </div> -->
     </div>
-    <p
-      @click="toggleDialog"
-      class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
-    >
-      Help
-    </p>
+
     <DialogComponent
       v-if="showDialog"
       :images="[
@@ -276,7 +304,7 @@ const signUp = async () => {
         { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
         // Add more images as needed
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -285,6 +313,7 @@ const signUp = async () => {
       @close-dialog="toggleDialog"
     />
   </div>
+  <Toast />
 </template>
 <script>
 export default {

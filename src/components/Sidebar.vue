@@ -1,187 +1,216 @@
 <template>
   <!-- Sidebar -->
-  <div
-    class="h-[100vh] p-4 flex flex-col justify-between transition-all duration-300 ease-in-out"
-    :class="[
-      isMobileSidebarCollapsed ? 'w-[80px]' : 'w-[300px]',
-      isDark ? 'bg-neutral-950' : 'bg-white'
-    ]"
-  >
-    <div>
-      <div
-        :class="[
-          'flex',
-          isMobileSidebarCollapsed ? 'flex-col' : 'flex-row',
-          'items-baseline',
-          { 'justify-center': isMobileSidebarCollapsed }
-        ]"
-      >
-        <div class="logo-container">
-          <img
-            v-if="isMobileSidebarCollapsed"
-            :src="
-              isDark
-                ? '/Members/Photos/Logos/Logo-Icon-Dark.svg'
-                : '/Members/Photos/Logos/Logo-Icon-Light.svg'
-            "
-            alt="JS Logo"
-            class="mr-4 mb-4 mt-2"
-            style="width: 5rem; height: auto"
-          />
-          <img
-            v-else
-            :src="
-              isDark
-                ? '/Members/Photos/Logos/Wording-Thin-Dark.svg'
-                : '/Members/Photos/Logos/Wording-Thin-Light.svg'
-            "
-            alt="Janeeb Solutions Logo"
-            class="mr-4 mb-4 mt-2 ml-2"
-            style="width: 10rem; height: auto"
-          />
+  <div class="main-sidebar">
+    <div
+      class="h-[100vh] p-4 flex flex-col justify-between transition-all duration-300 ease-in-out"
+      :class="[
+        isMobileSidebarCollapsed ? 'w-[80px]' : 'w-[300px]',
+        isDark ? 'bg-neutral-950' : 'bg-white'
+      ]"
+    >
+      <div>
+        <div
+          :class="[
+            'flex',
+            isMobileSidebarCollapsed ? 'flex-col' : 'flex-row',
+            'items-baseline',
+            { 'justify-center': isMobileSidebarCollapsed }
+          ]"
+        >
+          <div class="logo-container">
+            <img
+              v-if="isMobileSidebarCollapsed"
+              :src="
+                isDark
+                  ? '/Members/Photos/Logos/Logo-Icon-Dark.svg'
+                  : '/Members/Photos/Logos/Logo-Icon-Light.svg'
+              "
+              alt="JS Logo"
+              class="mr-4 mb-4 mt-2"
+              style="width: 5rem; height: auto"
+            />
+            <img
+              v-else
+              :src="
+                isDark
+                  ? '/Members/Photos/Logos/Wording-Thin-Dark.svg'
+                  : '/Members/Photos/Logos/Wording-Thin-Light.svg'
+              "
+              alt="Janeeb Solutions Logo"
+              class="mr-4 mb-4 mt-2 ml-2"
+              style="width: 10rem; height: auto"
+            />
+          </div>
         </div>
-      </div>
 
-      <button
-        @click="toggleShipment"
-        class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-orange-600 text-white mb-4 flex items-center"
-        :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
-      >
-        <i
-          class="pi pi-box text-white"
-          :class="{
-            'm-0 ': isMobileSidebarCollapsed,
-            'mr-4': !isMobileSidebarCollapsed
-          }"
-        ></i>
-        <p :class="{ 'opacity-0': isMobileSidebarCollapsed }" class="justify-center ml-2">
-          New Shipment
-        </p>
-      </button>
+        <button
+          @click="toggleShipment"
+          class="h-[45px] rounded-xl mt-2 px-4 py-2 bg-orange-600 text-white mb-4 flex items-center"
+          :class="{ 'w-full': !isMobileSidebarCollapsed, 'w-[48px]': isMobileSidebarCollapsed }"
+        >
+          <i
+            class="pi pi-box text-white"
+            :class="{
+              'm-0 ': isMobileSidebarCollapsed,
+              'mr-4': !isMobileSidebarCollapsed
+            }"
+          ></i>
+          <p :class="{ 'opacity-0': isMobileSidebarCollapsed }" class="justify-center ml-2">
+            New Shipment
+          </p>
+        </button>
 
-      <!-- Menu -->
-      <Menu
-        :class="[isDark ? 'dark' : 'light', 'specific-container']"
-        :model="items"
-        :router="router"
-        class="w-full md:w-[15rem] p-menu-custom specific-container"
-        :exact="false"
-      >
-        <template #item="{ item, props }">
-          <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
+        <!-- Menu -->
+        <Menu
+          :class="[isDark ? 'dark' : 'light', 'specific-container']"
+          :model="items"
+          :router="router"
+          class="w-full md:w-[15rem] p-menu-custom specific-container"
+          :exact="false"
+        >
+          <template #item="{ item, props }">
+            <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
+              <a
+                aria-hidden="false"
+                :class="[
+                  'h-[45px]  flex align-items-center mb-2',
+                  item.active ? 'active-menu-item' : ''
+                ]"
+                v-bind="props.action"
+                @click="navigate(item.route)"
+              >
+                <i class="mr-2" :class="item.icon"></i>
+                <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
+                <Badge severity="contrast" v-if="item.badge" class="ml-auto" :value="item.badge" />
+              </a>
+            </router-link>
             <a
+              v-else
               :class="[
                 'h-[45px] flex align-items-center mb-2',
                 item.active ? 'active-menu-item' : ''
               ]"
               v-bind="props.action"
-              @click="navigate(item.route)"
+              :target="item.target"
+              :href="item.url"
+              @click.prevent="showDialog"
+              :style="{ cursor: showDialog ? 'default' : 'pointer' }"
             >
-              <i class="mr-2" :class="item.icon"></i>
+              <span class="mr-2" :class="item.icon"></span>
               <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
-              <Badge severity="contrast" v-if="item.badge" class="ml-auto" :value="item.badge" />
             </a>
-          </router-link>
-          <a
-            v-else
-            :class="[
-              'h-[45px] flex align-items-center mb-2 ',
-              item.active ? 'active-menu-item' : ''
-            ]"
-            v-bind="props.action"
-            :target="item.target"
-            :href="item.url"
-            @click="item.command"
-          >
-            <span class="mr-2" :class="item.icon"></span>
-            <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
-          </a>
-        </template>
-      </Menu>
-    </div>
-    <button
-      class="relative overflow-hidden w-full p-link flex align-items-center text-color hover:surface-200 border-noround"
-    >
-      <div class="flex-shrink-0">
-        <Avatar
-          :label="avatarLabel"
-          class="mr-2 border border-neutral-900"
-          size="large"
-          shape="circle"
-        />
+          </template>
+        </Menu>
       </div>
-      <span
-        class="inline-flex flex-col transition-opacity duration-300 ease-in-out"
-        :class="{ 'opacity-0': isMobileSidebarCollapsed }"
+      <button
+        class="relative overflow-hidden w-full p-link flex align-items-center text-color hover:surface-200 border-noround"
       >
-        <span class="font-bold">{{ userFullName }}</span>
-        <span class="text-sm">{{ userRole }}</span>
-      </span>
-    </button>
-  </div>
-
-  <Dialog
-    v-model:visible="showShipment"
-    :class="[isDark ? 'dark' : 'light', 'w-[50%] rounded-lg']"
-    :modal="true"
-    @close-dialog="toggleShipment"
-  >
-    <div class="flex flex-col items-center justify-center m-8">
-      <p class="mb-4 text-3xl">New Shipment</p>
-      <!-- 
-      <FileUpload
-        name="demo[]"
-        url="/api/upload"
-        @upload="onAdvancedUpload($event), processShipment"
-        :multiple="true"
-        accept=".csv"
-        :maxFileSize="1000000"
-        :class="[isDark ? 'dark' : 'light', 'px-2 py-2']"
-      >
-        <template #empty>
-          <div class="flex items-center justify-center">
-            <span class="text-center">Drag and drop files here to upload.</span>
-          </div>
-        </template>
-      </FileUpload> -->
-      <input type="file" accept=".csv" @change="onFileChange" />
-      <Button @click="processShipment" class="mt-4 text-white py-2 px-6 bg-green-800"
-        >Process Shipment</Button
-      >
-      <Button @click="toggleShipment" class="mt-4 text-white py-2 px-6 bg-red-800">Cancel</Button>
+        <div class="flex-shrink-0">
+          <Avatar
+            :label="avatarLabel"
+            class="mr-2 border border-neutral-900"
+            size="large"
+            shape="circle"
+          />
+        </div>
+        <span
+          class="inline-flex flex-col transition-opacity duration-300 ease-in-out"
+          :class="{ 'opacity-0': isMobileSidebarCollapsed }"
+        >
+          <span class="font-bold">{{ userFullName }}</span>
+          <span class="text-sm">{{ userRole }}</span>
+        </span>
+      </button>
     </div>
-  </Dialog>
+    <!-- <input type="file" accept=".csv" @change="onFileChange" /> -->
+    <!-- <input type="file" accept=".csv" @change="onFileChange" /> -->
+    <!-- <input type="file" accept=".csv" @change="onFileChange" /> -->
+
+    <Dialog
+      v-model:visible="showShipment"
+      :class="[isDark ? 'dark' : 'light', 'w-[50%] max-w-xs rounded-lg']"
+      :modal="true"
+      @close-dialog="toggleShipment"
+    >
+      <div class="flex flex-col items-center justify-center m-8">
+        <p class="mb-4 text-3xl">New Shipment</p>
+
+        <label
+          class="cursor-pointer flex flex-col items-center justify-center w-full max-w-xs p-2 bg-orange-600 text-white rounded-md shadow-md hover:bg-black transition-all duration-200 ease-in-out"
+        >
+          <span>Choose a CSV file</span>
+          <input type="file" accept=".csv" @change="onFileChange" class="hidden" />
+        </label>
+
+        <!-- Display the file name or a confirmation message -->
+        <p
+          v-if="selectedFile"
+          class="text-sm mt-4"
+          :class="[isDark ? 'text-white ' : 'text-black']"
+        >
+          Selected file: {{ selectedFile.name }}
+        </p>
+
+        <Button
+          @click="processShipment"
+          :disabled="!selectedFile || loading"
+          :loading="loading"
+          :class="[
+            'w-full max-w-xs mt-4 items-center justify-center text-white py-2 px-6',
+            selectedFile ? 'bg-green-800 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'
+          ]"
+        >
+          <template v-if="loading">
+            <i class="pi pi-spin pi-spinner mr-2"></i> Processing...
+          </template>
+          <template v-else> Process Shipment </template>
+        </Button>
+
+        <Button
+          @click="toggleShipment"
+          class="w-full max-w-xs mt-4 items-center justify-center text-white py-2 px-6 bg-red-800"
+        >
+          Cancel
+        </Button>
+      </div>
+    </Dialog>
+    <DialogComponent
+      v-if="showDialog"
+      :dialogVisible="showDialog"
+      @close-dialog="toggleDialog"
+      title="Help Menu"
+      :images="[
+        { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
+        { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
+        { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
+        {
+          src: '/Members/Photos/manager dashboard (Tracking page).png',
+          alt: 'Alternative Image 4'
+        },
+        {
+          src: '/Members/Photos/manager dashboard (Shipments page).png',
+          alt: 'Alternative Image 5'
+        }
+      ]"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+    />
+  </div>
   <Toast />
-  <DialogComponent
-    v-if="showDialog"
-    :images="[
-      { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
-      { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
-      { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
-      { src: '/Members/Photos/manager dashboard (Tracking page).png', alt: 'Alternative Image 4' },
-      { src: '/Members/Photos/manager dashboard (Shipments page).png', alt: 'Alternative Image 5' }
-    ]"
-    title="Contact Support"
-    :contacts="[
-      { name: 'Call', phone: '+27 12 345 6789', underline: true },
-      { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
-    ]"
-    :dialogVisible="showDialog"
-    @close-dialog="toggleDialog"
-  />
 </template>
 
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { createClient } from '@supabase/supabase-js'
 import Papa from 'papaparse'
 import DialogComponent from '@/components/DialogComponent.vue'
-import { Result } from 'postcss'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+
 const toast = useToast()
 
 const isDark = useDark()
@@ -230,8 +259,6 @@ const validateCSV = (file) => {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       complete: (results) => {
-        console.log('Parsed results:', results)
-
         if (results.data.length < 2) {
           reject('CSV file is empty or contains only headers')
           return
@@ -308,6 +335,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
+const loading = ref(false)
+
 const logout = async () => {
   const { error } = await supabase.auth.signOut()
 
@@ -319,9 +348,9 @@ const logout = async () => {
 }
 
 const showDialog = ref(false)
+
 const toggleDialog = () => {
   showDialog.value = !showDialog.value
-  console.log('closing')
 }
 
 const showShipment = ref(false)
@@ -411,6 +440,7 @@ const processShipment = async () => {
     alert('Please select a file')
     return
   }
+  loading.value = true
 
   try {
     await validateCSV(selectedFile.value)
@@ -433,7 +463,14 @@ const processShipment = async () => {
     if (error) {
       console.log('API Error downloadingFile:', error)
     } else {
+      loading.value = false
       toggleShipment()
+      toast.add({
+        severity: 'info',
+        summary: 'Please note:',
+        detail: 'Order is being processed, please wait',
+        life: 4000
+      })
       const jsonData = convertCSVToJSON(CSVText.data)
 
       JSONText = jsonData
@@ -500,17 +537,29 @@ const processShipment = async () => {
                 throw new Error('Failed to insert package')
               }
             }
-            alert('All shipments and packages inserted successfully')
+
+            toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Shipments and packages inserted successfully',
+              life: 4000
+            })
           }
         }
       }
     }
   } catch (error) {
     console.error('Error processing file:', error)
-    alert('Error processing file: ' + error.message)
-
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error,
+      life: 10000
+    })
     selectedFile.value = null
     return
+  } finally {
+    loading.value = false
   }
 }
 const activeRoute = ref(router.currentRoute.value.name)
@@ -561,7 +610,6 @@ const items = computed(() => [
     label: isDark.value ? 'Light Mode' : 'Dark Mode',
     icon: isDark.value ? 'pi pi-fw pi-sun' : 'pi pi-fw pi-moon',
     command: () => {
-      console.log('Toggling Dark Mode')
       toggleDark()
     }
   },
@@ -569,7 +617,6 @@ const items = computed(() => [
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      console.log('Logging Out')
       logout()
     }
   },
@@ -577,7 +624,6 @@ const items = computed(() => [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
-      console.log('Opening Help Menu')
       toggleDialog()
     }
   }
@@ -602,7 +648,6 @@ const items = computed(() => [
 
 .dark .p-menuitem.p-focus > .p-menuitem-content {
   background-color: #262626 !important;
-  border-radius: 1rem;
 }
 
 .dark .p-menuitem:hover > .p-menuitem-content {
@@ -679,11 +724,21 @@ const items = computed(() => [
   color: rgba(0, 0, 0, 0.87) !important;
   stroke: black !important;
   fill: black !important;
-  background-color: white;
+  background-color: transparent !important;
 }
 
 .light a {
   color: black !important;
+}
+
+.light .p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+}
+
+.main-sidebar .light {
+  background-color: transparent !important;
+  color: black;
 }
 
 .p-menu {
@@ -691,6 +746,15 @@ const items = computed(() => [
   color: rgba(255, 255, 255, 0.87);
   border-radius: 4px;
   min-width: 12.5rem;
+}
+.dark .p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
+}
+
+.p-menu {
+  padding: 0.5rem 0;
+  background: transparent;
 }
 
 .light .p-menuitem:hover > .p-menuitem-content {
@@ -770,5 +834,15 @@ const items = computed(() => [
 
 .light .p-fileupload-upload-button {
   padding: 10px;
+}
+
+.p-dialog-mask.p-component-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.p-dialog {
+  max-height: 100vh;
+  overflow-y: auto;
 }
 </style>
