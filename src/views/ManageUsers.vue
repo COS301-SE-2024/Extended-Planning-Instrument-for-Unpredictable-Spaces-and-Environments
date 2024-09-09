@@ -1,17 +1,14 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed} from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
-import Toast from 'primevue/toast'
-import { useToast } from 'primevue/usetoast'
 const isDark = useDark()
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
-const toast = useToast()
 
 // Utility to sanitize input
 const sanitizeInput = (input) => {
@@ -43,7 +40,7 @@ const handleError = (error, context) => {
   // Optionally send the error to an external logging service
 }
 
-const checkUserPermissions = (user) => {
+const checkUserPermissions = (/*user*/) => {
   return true // Assuming all authenticated users have permission for this example
 }
 
@@ -124,43 +121,17 @@ const fetchUsers = async () => {
 }
 const DelteUser = async () => {
   loadingDel.value = true
-  if (selectedUser.value.Email === currentUser.value.email) {
-    loadingDel.value = false
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'You are not allowed delete yourself, deleting employees need to be authorized',
-      life: 10000
-    })
-    return
-  }
-
   const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
-  console.log(sanitizedEmail)
   try {
-    const { data, error } = await supabase.functions.invoke('core', {
+    const { /*data,*/ error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'deleteUser', email: sanitizedEmail }),
       method: 'POST'
     })
 
     if (error) {
-      console.log(error)
-      dialogVisible.value = false
       handleError(error, 'deleteUser')
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: error,
-        life: 10000
-      })
     } else {
       dialogVisible.value = false
-      toast.add({
-        severity: 'success',
-        summary: 'Success',
-        detail: 'You have successfully deleted the user',
-        life: 5000
-      })
     }
   } catch (error) {
     handleError(error, 'deleteUser')
@@ -191,6 +162,7 @@ const onRemoveThing = (user) => {
   selectedRole.value = roles.value.find((role) => role.name === user.Role) || null
   dialogVisible.value = true
 }
+
 const roles = ref([
   { name: 'Manager', code: 'Manager' },
   { name: 'Packer', code: 'Packer' },
@@ -198,7 +170,21 @@ const roles = ref([
   { name: 'unassigned', code: 'unassigned' }
 ])
 
+const isValidEmail = computed(() => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(selectedUser.value.Email)
+})
+
+const isValidPhoneNumber = computed(() => {
+  const phoneRegex = /^(\+27|27|0)(\d{9})$/
+  return phoneRegex.test(selectedUser.value.Phone)
+})
+
 const saveChanges = async () => {
+  if (!isValidEmail.value || !isValidPhoneNumber.value) {
+    return
+  }
+
   loading.value = true
   try {
     const sanitizedFullName = sanitizeInput(selectedUser.value.FullName)
@@ -220,6 +206,10 @@ const saveChanges = async () => {
       handleError(error, 'saveChanges')
     } else {
       dialogVisible.value = false
+      const index = customers.value.findIndex(user => user.Email === selectedUser.value.Email)
+      if (index !== -1) {
+        customers.value[index] = { ...selectedUser.value, Role: selectedRole.value.name }
+      }
     }
   } catch (error) {
     handleError(error, 'saveChanges')
@@ -240,7 +230,7 @@ const nameWithYou = (user) => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -296,7 +286,7 @@ const nameWithYou = (user) => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-orange-500 text-gray-200 rounded-lg p-2"
+                class="bg-orange-500 text-gray-100 rounded-lg p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -331,29 +321,42 @@ const nameWithYou = (user) => {
     >
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="FullName">Full Name</label>
-        <InputText
-          :class="[
-            isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
-              : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
-          ]"
-          v-model="selectedUser.FullName"
-          id="FullName"
-        />
+        <input
+            :class="[
+              isDark
+                ? 'text-white border bg-neutral-900 border-transparent'
+                : 'border border-neutral-900 bg-white text-neutral-800',
+              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
+            ]"
+            type="text"
+            id="name"
+            v-model="name"
+            required
+            placeholder="eg. John Doe"
+            class="form-control"
+          />
       </div>
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="Email">Email</label>
-        <InputText
+        <input
           :class="[
             isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
+              ? 'text-white border bg-neutral-900 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+            'mt-2 mb-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+            { 'border-red-500 border-2': !isValidEmail && selectedUser.Email !== '' }
           ]"
+          type="email"
+          id="email"
           v-model="selectedUser.Email"
-          id="Email"
+          required
+          placeholder="example@example.com"
+          class="form-control"
+          @input="emailDuplicate = false"
         />
+        <span v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm mb-4">
+          Please enter a valid email address.
+        </span>
       </div>
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="Role">Role</label>
@@ -375,16 +378,24 @@ const nameWithYou = (user) => {
       </div>
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="Phone">Phone Number</label>
-        <InputText
+        <input
           :class="[
             isDark
-              ? 'text-white border bg-neutral-950 border-transparent'
+              ? 'text-white border bg-neutral-900 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
-            'mt-2   form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+            'mt-2 mb-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+            { 'border-red-500 border-2': !isValidPhoneNumber && selectedUser.Phone !== '' }
           ]"
+          type="tel"
+          id="phone"
           v-model="selectedUser.Phone"
-          id="Phone"
+          required
+          placeholder="e.g. +27123456789"
+          class="form-control"
         />
+        <span v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm mb-4">
+          Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
+        </span>
       </div>
       <div class="mt-6 flex flex-col items-center align-center">
         <Button
@@ -413,7 +424,7 @@ const nameWithYou = (user) => {
     <DialogComponent
       v-if="showDialog"
       :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
-      title="Help Menu"
+      title="Contact Support"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -422,7 +433,6 @@ const nameWithYou = (user) => {
       @close-dialog="toggleDialog"
     />
   </div>
-  <Toast />
 </template>
 
 <script>
