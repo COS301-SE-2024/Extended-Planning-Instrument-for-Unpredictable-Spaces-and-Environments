@@ -45,23 +45,22 @@ const showError = () => {
 
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
-    passwordError.value = true
-    alert('Passwords do not match. Please try again.')
-    return
+    passwordError.value = true;
+    alert('Passwords do not match. Please try again.');
+    return;
   }
 
-  passwordError.value = false
+  passwordError.value = false;
 
   try {
-    // Check if the email exists using the new API call
+    // Check if the email exists
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'checkUserExistsByEmail',
-        email: email.value
+        email: email.value,
       }),
-      method: 'POST'
-    })
-    // console.log('DATATA', data.exists)
+      method: 'POST',
+    });
 
     if (error || !data.exists) {
       toast.add({
@@ -69,39 +68,45 @@ const requestPasswordReset = async () => {
         summary: 'Error',
         detail:
           'An Account with this Email Does not exist. Please check the email address or Sign Up with an Account.',
-        life: 3000
-      })
-      return
+        life: 3000,
+      });
+      return;
     }
-    // Email exists, proceed with password reset
+
+    // Specify the redirect URL based on the environment
+    const redirectUrl = process.env.NODE_ENV === 'production'
+      ? 'https://janeebsolutions.co.za/confirm-password'
+      : 'http://localhost:5173/confirm-password';
+
+    // Proceed with password reset and use the appropriate redirect URL
     const { resetError } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/confirm-password`
-    })
+      redirectTo: redirectUrl,
+    });
 
     if (resetError) {
-      showError()
-      console.error('Error sending password recovery email:', resetError)
+      showError();
+      console.error('Error sending password recovery email:', resetError);
       toast.add({
         severity: 'error',
         summary: 'Error',
         detail: `Unexpected Error when sending password recovery email ${resetError.message}`,
-        life: 3000
-      })
-      return
+        life: 3000,
+      });
+      return;
     } else {
-      showSuccess()
-      emailSent.value = true
+      showSuccess();
+      emailSent.value = true;
     }
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('Unexpected error:', error);
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Unexpected Error when sending password recovery email ${error.message}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
-}
+};
 
 // Function to handle password update
 const resetPassword = async () => {
