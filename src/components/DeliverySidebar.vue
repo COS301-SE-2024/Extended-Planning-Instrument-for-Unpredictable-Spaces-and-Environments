@@ -53,12 +53,10 @@ const toggleDialog = () => {
 
 const toggleDialog2 = () => {
   showDialog.value = !showDialog.value
-  console.log('Toggling showDialog:', showDialog.value)
 }
 
 const handleOpenDeliveryDialog = () => {
   toggleDialog()
-  console.log('Emmit has been recieved and dialog has been toggled')
 }
 
 async function getSession() {
@@ -94,8 +92,21 @@ async function checkRole(email) {
   }
 }
 
-//API CALLS FOR SHIPMENTS
+async function setupSubscription() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Deliveries' }, () => {
+        getDeliveriesByStatus()
+      })
+      .subscribe()
+  } catch (error) {
+    console.error('Failed to fetch all shipped deliveries')
+  }
+}
+
 const deliveriesByStatus = ref([])
+
 const getDeliveriesByStatus = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -105,9 +116,7 @@ const getDeliveriesByStatus = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      // console.log('Data', data.data)
       deliveriesByStatus.value = data.data
-      // console.log('getDeliveriesByStatus Result:  ', deliveriesByStatus)
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -172,6 +181,7 @@ async function logout() {
 
 onMounted(() => {
   getDeliveriesByStatus()
+  setupSubscription()
 })
 
 const items = [
@@ -204,7 +214,7 @@ const items = [
     icon: 'pi pi-fw pi-question',
     command: () => {
       console.log('Opening Help Menu')
-      // toggleDialog()
+      toggleDialog2()
     }
   }
 ]
@@ -247,25 +257,7 @@ const items = [
         </a>
       </template>
       <template #end>
-        <div class="flex items-center gap-2">
-          <!-- <div
-            :class="[
-              isDark
-                ? 'border-neutral-500 bg-neutral-950 text-white'
-                : 'border-gray-500 bg-white text-black',
-              'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
-            ]"
-          >
-            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-            <InputText
-              placeholder="Search"
-              :class="[
-                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-                'focus:outline-none focus:ring-0 w-32 sm:w-auto'
-              ]"
-            />
-          </div> -->
-        </div>
+        <div class="flex items-center gap-2"></div>
       </template>
     </Menubar>
     <div class="bg-black opacity-50 backdrop-blur-lg">
