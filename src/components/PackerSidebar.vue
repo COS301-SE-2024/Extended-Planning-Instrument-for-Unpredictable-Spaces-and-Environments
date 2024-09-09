@@ -241,7 +241,7 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
     updateShipmentStatus(shipment.id, 'Processing')
     updateShipmentStartTime(shipment.id)
   }
-  console.log(packingResults.value)
+
   stopLoading()
 }
 
@@ -251,16 +251,15 @@ const runPackingAlgo = async (shipmentId) => {
     const { data: response } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'fetchSolution',
-        ShipmentId: parseInt(shipmentId)
+        shipmentId: shipmentId
       }),
       method: 'POST'
     })
-    console.log(response)
     if (response.error) {
       console.error('Failed to fetch solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      packingResults.value[shipmentId] = response.boxes
+      packingResults.value[shipmentId] = response.data.boxes
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (e) {
@@ -273,7 +272,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
     const { data, error } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'getPackages',
-        ShipmentID: parseInt(shipmentId)
+        ShipmentID: shipmentId
       }),
       method: 'POST'
     })
@@ -287,18 +286,20 @@ async function uploadSolution(shipmentId, containerDimensions) {
       console.error('Invalid data structure received:', data)
       return
     }
-    console.log('Packages: ', data)
-    const response = geneticAlgorithm(data.data, containerDimensions, 150, 300, 0.01).data
 
+    const response = geneticAlgorithm(data.data, containerDimensions, 150, 300, 0.01)
+    if (response.data.boxes.length == 0) {
+      console.error('Failed to calculate solution')
+      return
+    }
     const { error: errorSaving } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'uploadSolution',
-        ShipmentId: parseInt(shipmentId),
+        shipmentId: shipmentId,
         jsonObject: response
       }),
       method: 'POST'
     })
-    console.log(errorSaving)
     if (errorSaving) {
       console.error('Failed to store solution')
     } else {
@@ -315,7 +316,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
         console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
       }
       console.log('Response.data', response)
-      packingResults.value[shipmentId] = response.boxes
+      packingResults.value[shipmentId] = response.data.boxes
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (error) {

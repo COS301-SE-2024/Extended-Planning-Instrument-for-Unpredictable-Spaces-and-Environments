@@ -354,8 +354,9 @@ export function geneticAlgorithm(
 
   let population = initializePopulation(popSize, boxes)
 
-  let bestContainer: Container | null = null
-  let bestIndividual: Box[] | null = null
+  console.log("Current Population",population)
+  let bestContainer: Container
+  let bestIndividual: Box[]
 
   for (let generation = 0; generation < numGenerations; generation++) {
     const fitnessResults = population.map((individual) =>
@@ -374,6 +375,7 @@ export function geneticAlgorithm(
       bestContainer = currentBestContainer
       bestIndividual = currentBestIndividual
       currentIterations = 0
+      console.log('bestContainer', bestContainer)
     } else {
       currentIterations++
     }
