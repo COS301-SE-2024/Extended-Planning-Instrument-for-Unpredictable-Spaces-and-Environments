@@ -904,6 +904,8 @@ async function generateNewSolution(shipmentID) {
 
       const result = data
 
+      // const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
+      // console.log('RESPONSE: ', response)
       const response = await fetch(
         'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
         {
@@ -936,7 +938,9 @@ async function generateNewSolution(shipmentID) {
         if (updateError) {
           console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
         }
+        console.log('OLD PACKING DATA', packingData.value[0], packingData.value[1])
         handleJsonData(responsedata.boxes)
+        console.log('NEW PACKING DATA', packingData.value[0], packingData.value[1])
         toggleShipment(shipmentID)
       }
     }
