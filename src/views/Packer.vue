@@ -389,8 +389,6 @@ function cleanupThreeJS() {
 }
 
 function createContainer(scene, CONTAINER_SIZE, isDark) {
-  console.log('Creating container', CONTAINER_SIZE)
-
   const geometry = new THREE.BoxGeometry(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
   const material = new THREE.MeshBasicMaterial({
     color: '#64748b',
@@ -410,6 +408,7 @@ function createContainer(scene, CONTAINER_SIZE, isDark) {
 }
 
 function createBoxesFromData(scene, boxesData, truckPacked) {
+  console.log('boxesData incoming', boxesData)
   // Check if boxesData is a Vue ref and extract the actual value
   if (boxesData && boxesData.__v_isRef) {
     boxesData = boxesData._value
@@ -889,7 +888,7 @@ async function generateNewSolution(shipmentID) {
       }),
       method: 'POST'
     })
-
+    console.log('Successfully deleted saved solution, heres its packages', data)
     if (error2) {
       console.error('Error fetching packages for shipment: ', error)
       return
@@ -903,37 +902,59 @@ async function generateNewSolution(shipmentID) {
     const result = data
 
     const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
-    
+
+    console.log('REsponse from algo', response)
     const { error: errorSaving } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'uploadSolution',
-        ShipmentId: shipmentID,
+        shipmentId: shipmentID,
         jsonObject: response
       }),
       method: 'POST'
     })
     if (errorSaving) {
       console.error('Failed to store solution')
-    }
-    const responsedata = response
-
-    if (responsedata == null) {
-      console.error('Failed to upload solution', responsedata)
     } else {
-      const { error: updateError } = await supabase.functions.invoke('packing', {
-        body: JSON.stringify({
-          type: 'updateFitnessValue',
-          ShipmentId: shipmentID,
-          newFitnessValue: parseFloat(responsedata.fitness)
-        }),
-        method: 'POST'
-      })
+      if (response == null) {
+        console.error('Failed to upload solution', response)
+      } else {
+        const { error: updateError } = await supabase.functions.invoke('packing', {
+          body: JSON.stringify({
+            type: 'updateFitnessValue',
+            ShipmentId: shipmentID,
+            newFitnessValue: parseFloat(response.fitness)
+          }),
+          method: 'POST'
+        })
 
-      if (updateError) {
-        console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        if (updateError) {
+          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        } else {
+          const json = response.boxes
+          const newPackingData = json._isRef ? json.value : json
+          if (!newPackingData) {
+            console.error('Invalid packing data received:', newPackingData)
+            toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Invalid packing data received',
+              life: 3000
+            })
+            return
+          }
+          const shipmentIndex = shipments.value.findIndex((shipment) => shipment.id === shipmentID)
+
+          const updatedData = newPackingData.map((box) => ({
+            ...box,
+            scanned: false
+          }))
+
+          packingData.value[shipmentIndex] = updatedData
+
+          saveProgress()
+          toggleShipment(shipmentID)
+        }
       }
-      handleJsonData(responsedata.boxes)
-      toggleShipment(shipmentID)
     }
   } catch (error) {
     console.error('Error in generateNewSolution:', error)

@@ -255,11 +255,13 @@ const runPackingAlgo = async (shipmentId) => {
       }),
       method: 'POST'
     })
+
+    console.log("result from fetch",response)
     if (response.error) {
       console.error('Failed to fetch solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      packingResults.value[shipmentId] = response.data.boxes
+      packingResults.value[shipmentId] = response.data.data.boxes
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (e) {
@@ -291,33 +293,34 @@ async function uploadSolution(shipmentId, containerDimensions) {
     if (response.data.boxes.length == 0) {
       console.error('Failed to calculate solution')
       return
-    }
-    const { error: errorSaving } = await supabase.functions.invoke('packing', {
-      body: JSON.stringify({
-        type: 'uploadSolution',
-        shipmentId: shipmentId,
-        jsonObject: response
-      }),
-      method: 'POST'
-    })
-    if (errorSaving) {
-      console.error('Failed to store solution')
     } else {
-      const { error: updateError } = await supabase.functions.invoke('packing', {
+      const { error: errorSaving } = await supabase.functions.invoke('packing', {
         body: JSON.stringify({
-          type: 'updateFitnessValue',
-          ShipmentId: parseInt(shipmentId),
-          newFitnessValue: parseFloat(response.fitness)
+          type: 'uploadSolution',
+          shipmentId: shipmentId,
+          jsonObject: response
         }),
         method: 'POST'
       })
+      if (errorSaving) {
+        console.error('Failed to store solution')
+      } else {
+        const { error: updateError } = await supabase.functions.invoke('packing', {
+          body: JSON.stringify({
+            type: 'updateFitnessValue',
+            ShipmentId: parseInt(shipmentId),
+            newFitnessValue: parseFloat(response.fitness)
+          }),
+          method: 'POST'
+        })
 
-      if (updateError) {
-        console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        if (updateError) {
+          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        }
+        console.log('Response.data', response)
+        packingResults.value[shipmentId] = response.data.boxes
+        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
       }
-      console.log('Response.data', response)
-      packingResults.value[shipmentId] = response.data.boxes
-      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (error) {
     console.error('Error in getSolution:', error)
