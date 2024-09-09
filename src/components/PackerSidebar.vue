@@ -256,13 +256,18 @@ const runPackingAlgo = async (shipmentId) => {
       method: 'POST'
     })
 
-    console.log("result from fetch",response)
+    console.log('result from fetch', response)
     if (response.error) {
       console.error('Failed to fetch solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      packingResults.value[shipmentId] = response.data.data.boxes
-      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      if (response && response.data && response.data.boxes) {
+        packingResults.value[shipmentId] = response.data.boxes
+        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      } else {
+        console.error('Invalid or missing data in the response')
+        return
+      }
     }
   } catch (e) {
     console.error('Failure to fetch solution', e)

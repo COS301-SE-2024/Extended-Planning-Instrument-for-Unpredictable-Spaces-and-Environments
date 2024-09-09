@@ -903,7 +903,6 @@ async function generateNewSolution(shipmentID) {
 
     const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
 
-    console.log('REsponse from algo', response)
     const { error: errorSaving } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'uploadSolution',
