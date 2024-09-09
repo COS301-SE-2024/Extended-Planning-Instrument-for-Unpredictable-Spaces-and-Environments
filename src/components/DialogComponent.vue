@@ -101,7 +101,7 @@ const titleClass = computed(() => [
           >
             <div class="flex items-center mb-4">
               <img
-                src="/Members/Photos/truck.png"
+                src="../assets/Photos/truck.png"
                 alt="Truck"
                 class="w-16 h-16 mr-4 animate-bounce"
               />

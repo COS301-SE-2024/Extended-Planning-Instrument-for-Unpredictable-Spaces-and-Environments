@@ -59,7 +59,7 @@ const logout = async () => {
   >
     <div class="video-container flex items-center justify-center w-full lg:w-1/2 lg:h-full">
       <video
-        src="/Members/Videos/Error.mp4"
+        src="../assets/Videos/Error.mp4"
         autoplay
         loop
         muted
@@ -77,7 +77,7 @@ const logout = async () => {
         </p>
         <p class="text-base lg:text-2xl mb-4">
           Looks like the boxes didn't stack up as planned. Our AI must have taken a coffee break!
-          Let's get you back on track – no more missing parcels, we promise.
+          Let's get you back on track - no more missing parcels, we promise.
         </p>
         <div class="flex justify-center lg:justify-start mt-6 lg:mt-10">
           <button @click="logout" class="bg-orange-600 text-white px-6 py-2 rounded-md">
