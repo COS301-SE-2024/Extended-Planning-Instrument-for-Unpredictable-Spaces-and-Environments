@@ -880,68 +880,59 @@ async function generateNewSolution(shipmentID) {
 
     if (error) {
       console.log(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
+    }
+
+    const { data, error2 } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'getPackages',
+        ShipmentID: shipmentID
+      }),
+      method: 'POST'
+    })
+
+    if (error2) {
+      console.error('Error fetching packages for shipment: ', error)
       return
+    }
+
+    if (!data || !data.data) {
+      console.error('Invalid data structure received:', data)
+      return
+    }
+
+    const result = data
+
+    const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
+    const { error: errorSaving } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'uploadSolution',
+        ShipmentId: shipmentID,
+        jsonObject: response
+      }),
+      method: 'POST'
+    })
+    if (errorSaving) {
+      console.error('Failed to store solution')
+    }
+    const responsedata = response
+
+    if (responsedata == null) {
+      console.error('Failed to upload solution', responsedata)
     } else {
-      console.log(`Successfully deleted saved solution for shiment`)
-      const { data, error2 } = await supabase.functions.invoke('packing', {
+      const { error: updateError } = await supabase.functions.invoke('packing', {
         body: JSON.stringify({
-          type: 'getPackages',
-          ShipmentID: shipmentID
+          type: 'updateFitnessValue',
+          ShipmentId: shipmentID,
+          newFitnessValue: parseFloat(responsedata.fitness)
         }),
         method: 'POST'
       })
 
-      if (error2) {
-        console.error('Error fetching packages for shipment: ', error)
-        return
+      if (updateError) {
+        console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
       }
-
-      if (!data || !data.data) {
-        console.error('Invalid data structure received:', data)
-        return
-      }
-
-      const result = data
-
-      // const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
-      // console.log('RESPONSE: ', response)
-      const response = await fetch(
-        'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            shipmentID: shipmentID,
-            containerSize: CONTAINER_SIZE,
-            boxes: result
-          })
-        }
-      )
-      const responsedata = await response.json()
-      console.log('Here is the new solution', responsedata)
-
-      if (responsedata == null) {
-        console.error('Failed to upload solution', responsedata)
-      } else {
-        const { error: updateError } = await supabase.functions.invoke('packing', {
-          body: JSON.stringify({
-            type: 'updateFitnessValue',
-            ShipmentId: shipmentID,
-            newFitnessValue: parseFloat(responsedata.fitness)
-          }),
-          method: 'POST'
-        })
-
-        if (updateError) {
-          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
-        }
-        console.log('OLD PACKING DATA', packingData.value[0], packingData.value[1])
-        handleJsonData(responsedata.boxes)
-        console.log('NEW PACKING DATA', packingData.value[0], packingData.value[1])
-        toggleShipment(shipmentID)
-      }
+      handleJsonData(responsedata.boxes)
+      toggleShipment(shipmentID)
     }
   } catch (error) {
     console.error('Error in generateNewSolution:', error)

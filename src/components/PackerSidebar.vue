@@ -8,6 +8,7 @@ import { FilterMatchMode } from 'primevue/api'
 import { isLoading, useToggleDialog } from './packerDialog'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
 const containerDimensions = [1200, 1930, 1000]
 
@@ -240,37 +241,26 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
     updateShipmentStatus(shipment.id, 'Processing')
     updateShipmentStartTime(shipment.id)
   }
+  console.log(packingResults.value)
   stopLoading()
 }
 
 const runPackingAlgo = async (shipmentId) => {
+  console.log('Trying shipment', shipmentId)
   try {
-    const response = await fetch(
-      'https://my-flask-app-376304333680.africa-south1.run.app/getSolution',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          shipmentID: shipmentId
-        })
-      }
-    )
-    const responsedata = await response.json()
-    let errorObj = null
-    if (responsedata.details) {
-      try {
-        errorObj = JSON.parse(responsedata.details.replace(/'/g, '"'))
-      } catch (parseError) {
-        console.error('Error parsing details:', parseError)
-      }
-    }
-
-    if (errorObj && errorObj.error) {
+    const { data: response } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'fetchSolution',
+        ShipmentId: parseInt(shipmentId)
+      }),
+      method: 'POST'
+    })
+    console.log(response)
+    if (response.error) {
+      console.error('Failed to fetch solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      packingResults.value[shipmentId] = responsedata.boxes
+      packingResults.value[shipmentId] = response.boxes
       emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (e) {
@@ -283,7 +273,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
     const { data, error } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
         type: 'getPackages',
-        ShipmentID: shipmentId
+        ShipmentID: parseInt(shipmentId)
       }),
       method: 'POST'
     })
@@ -297,35 +287,26 @@ async function uploadSolution(shipmentId, containerDimensions) {
       console.error('Invalid data structure received:', data)
       return
     }
+    console.log('Packages: ', data)
+    const response = geneticAlgorithm(data.data, containerDimensions, 150, 300, 0.01).data
 
-    const result = data
-
-    console.log('Sending in Packages', result)
-
-    const response = await fetch(
-      'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          shipmentID: shipmentId,
-          containerSize: containerDimensions,
-          boxes: result
-        })
-      }
-    )
-    const responsedata = await response.json()
-
-    if (responsedata == null) {
-      console.error('Failed to upload solution', responsedata)
+    const { error: errorSaving } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'uploadSolution',
+        ShipmentId: parseInt(shipmentId),
+        jsonObject: response
+      }),
+      method: 'POST'
+    })
+    console.log(errorSaving)
+    if (errorSaving) {
+      console.error('Failed to store solution')
     } else {
       const { error: updateError } = await supabase.functions.invoke('packing', {
         body: JSON.stringify({
           type: 'updateFitnessValue',
-          ShipmentId: shipmentId,
-          newFitnessValue: parseFloat(responsedata.fitness)
+          ShipmentId: parseInt(shipmentId),
+          newFitnessValue: parseFloat(response.fitness)
         }),
         method: 'POST'
       })
@@ -333,8 +314,9 @@ async function uploadSolution(shipmentId, containerDimensions) {
       if (updateError) {
         console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
       }
-      packingResults.value = responsedata.boxes
-      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
+      console.log('Response.data', response)
+      packingResults.value[shipmentId] = response.boxes
+      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
     }
   } catch (error) {
     console.error('Error in getSolution:', error)

@@ -349,8 +349,9 @@ export function geneticAlgorithm(
     console.error('Invalid or empty boxesData:', boxesData)
     return { data: { fitness: 0, boxes: [] } }
   }
+
   const boxes = boxesData.map((data) => new Box(data))
-  console.log('Boxes', boxes)
+
   let population = initializePopulation(popSize, boxes)
 
   let bestContainer: Container | null = null
