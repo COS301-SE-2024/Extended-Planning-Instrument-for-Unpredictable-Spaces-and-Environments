@@ -1,13 +1,14 @@
 type BoxData = {
   id: number
   Shipment_id: number
-  Packed_time: string
+  Packed_time: string | null
   Width: number
   Length: number
   Height: number
   Weight: number
   Volume: number
 }
+
 class Box {
   id: number
   Shipment_id: number
@@ -71,18 +72,23 @@ class Container {
   }
 
   addBox(box: Box): boolean {
-    for (const space of this.remainingSpace.sort((a) => a[2] || a[1])) {
+    this.remainingSpace.sort((a, b) => a[2] - b[2] || a[1] - b[1])
+
+    for (const space of this.remainingSpace) {
       for (const orientation of this.generateOrientations(box)) {
         if (this.canFit(orientation, space)) {
-          const [x, y, z, , ,] = space
-          if (!this.checkOverlap(orientation, x, y, z) && this.isSupported(orientation, x, y, z)) {
-            if (this.checkWeightDistribution(orientation, x, y, z)) {
-              this.boxes.push([orientation, x, y, z])
-              this.remainingSpace = this.remainingSpace.filter((s) => s !== space)
-              this.splitSpace(x, y, z, orientation)
-              this.totalRemainingVolume -= orientation.volume
-              return true
-            }
+          const [x, y, z] = space
+
+          if (
+            !this.checkOverlap(orientation, x, y, z) &&
+            this.isSupported(orientation, x, y, z) &&
+            this.checkWeightDistribution(orientation, x, y, z)
+          ) {
+            this.boxes.push([orientation, x, y, z])
+            this.remainingSpace = this.remainingSpace.filter((s) => s !== space)
+            this.splitSpace(x, y, z, orientation)
+            this.totalRemainingVolume -= orientation.volume
+            return true
           }
         }
       }
@@ -98,8 +104,12 @@ class Container {
         bz < z + newBox.length &&
         bz + box.length > z
       ) {
-        if (by > y && newBox.density > box.density * 1.1) {
-          return false
+        // Check if the new box is above an existing one
+        if (by < y) {
+          // Ensure the box below can support the new one
+          if (box.density * 1.1 < newBox.density) {
+            return false
+          }
         }
       }
     }
@@ -126,7 +136,12 @@ class Container {
   generateOrientations(box: Box): Box[] {
     const dimensions = [box.width, box.height, box.length]
     const permutations = this.permute(dimensions)
-    return permutations.map((perm) => box.rotate(perm[0], perm[1], perm[2]))
+
+    const uniquePerms = Array.from(new Set(permutations.map((perm) => perm.join(',')))).map((str) =>
+      str.split(',').map(Number)
+    )
+
+    return uniquePerms.map((perm) => box.rotate(perm[0], perm[1], perm[2]))
   }
 
   permute(arr: number[]): number[][] {
@@ -144,14 +159,16 @@ class Container {
   }
 
   checkOverlap(newBox: Box, newX: number, newY: number, newZ: number): boolean {
+    const EPSILON = 1e-6
+
     for (const [box, x, y, z] of this.boxes) {
       if (
-        newX < x + box.width &&
-        newX + newBox.width > x &&
-        newY < y + box.height &&
-        newY + newBox.height > y &&
-        newZ < z + box.length &&
-        newZ + newBox.length > z
+        newX < x + box.width - EPSILON &&
+        newX + newBox.width > x + EPSILON &&
+        newY < y + box.height - EPSILON &&
+        newY + newBox.height > y + EPSILON &&
+        newZ < z + box.length - EPSILON &&
+        newZ + newBox.length > z + EPSILON
       ) {
         return true
       }
@@ -207,7 +224,7 @@ class Container {
 function initializePopulation(popSize: number, boxes: Box[]): Box[][] {
   const population: Box[][] = []
   for (let i = 0; i < popSize; i++) {
-    const individual = [...boxes].sort((a) => a.volume)
+    const individual = [...boxes].sort((a) => -a.volume)
     population.push(individual)
   }
   return population
@@ -317,7 +334,9 @@ function mutate(individual: Box[], mutationRate: number): void {
     }
   }
 }
+
 let bestFitness = Number.NEGATIVE_INFINITY
+let currentIterations = 0
 
 export function geneticAlgorithm(
   boxesData: BoxData[],
@@ -326,7 +345,12 @@ export function geneticAlgorithm(
   numGenerations: number = 300,
   mutationRate: number = 0.01
 ): { data: { fitness: number; boxes: any[] } } {
+  if (!boxesData || !Array.isArray(boxesData) || boxesData.length === 0) {
+    console.error('Invalid or empty boxesData:', boxesData)
+    return { data: { fitness: 0, boxes: [] } }
+  }
   const boxes = boxesData.map((data) => new Box(data))
+  console.log('Boxes', boxes)
   let population = initializePopulation(popSize, boxes)
 
   let bestContainer: Container | null = null
@@ -348,6 +372,9 @@ export function geneticAlgorithm(
       bestFitness = currentBestFitness
       bestContainer = currentBestContainer
       bestIndividual = currentBestIndividual
+      currentIterations = 0
+    } else {
+      currentIterations++
     }
 
     const parents = selectParents(population, fitness, Math.floor(popSize / 2))
@@ -362,15 +389,25 @@ export function geneticAlgorithm(
       nextPopulation.push(child1, child2)
     }
 
-    // Elitism: Keep the best individual in the new population
     nextPopulation[0] = bestIndividual ? [...bestIndividual] : nextPopulation[0]
 
     population = nextPopulation
+
+    if (currentIterations >= 16) {
+      break
+    }
+  }
+  console.log('Current iterations', currentIterations)
+  console.log('Current best Container', bestContainer)
+
+  if (!bestContainer) {
+    console.error('No valid container was found during the genetic algorithm execution.')
+    return { data: { fitness: 0, boxes: [] } }
   }
 
   const finalSolution = {
     fitness: bestFitness,
-    boxes: bestContainer.boxes.map(([box, x, y, z]) => ({
+    boxes: bestContainer!.boxes.map(([box, x, y, z]) => ({
       id: box.id,
       width: box.width,
       height: box.height,
@@ -382,26 +419,5 @@ export function geneticAlgorithm(
       z
     }))
   }
-
   return { data: finalSolution }
 }
-
-// const containerDimensions: [number, number, number] = [1200, 1380, 2800] // width, height, length
-
-// const [bestIndividual, bestContainer] = geneticAlgorithm(boxesData, containerDimensions)
-
-// // Prepare the final solution as JSON
-// const finalSolution = {
-//   fitness: bestFitness,
-//   boxes: bestContainer.boxes.map(([box, x, y, z]) => ({
-//     id: box.id,
-//     width: box.width,
-//     height: box.height,
-//     length: box.length,
-//     x,
-//     y,
-//     z
-//   }))
-// }
-
-// console.log(JSON.stringify(finalSolution, null, 2))

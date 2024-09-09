@@ -36,6 +36,8 @@ import { getDeliveriesByStatus } from './Deliveries/getDeliveriesByStatus.ts'
 import { updateDeliveryStartTime } from './Deliveries/updateDeliveryStartTime.ts'
 import { updateDeliveryEndTime } from './Deliveries/updateDeliveryEndTime.ts'
 import { updateDeliveryStatus } from './Deliveries/updateDeliveryStatus.ts'
+import { getDeliveriesByProcessing } from './Deliveries/getDeliveriesByProcessing.ts'
+
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -108,6 +110,9 @@ Deno.serve(async (req) => {
             requestBody.Volume
           )
         )
+      }
+      if (requestBody.type == 'getDeliveriesByProcessing') {
+        return responseBuilder(await getDeliveriesByProcessing(supabaseUser))
       }
       if (requestBody.type == 'getCurrentUser') {
         return responseBuilder(await getCurrentUser(supabaseUser))
