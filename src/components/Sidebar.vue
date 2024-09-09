@@ -544,6 +544,16 @@ const processShipment = async () => {
               detail: 'Shipments and packages inserted successfully',
               life: 4000
             })
+
+            const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('core', {
+              body: JSON.stringify({ type: 'deleteCSV', fileName: selectedFile.value.name }),
+              method: 'POST'
+            });
+
+            if (deleteError) {
+              console.error('Error deleting the CSV file:', deleteError);
+            }
+
           }
         }
       }
