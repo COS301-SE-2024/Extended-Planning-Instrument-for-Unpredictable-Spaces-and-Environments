@@ -1,4 +1,4 @@
-export async function uploadSolution(supabase: any, jsonObject: object) {
+export async function uploadSolution(supabase: any, jsonObject: object, shipment_id: any) {
   try {
     // Log the incoming JSON object for debugging
     console.log('Incoming JSON Object:', jsonObject);
@@ -7,7 +7,7 @@ export async function uploadSolution(supabase: any, jsonObject: object) {
     const jsonBlob = new Blob([JSON.stringify(jsonObject)], { type: 'application/json' });
 
     // Generate a unique file name
-    const fileName = `solution_${Date.now()}.json`;
+    const fileName = `shipment_${shipment_id}.json`;
 
     // Upload the JSON file to the 'solutions' bucket in Supabase
     const { data: uploadData, error: uploadError } = await supabase.storage
