@@ -6,6 +6,7 @@ import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
 import { FilterMatchMode } from 'primevue/api'
 import { isLoading, useToggleDialog } from './packerDialog'
+import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
 
 const containerDimensions = [1200, 1930, 1000]
@@ -13,6 +14,8 @@ const containerDimensions = [1200, 1930, 1000]
 const packingResults = ref({})
 const shipmentsToPack = ref(null)
 const showShipmentSelection = ref(false)
+
+const toast = useToast()
 
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -41,9 +44,14 @@ const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 // const dialogVisible = ref(false)
 
-const { dialogVisible, toggleStartNewPacking, toggleDialog } = useToggleDialog()
+const { dialogVisible, showStartPackingOvererlay, toggleStartNewPacking, toggleDialog } =
+  useToggleDialog()
 
 const { loadingShipments, startLoading, stopLoading } = isLoading()
+
+onMounted(() => {
+  loadProgress()
+})
 
 async function logout() {
   const { error } = await supabase.auth.signOut()
@@ -135,9 +143,19 @@ const items = [
     label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      toggleDialog()
-      getAllProcessing()
-    }
+      if (showStartPackingOvererlay.value) {
+        toggleDialog()
+        getAllProcessing()
+      } else {
+        toast.add({
+          severity: 'warn',
+          summary: 'Action Disabled',
+          detail: 'You cant start a new shipment until the active shipment is complete',
+          life: 3000
+        })
+      }
+    },
+    disabled: !showStartPackingOvererlay.value
   },
 
   {
@@ -164,9 +182,26 @@ const items = [
   }
 ]
 
+function loadProgress() {
+  const savedProgress = localStorage.getItem('packingProgress')
+  if (savedProgress) {
+    const progressData = JSON.parse(savedProgress)
+    packingResults.value = progressData.packingData
+    shipmentsToPack.value = progressData.shipments
+
+    return true
+  }
+  return false
+}
+
 function printQRcode() {
   if (Object.keys(packingResults.value).length === 0) {
-    alert('No shipments have been packed yet.')
+    toast.add({
+      severity: 'error',
+      summary: 'No Delivery has been selected to Pack',
+      detail: 'You need to choose a delivery to pack before you can print the QR codes ',
+      life: 3000
+    })
     return
   }
   showShipmentSelection.value = true
@@ -333,7 +368,11 @@ onMounted(() => {
         </svg>
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
-        <a v-ripple class="flex items-center p-6" v-bind="props.action">
+        <a
+          v-bind="props.action"
+          :class="{ 'disabled-link': !showStartPackingOvererlay }"
+          @click="item.command()"
+        >
           <span :class="item.icon" />
           <span class="ml-2">{{ item.label }}</span>
           <Badge
@@ -449,6 +488,11 @@ onMounted(() => {
 
 <style>
 /* General styles */
+
+.disabled-link {
+  pointer-events: none;
+  opacity: 0.5;
+}
 .mobile-icon {
   display: none;
 }

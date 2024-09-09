@@ -9,7 +9,7 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog, isLoading } from '../components/packerDialog'
-import ProgressSpinner from 'primevue/progressspinner'
+import Loading from '../views/Loading.vue'
 import { supabase } from '../supabase.js'
 
 const packingData = ref([])
@@ -57,8 +57,6 @@ function startNewDelivery() {
   shipments.value = []
   activeShipment.value = null
 
-  // Reset UI states
-  showStartPackingOvererlay.value = false
   isNewSceneVisible.value = false
   cratePacked.value = false
   toggleDialog()
@@ -310,7 +308,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
   }
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.setClearColor(isDark ? '#262626' : 0xffffff)
+  renderer.setClearColor(isDark ? '#171717' : 0xffffff)
   container.appendChild(renderer.domElement)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -458,6 +456,7 @@ function createBoxesFromData(scene, boxesData, truckPacked) {
     const edgesGeometry = new THREE.EdgesGeometry(geometry)
     const edgesMaterial = new THREE.LineBasicMaterial({ color: isDark ? 0xffffff : 0x000000 })
     const wireframe = new THREE.LineSegments(edgesGeometry, edgesMaterial)
+    wireframe.material.color.set(isDark.value ? 0xffffff : 0x000000)
     mesh.add(wireframe)
   })
 }
@@ -593,7 +592,7 @@ const onDetect = (result) => {
                 (child) => child instanceof THREE.LineSegments
               )
               if (wireframe) {
-                wireframe.material.color.set('#000000')
+                wireframe.material.color.set(isDark.value ? 0xffffff : 0x000000)
               }
             }
           } else {
@@ -965,21 +964,7 @@ async function generateNewSolution(shipmentID) {
       v-if="loadingShipments"
       :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
     >
-      <img
-        :src="
-          isDark
-            ? '/Members/Photos/Logos/Logo-Light-Transparent.svg'
-            : '/Members/Photos/Logos/Logo-Dark-Transparent.svg'
-        "
-        class="logo"
-        alt="Logo"
-      />
-      <ProgressSpinner
-        style="width: 150px; height: 150px"
-        strokeWidth="4"
-        animationDuration=".5s"
-        aria-label="Custom ProgressSpinner"
-      />
+      <Loading />
     </div>
 
     <div
@@ -1123,7 +1108,11 @@ async function generateNewSolution(shipmentID) {
           >
             <div id="new-three-container" class="w-full h-full"></div>
           </div>
-          <div v-else :id="`three-container-${activeShipment}`" class="w-full h-full">
+          <div
+            v-else
+            :id="`three-container-${activeShipment}`"
+            class="w-full h-full flex justify-center align-center"
+          >
             <div
               v-if="isKeyVisible"
               :class="[
