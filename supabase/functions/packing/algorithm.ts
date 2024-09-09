@@ -322,7 +322,7 @@ function evaluateFitness(
       3
 
   // Layer-based compactness
-  const layerHeight = 250
+  const layerHeight = 200
   const layers: Box[][] = []
   for (const [box, , y] of container.boxes) {
     const layerIndex = Math.floor(y / layerHeight)
@@ -365,7 +365,7 @@ function evaluateFitness(
     (1 - weightDistributionPenalty) * 0.1 +
     packingRatio * 0.4 +
     compactness * 0.1 +
-    ((1 - proximityPenalty) * 0.1) / (2 + unplacedPenalty)
+    ((1 - proximityPenalty) * 0.1) / ((1 + unplacedPenalty) * 1.5)
 
   return [fitness, container, unplacedBoxes]
 }
