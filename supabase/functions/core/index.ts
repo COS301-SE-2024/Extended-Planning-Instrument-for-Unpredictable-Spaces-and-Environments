@@ -13,7 +13,7 @@ import { getCurrentUser } from './Users/getCurrentUser.ts'
 import { getUserIdFromId } from './Users/getUserIdFromId.ts'
 import { getNameByEmail } from './Users/getNameByEmail.ts'
 import { updateDriverID } from './Users/updateDriverID.ts'
-
+import { checkUserExistsByEmail } from './Users/checkUserExistsByEmail.ts'
 // Package
 import { insertPackage } from './Packages/insertPackage.ts'
 import { uploadFile } from './Packages/uploadCSV.ts'
@@ -35,6 +35,9 @@ import { getDeliveriesByDriverID } from './Deliveries/getDeliveriesByDriverID.ts
 import { getDeliveriesByStatus } from './Deliveries/getDeliveriesByStatus.ts'
 import { updateDeliveryStartTime } from './Deliveries/updateDeliveryStartTime.ts'
 import { updateDeliveryEndTime } from './Deliveries/updateDeliveryEndTime.ts'
+import { updateDeliveryStatus } from './Deliveries/updateDeliveryStatus.ts'
+import { getDeliveriesByProcessing } from './Deliveries/getDeliveriesByProcessing.ts'
+
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -43,6 +46,7 @@ import { insertDelivery } from './Deliveries/insertDelivery.ts'
 import { getMaxShipmentID } from './Shipments/getMaxShipmentID.ts'
 import { insertShipment } from './Shipments/insertShipment.ts'
 import { deleteCSV } from './Storage/deleteCSV.ts'
+import { uploadSignature } from './Deliveries/uploadSignature.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -91,6 +95,9 @@ Deno.serve(async (req) => {
       if (requestBody.type == 'deleteUser') {
         return responseBuilder(await deleteUser(supabaseUser, requestBody.email))
       }
+      if (requestBody.type == 'checkUserExistsByEmail') {
+        return responseBuilder(await checkUserExistsByEmail(supabaseUser, requestBody.email))
+      }
       if (requestBody.type == 'insertPackage') {
         return responseBuilder(
           await insertPackage(
@@ -104,11 +111,17 @@ Deno.serve(async (req) => {
           )
         )
       }
+      if (requestBody.type == 'getDeliveriesByProcessing') {
+        return responseBuilder(await getDeliveriesByProcessing(supabaseUser))
+      }
       if (requestBody.type == 'getCurrentUser') {
         return responseBuilder(await getCurrentUser(supabaseUser))
       }
       if (requestBody.type == 'getShipmentByDeliveryID') {
         return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
+      }
+      if (requestBody.type == 'uploadSignature') {
+        return responseBuilder(await uploadSignature(supabaseUser, requestBody.dataURL))
       }
       if (requestBody.type == 'getNameByEmail') {
         return responseBuilder(await getNameByEmail(supabaseUser, requestBody.email))
@@ -126,23 +139,44 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'updateDeliveryStartTime') {
         return responseBuilder(
-          await updateDeliveryStartTime(supabaseUser, requestBody.deliveryId, new Date(requestBody.newStartTime))
-        );
+          await updateDeliveryStartTime(
+            supabaseUser,
+            requestBody.deliveryId,
+            new Date(requestBody.newStartTime)
+          )
+        )
       }
       if (requestBody.type == 'updateDeliveryEndTime') {
         return responseBuilder(
-          await updateDeliveryEndTime(supabaseUser, requestBody.deliveryId, new Date(requestBody.newEndTime))
-        );
+          await updateDeliveryEndTime(
+            supabaseUser,
+            requestBody.deliveryId,
+            new Date(requestBody.newEndTime)
+          )
+        )
       }
       if (requestBody.type == 'updateShipmentStartTime') {
         return responseBuilder(
-          await updateShipmentStartTime(supabaseUser, requestBody.shipmentId, new Date(requestBody.newStartTime))
-        );
+          await updateShipmentStartTime(
+            supabaseUser,
+            requestBody.shipmentId,
+            new Date(requestBody.newStartTime)
+          )
+        )
+      }
+      if (requestBody.type == 'updateDeliveryStatus') {
+        return responseBuilder(
+          await updateDeliveryStatus(supabaseUser, requestBody.deliveryId, requestBody.newStatus)
+        )
       }
       if (requestBody.type == 'updateShipmentEndTime') {
         return responseBuilder(
-          await updateShipmentEndTime(supabaseUser, requestBody.shipmentId, new Date(requestBody.newEndTime))
-        );
+          await updateShipmentEndTime(
+            supabaseUser,
+            requestBody.shipmentId,
+            new Date(requestBody.newEndTime)
+          )
+        )
       }
       if (requestBody.type == 'deleteShipment') {
         return responseBuilder(await deleteShipment(supabaseUser, requestBody.fileName))
@@ -162,10 +196,9 @@ Deno.serve(async (req) => {
         return responseBuilder(await getAllUsers(supabaseUser))
       }
       if (requestBody.type == 'updateDriverID') {
-        return responseBuilder(await updateDriverID(supabaseUser
-          , requestBody.deliveryID
-          , requestBody.driverID
-        ))
+        return responseBuilder(
+          await updateDriverID(supabaseUser, requestBody.deliveryID, requestBody.driverID)
+        )
       }
       if (requestBody.type == 'getAllPackages') {
         return responseBuilder(await getAllPackages(supabaseUser))

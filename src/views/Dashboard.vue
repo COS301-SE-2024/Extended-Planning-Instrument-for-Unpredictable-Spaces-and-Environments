@@ -5,6 +5,7 @@ import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { supabase } from '../supabase'
 import { format, parseISO } from 'date-fns'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 
 const isDark = useDark()
 const chartData = ref({
@@ -24,10 +25,61 @@ const chartDataDeliveries = ref({
 const knobValue = ref(0)
 const packages = ref([])
 const deliveries = ref([])
-const maxDeliveries = ref([])
-const knobValueDelivered = ref([])
+const maxDeliveries = ref(0)
+const knobValueDelivered = ref(0)
 
 // const router = useRouter()
+
+async function checkProcessing() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'Shipment', filter: 'Status=eq.Processing' },
+        (payload) => {
+          console.log('New or updated Processing Shipment:', payload.new.id)
+          uploadSoltuion(payload.new.id)
+        }
+      )
+      .subscribe()
+    // console.log('Subscription set up successfully')
+  } catch (error) {
+    console.error('Error setting up subscription:', error)
+  }
+}
+const containerDimensions = [1000, 1930, 1200] // defualt truck
+
+async function uploadSoltuion(shipmentId) {
+  const { data, error } = await supabase.functions.invoke('packing', {
+    body: JSON.stringify({
+      type: 'getPackages',
+      ShipmentID: shipmentId
+    }),
+    method: 'POST'
+  })
+  const result = await data.data
+  if (error) {
+    console.error('Error fetching packages for shipment', error.message)
+  } else {
+    const Solution = await geneticAlgorithm(result, containerDimensions, 150, 300, 0.01)
+    const stringSOl = JSON.stringify(Solution)
+    console.log('RESULT GOING INTO INVOKE:', stringSOl)
+    const { data, error } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'uploadSolution',
+        shipmentID: shipmentId,
+        solutions: stringSOl
+      }),
+      method: 'POST'
+    })
+    if (error) {
+      console.error('Error uploading calculated Solution', error)
+    } else {
+      console.log('Successfully uploaded solution')
+    }
+  }
+}
 
 let userName
 async function getUsername() {
@@ -49,10 +101,10 @@ async function setupSubscription() {
       })
       .subscribe()
   } catch (error) {
-    handleError(error, 'setupSubscription')
+    console.error(error, 'setupSubscription')
   }
 }
-//
+
 const getAllShipments = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -178,6 +230,7 @@ const getAllPackages = async () => {
     console.error('Error fetching data:', error)
   }
 }
+
 const getAllDeliveries = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -188,10 +241,10 @@ const getAllDeliveries = async () => {
       console.log('API Error:', error)
     } else {
       deliveries.value = data.data
-      maxDeliveries.value = deliveries.value.length
+      maxDeliveries.value = deliveries.value.length // Ensure maxDeliveries is a number
       knobValueDelivered.value = deliveries.value.filter(
         (delivery) => delivery.Status === 'Delivered'
-      ).length
+      ).length // Ensure knobValueDelivered is a number
       updateChartData()
     }
   } catch (error) {
@@ -228,19 +281,21 @@ const events = [
 const chartOptions = {
   responsive: true
 }
+
 onMounted(() => {
   getUsername()
   getAllShipments()
   getAllPackages()
   getAllDeliveries()
   setupSubscription()
+  checkProcessing()
 })
 </script>
 
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -291,10 +346,10 @@ onMounted(() => {
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="knobValue"
+                :max="500"
                 valueColor="#f97316"
                 :rangeColor="isDark ? 'White' : 'Black'"
                 :class="[isDark ? 'dark' : 'light']"
-                :max="500"
               />
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Total Packages</h2>
@@ -315,10 +370,10 @@ onMounted(() => {
             <div class="flex flex-row flex-grow items-center">
               <Knob
                 v-model="knobValueDelivered"
+                :max="maxDeliveries"
                 valueColor="#f97316"
                 :rangeColor="isDark ? 'White' : 'Black'"
                 :class="[isDark ? 'dark' : 'light']"
-                :max="maxDeliveries"
               />
               <div class="ml-4 flex flex-col">
                 <h2 class="mb-1 font-bold">Delivered</h2>
@@ -338,12 +393,7 @@ onMounted(() => {
           >
             <h2 class="mb-6 font-bold">Fitness Value</h2>
             <div class="flex justify-center items-center w-full h-full">
-              <Chart
-                type="scatter"
-                :data="fitnessData"
-                :options="scatterOptions"
-                class="h-full w-full"
-              />
+              <Chart type="scatter" :data="fitnessData" class="h-full w-full" />
             </div>
           </div>
         </div>

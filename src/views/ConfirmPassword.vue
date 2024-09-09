@@ -47,7 +47,8 @@ const resetPassword = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.',
+      detail:
+        'Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.',
       life: 3000
     })
     return
@@ -56,8 +57,19 @@ const resetPassword = async () => {
   passwordError.value = false
 
   try {
+    const { data: sessionData } = await supabase.auth.getSession()
+
+    if (!sessionData || !sessionData.session) {
+      console.error('No session found')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No active session found. Please try again.',
+        life: 3000
+      })
+      return
+    }
     const { error } = await supabase.auth.updateUser({
-      email: userEmail.value,
       password: password1.value
     })
 
@@ -70,14 +82,16 @@ const resetPassword = async () => {
         life: 3000
       })
     } else {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut()
       toast.add({
         severity: 'success',
         summary: 'Success',
         detail: 'Password updated successfully.',
         life: 3000
       })
-      router.push('/')
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
     }
   } catch (error) {
     console.error('Unexpected error:', error)
@@ -103,43 +117,55 @@ onMounted(() => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      isDark ? 'dark bg-neutral-900' : 'bg-gray-200',
+      'min-h-screen flex flex-col items-center justify-center font-inter'
     ]"
   >
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
+        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sm:rounded-xl sm:shadow-xl',
+        'flex flex-col justify-center'
       ]"
     >
-      <div class="flex items-center justify-center">
+      <!-- Logo container -->
+      <div
+        :class="[
+          'flex items-start justify-start w-full', // Align left on smaller screens
+          'sm:items-center sm:justify-center' // Center on larger screens
+        ]"
+        style="margin-bottom: 1rem"
+      >
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
       </div>
-      <p
+      <div
         :class="[
-          isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center font-bold mb-2 '
+          'flex flex-col w-full mb-6',
+          'items-start justify-start text-left', // Align text left on smaller screens
+          'sm:items-center sm:text-center' // Center text on larger screens
         ]"
       >
-        Change Password
-      </p>
-      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">
-        Please enter your new password
-      </h2>
+        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
+          Change Password
+        </p>
+        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+          Please enter your new passwrod below
+        </p>
+      </div>
       <form @submit.prevent="resetPassword" class="flex flex-col">
         <label
           for="password1"
@@ -174,7 +200,8 @@ onMounted(() => {
           </template>
         </Password>
         <p v-if="passwordError" class="text-red-500 text-sm mt-2 mb-4">
-          Password must be at least 8 characters long and include one lowercase, one uppercase, and one numeric character.
+          Password must be at least 8 characters long and include one lowercase, one uppercase, and
+          one numeric character.
         </p>
         <label
           for="password2"
@@ -229,40 +256,21 @@ onMounted(() => {
         >
           <router-link to="/" class="ml-2 text-orange-500"> Back to login</router-link>
         </p>
-      </form>
-    </div>
-    <div class="flex-col">
-      <div
-        @click="toggleDark"
-        :class="[
-          isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-          'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 mb-4 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-        ]"
-      >
-        <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-          <span v-if="isDark">Light Mode</span>
-          <span v-else>Dark Mode</span>
+        <p
+          @click="toggleDialog"
+          class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        >
+          Help
         </p>
-
-        <button class="focus:outline-none">
-          <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-        </button>
-      </div>
-
-      <p
-        @click="toggleDialog"
-        class="flex items-center justify-center mr-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
-      >
-        Help
-      </p>
+      </form>
     </div>
 
     <div>
       <DialogComponent
         v-if="dialogVisible"
-        imagePath="/Members/Photos/Login _ landing page.png"
+        imagePath="src/assets/Photos/Login _ landing page.png"
         altText="Alternative Image"
-        title="Contact Support"
+        title="Help Menu"
         :contacts="[
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -274,10 +282,10 @@ onMounted(() => {
     <DialogComponent
       v-if="dialogVisible"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '@/assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '@/assets/Photos/Sign-up.png', alt: 'Image 2' }
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -369,5 +377,10 @@ body {
 }
 .p-dialog .p-dialog-header {
   background: white;
+}
+
+.p-icon-field-right > .p-input-icon:last-of-type {
+  right: 0rem;
+  color: rgba(0, 0, 0, 0.6);
 }
 </style>

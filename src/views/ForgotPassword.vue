@@ -5,6 +5,7 @@ import { supabase } from '../supabase'
 import { useRouter, useRoute } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { useToast } from 'primevue/usetoast'
+import { checkUserExistsByEmail } from '../../supabase/functions/core/Users/checkUserExistsByEmail'
 
 const dialogVisible = ref(false)
 const isDark = useDark()
@@ -41,6 +42,7 @@ const showError = () => {
     life: 3000
   })
 }
+
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
     passwordError.value = true
@@ -51,22 +53,53 @@ const requestPasswordReset = async () => {
   passwordError.value = false
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+    // Check if the email exists using the new API call
+    const { data, error } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'checkUserExistsByEmail',
+        email: email.value
+      }),
+      method: 'POST'
+    })
+    // console.log('DATATA', data.exists)
+
+    if (error || !data.exists) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail:
+          'An Account with this Email Does not exist. Please check the email address or Sign Up with an Account.',
+        life: 3000
+      })
+      return
+    }
+    // Email exists, proceed with password reset
+    const { resetError } = await supabase.auth.resetPasswordForEmail(email.value, {
       redirectTo: `${window.location.origin}/confirm-password`
     })
 
-    if (error) {
+    if (resetError) {
       showError()
-      console.error('Error sending password recovery email:', error)
-      alert('Error sending password recovery email: ' + error.message)
+      console.error('Error sending password recovery email:', resetError)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `Unexpected Error when sending password recovery email ${resetError.message}`,
+        life: 3000
+      })
+      return
     } else {
       showSuccess()
-      // alert('Password recovery email sent. Please check your inbox.')
       emailSent.value = true
     }
   } catch (error) {
     console.error('Unexpected error:', error)
-    alert('Unexpected error occurred: ' + error.message)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Unexpected Error when sending password recovery email ${error.message}`,
+      life: 3000
+    })
   }
 }
 
@@ -112,43 +145,57 @@ onMounted(() => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      'min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      isDark ? 'dark bg-neutral-900' : 'bg-gray-200',
+      'min-h-screen flex flex-col items-center justify-center font-inter'
     ]"
   >
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
+        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sm:rounded-xl sm:shadow-xl',
+        'flex flex-col justify-center'
       ]"
     >
-      <div class="flex items-center justify-center">
+      <!-- Logo container -->
+      <div
+        :class="[
+          'flex items-start justify-start w-full', // Align left on smaller screens
+          'sm:items-center sm:justify-center' // Center on larger screens
+        ]"
+        style="margin-bottom: 1rem"
+      >
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
       </div>
-      <p
+      <div
         :class="[
-          isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center font-bold mb-2 '
+          'flex flex-col w-full mb-6',
+          'items-start justify-start text-left', // Align text left on smaller screens
+          'sm:items-center sm:text-center' // Center text on larger screens
         ]"
       >
-        Forgot Password?
-      </p>
-      <h2 class="mb-8 text-gray-500 dark:text-gray-400 text-left">
-        Enter you email to receive a recovery link
-      </h2>
+        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
+          Forgot Password?
+        </p>
+        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+          Enter you email to receive a recovery link
+        </p>
+      </div>
+
+      <h2 class="mb-2 text-gray-500 dark:text-gray-400 text-left"></h2>
       <form @submit.prevent="requestPasswordReset" class="flex flex-col">
         <div class="form-group mb-6">
           <label
@@ -189,40 +236,21 @@ onMounted(() => {
         >
           <router-link to="/" class="ml-2 text-orange-500"> Back to login</router-link>
         </p>
-      </form>
-    </div>
-    <div class="flex-col">
-      <div
-        @click="toggleDark"
-        :class="[
-          isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-          'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 mb-4 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-        ]"
-      >
-        <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-          <span v-if="isDark">Light Mode</span>
-          <span v-else>Dark Mode</span>
+        <p
+          @click="toggleDialog"
+          class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        >
+          Help
         </p>
-
-        <button class="focus:outline-none">
-          <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-        </button>
-      </div>
-
-      <p
-        @click="toggleDialog"
-        class="flex items-center justify-center mr-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
-      >
-        Help
-      </p>
+      </form>
     </div>
 
     <div>
       <DialogComponent
         v-if="dialogVisible"
-        imagePath="/Members/Photos/Login _ landing page.png"
+        imagePath="src/assets/Photos/Login _ landing page.png"
         altText="Alternative Image"
-        title="Contact Support"
+        title="Help Menu"
         :contacts="[
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
           { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -234,11 +262,11 @@ onMounted(() => {
     <DialogComponent
       v-if="dialogVisible"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '@/assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '@/assets/Photos/Sign-up.png', alt: 'Image 2' }
         // Add more images as needed
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }

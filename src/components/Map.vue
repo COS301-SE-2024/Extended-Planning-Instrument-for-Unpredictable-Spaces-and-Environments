@@ -1,41 +1,25 @@
 <template>
   <div :class="[' h-[auto] flex flex-col rounded-md ']">
     <div id="map" style="width: 100%; height: 400px"></div>
-    <button
-      v-if="!isNavigating"
-      @click="startNavigation"
-      class="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-    >
-      Start Navigation
-    </button>
-    <div v-if="isNavigating" class="mt-4">
-      <h2 class="text-xl font-bold mb-2">Current Step:</h2>
-      <p v-html="currentStep"></p>
-      <button
-        @click="nextStep"
-        class="w-full mt-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-600"
-      >
-        Next Step
-      </button>
-    </div>
     <p v-if="errorMessage" class="error-message mt-4">{{ errorMessage }}</p>
   </div>
 </template>
 
 <script>
 import { ref, onMounted, watch } from 'vue'
-import { Loader } from '@googlemaps/js-api-loader'
-import { useDark } from '@vueuse/core'
+// import { Loader } from '@googlemaps/js-api-loader'
+import loader from '../googleMapsLoader.js'
+// import { useDark } from '@vueuse/core'
 
 const startingPosition = ref(null)
 
 let markers = []
 
-const isDark = useDark()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  // console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
+// const isDark = useDark()
+// const toggleDark = () => {
+//   isDark.value = !isDark.value
+//   // console.log('Dark mode:', isDark.value ? 'on' : 'off')
+// }
 export default {
   props: {
     destination: {
@@ -49,21 +33,13 @@ export default {
     const errorMessage = ref('')
     const isNavigating = ref(false)
     const currentStep = ref('')
-    const currentDirectionsRenderer = ref(null);
+    const currentDirectionsRenderer = ref(null)
     const directionsRenderer = ref(null)
     const steps = ref([])
     const currentStepIndex = ref(0)
     let map = null
     let google = null
     // let watchId = null
-
-    // console.log('HERE IS PROPS FROM MAPS', props)
-
-    const loader = new Loader({
-      apiKey: "AIzaSyC6di1BTu_1U6KrADXOmy21xmsLwJ-an9g",
-      version: 'weekly',
-      libraries: ['places']
-    })
 
     const getLocation = () => {
       return new Promise((resolve, reject) => {
@@ -209,43 +185,6 @@ export default {
       }
     }
 
-    // const updateMap = async () => {
-    //   if (!map || !google) {
-    //     console.error('Map or Google API not initialized')
-    //     return
-    //   }
-
-    //   // Remove existing markers
-    //   markers.forEach((marker) => marker.setMap(null))
-    //   markers = []
-
-    //   // Add marker for starting position
-    //   const startMarker = new google.maps.Marker({
-    //     position: { lat: coordinates.value.lat, lng: coordinates.value.long },
-    //     map: map,
-    //     title: 'Starting Position'
-    //   })
-    //   markers.push(startMarker)
-
-    //   // Add marker for new destination
-    //   if (destinationCoords.value.lat && destinationCoords.value.long) {
-    //     const destinationMarker = new google.maps.Marker({
-    //       position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
-    //       map: map,
-    //       title: 'Destination'
-    //     })
-    //     markers.push(destinationMarker)
-    //   }
-
-    //   // Fit the map to show both markers
-    //   const bounds = new google.maps.LatLngBounds()
-    //   bounds.extend({ lat: coordinates.value.lat, lng: coordinates.value.long })
-    //   bounds.extend({ lat: destinationCoords.value.lat, lng: destinationCoords.value.long })
-    //   map.fitBounds(bounds)
-
-    //   // Recalculate route
-    //   await calculateRoute()
-    // }
     const updateMap = async () => {
       if (!map || !google) {
         console.error('Map or Google API not initialized')
@@ -257,8 +196,8 @@ export default {
       markers = []
 
       if (currentDirectionsRenderer.value) {
-        currentDirectionsRenderer.value.setMap(null);
-        currentDirectionsRenderer.value = null;
+        currentDirectionsRenderer.value.setMap(null)
+        currentDirectionsRenderer.value = null
       }
 
       const { DirectionsRenderer } = await loader.importLibrary('routes')
@@ -308,7 +247,6 @@ export default {
     watch(
       () => props.destination,
       async (newDestination) => {
-        console.log('WE GOT THE NEW DESTINATION', newDestination)
         if (newDestination) {
           if (startingPosition.value) {
             // Make the old destination the new starting position

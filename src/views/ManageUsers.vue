@@ -6,9 +6,12 @@ import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 const isDark = useDark()
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
+const toast = useToast()
 
 // Utility to sanitize input
 const sanitizeInput = (input) => {
@@ -59,7 +62,7 @@ async function fetchCurrentUser() {
           handleError(error, 'fetchCurrentUser')
         } else {
           currentUser.value = data.data
-          // console.log('Current user fetched:', currentUser.value)
+          // console.log('Current user:', currentUser.value) // Debugging statement
         }
       } else {
         console.log('User does not have permission')
@@ -78,15 +81,15 @@ async function setupSubscription() {
       .channel('custom-all-channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Users' }, (payload) => {
         handleInsertOrUpdate(payload.new)
-        console.log('Inserted:', payload.new)
+        // console.log('Inserted:', payload.new)
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Users' }, (payload) => {
         handleInsertOrUpdate(payload.new)
-        console.log('Updated:', payload.new)
+        // console.log('Updated:', payload.new)
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Users' }, (payload) => {
         handleDelete(payload.old)
-        console.log('Deleted:', payload.old)
+        // console.log('Deleted:', payload.old)
       })
       .subscribe()
   } catch (error) {
@@ -121,7 +124,19 @@ const fetchUsers = async () => {
 }
 const DelteUser = async () => {
   loadingDel.value = true
+  if (selectedUser.value.Email === currentUser.value.email) {
+    loadingDel.value = false
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'You are not allowed delete yourself, deleting employees need to be authorized',
+      life: 10000
+    })
+    return
+  }
+
   const sanitizedEmail = sanitizeInput(selectedUser.value.Email)
+  console.log(sanitizedEmail)
   try {
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'deleteUser', email: sanitizedEmail }),
@@ -129,9 +144,23 @@ const DelteUser = async () => {
     })
 
     if (error) {
+      console.log(error)
+      dialogVisible.value = false
       handleError(error, 'deleteUser')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error,
+        life: 10000
+      })
     } else {
       dialogVisible.value = false
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'You have successfully deleted the user',
+        life: 5000
+      })
     }
   } catch (error) {
     handleError(error, 'deleteUser')
@@ -200,7 +229,8 @@ const saveChanges = async () => {
 }
 
 const nameWithYou = (user) => {
-  if (currentUser.value.email === user.Email) {
+  // console.log('Function called for user:', user) // Debugging statement
+  if (currentUser.value && currentUser.value.email === user.email) {
     return `${user.FullName} (You)`
   }
   return user.FullName
@@ -210,7 +240,7 @@ const nameWithYou = (user) => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -266,7 +296,7 @@ const nameWithYou = (user) => {
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">
               <Button
-                class="bg-orange-500 text-gray-100 rounded-lg p-2"
+                class="bg-orange-500 text-gray-200 rounded-lg p-2"
                 label="Edit"
                 @click="onRemoveThing(slotProps.data)"
               />
@@ -383,7 +413,7 @@ const nameWithYou = (user) => {
     <DialogComponent
       v-if="showDialog"
       :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -392,6 +422,7 @@ const nameWithYou = (user) => {
       @close-dialog="toggleDialog"
     />
   </div>
+  <Toast />
 </template>
 
 <script>

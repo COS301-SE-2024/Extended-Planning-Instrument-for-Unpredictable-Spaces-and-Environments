@@ -5,34 +5,39 @@ import VueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from 'tailwindcss'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { viteStaticCopy } from 'vite-plugin-static-copy' // Add this import
+
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default defineConfig({
+  root: 'src',
   plugins: [
-    vue(),
+    vue(), // Add the Vue plugin here
     vueJsx(),
     VueDevTools(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'public/_redirects', // Source file
-          dest: '' // Destination in dist folder
-        }
-      ]
-    })
   ],
-  base: '/',
   css: {
     postcss: {
-      plugins: [tailwindcss()]
-    }
+      plugins: [tailwindcss()],
+    },
+  },
+  build: {
+    outDir: '../dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: path.resolve(dirname, 'src/index.html'),
+    },
   },
   resolve: {
     alias: {
-      '@': path.resolve(dirname, './src')
+      '@': path.resolve(dirname, './src'),
+      'source-map-js': 'source-map',
+      path: 'rollup-plugin-node-polyfills/polyfills/path',
+      url: 'rollup-plugin-node-polyfills/polyfills/url'
     }
+  },
+  optimizeDeps: {
+    exclude: ['fs']
   }
 })

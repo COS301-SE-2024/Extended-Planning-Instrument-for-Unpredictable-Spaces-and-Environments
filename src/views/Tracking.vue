@@ -238,7 +238,7 @@ const loading = ref(false)
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -270,7 +270,7 @@ const loading = ref(false)
       <div
         class="loading-new"
         v-if="visible"
-        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-100 text-black']"
+        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
       >
         <ProgressSpinner
           style="width: 150px; height: 150px"
@@ -376,7 +376,7 @@ const loading = ref(false)
     <DialogComponent
       v-if="showDialog"
       :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -409,8 +409,6 @@ export default {
     },
     save() {
       const { isEmpty, data } = this.$refs.signaturePad.saveSignature()
-      console.log(isEmpty)
-      console.log(data)
     }
   },
   components: {

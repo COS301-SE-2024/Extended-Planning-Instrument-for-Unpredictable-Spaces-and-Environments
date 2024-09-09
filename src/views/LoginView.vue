@@ -1,14 +1,14 @@
 <script setup>
 // DARK MODE SETTINGS
 import { useDark } from '@vueuse/core'
-import { ref, onMounted } from 'vue'
+import { ref, computed, watchEffect, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
 
 // let localUser
-const dialogVisible = ref(false)
-
+const emailError = ref(false)
+const passwordError = ref(false)
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
@@ -20,17 +20,90 @@ const email = ref('')
 const password = ref('')
 const router = useRouter()
 
-// Sign in with email and password
+const failedAttempts = ref(0)
+const cooldownEndTime = ref(0)
+const cooldownMessage = ref('')
+
+// Computed property to check if the cooldown is active
+const isCooldownActive = computed(() => {
+  return Date.now() < cooldownEndTime.value
+})
+
+// Watch the cooldown end time and update the countdown message
+watchEffect(() => {
+  if (isCooldownActive.value) {
+    const interval = setInterval(() => {
+      const remainingTime = Math.ceil((cooldownEndTime.value - Date.now()) / 1000)
+      cooldownMessage.value = `Too many failed attempts. Please wait ${Math.floor(remainingTime / 60)} minutes and ${remainingTime % 60} seconds before trying again.`
+
+      if (!isCooldownActive.value) {
+        clearInterval(interval)
+      }
+    }, 1000)
+  } else {
+    cooldownMessage.value = ''
+  }
+})
+
+// Load the cooldownEndTime from localStorage when the component mounts
+onMounted(() => {
+  const storedCooldownEndTime = localStorage.getItem('cooldownEndTime')
+  if (storedCooldownEndTime) {
+    cooldownEndTime.value = parseInt(storedCooldownEndTime, 10)
+  }
+})
+
 const signIn = async () => {
+  const currentTime = Date.now()
+
+  if (isCooldownActive.value) {
+    return
+  }
+
+  if (failedAttempts.value >= 10) {
+    alert("You have exceeded the maximum number of attempts. Please reset your password.")
+    router.push({ name: 'forgot-password' }) // Redirect to password reset page
+    return
+  }
+
   const { user, error } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value
   })
+  
   if (error) {
-    alert(error.message)
+    console.log(error)
+    failedAttempts.value++
+    
+    if (error.message.includes('email')) {
+      emailError.value = true
+      passwordError.value = false
+    } else if (error.message.includes('password')) {
+      passwordError.value = true
+      emailError.value = false
+    } else {
+      // If we can't determine which field is wrong, set both to true
+      emailError.value = true
+      passwordError.value = true
+    }
+
+    if (failedAttempts.value >= 3) {
+      let cooldownMinutes = Math.pow(2, failedAttempts.value - 3) * 10
+      cooldownEndTime.value = Date.now() + cooldownMinutes * 60000
+
+      // Save the cooldownEndTime to localStorage
+      localStorage.setItem('cooldownEndTime', cooldownEndTime.value.toString())
+    }
+    
+    // You might want to set a more specific error message here
+    console.error(error.message)
   } else {
     console.log('User signed in:', user)
-    // await checkRole()
+    failedAttempts.value = 0 // Reset failed attempts on successful login
+
+    // Clear the cooldownEndTime from localStorage on successful login
+    localStorage.removeItem('cooldownEndTime')
+
     router.push({ name: 'callback' })
   }
 }
@@ -55,49 +128,64 @@ const signInWithProvider = async (provider) => {
 }
 </script>
 
+
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900' : 'bg-gray-100',
-      ' min-h-screen flex flex-col items-center justify-center shadow-lg font-inter px-4'
+      isDark ? 'dark bg-neutral-900' : 'bg-gray-200',
+      'min-h-screen flex flex-col items-center justify-center font-inter'
     ]"
   >
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'mt-4 sign-in-container w-full sm:w-[500px] h-auto mx-auto p-8 sm:p-14 rounded-xl shadow-xl'
+        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sm:rounded-xl sm:shadow-xl',
+        'flex flex-col justify-center'
       ]"
     >
-      <div class="flex items-center justify-center">
+      <!-- Logo container -->
+      <div
+        :class="[
+          'flex items-start justify-start w-full', // Align left on smaller screens
+          'sm:items-center sm:justify-center' // Center on larger screens
+        ]"
+        style="margin-bottom: 1rem"
+      >
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
-          style="width: 10rem; height: auto"
+          style="width: 15rem; height: auto"
         />
       </div>
-      <p
+      <div
         :class="[
-          isDark ? 'text-white' : ' text-neutral-800 ',
-          'text-3xl flex items-center  font-bold mb-6 '
+          'flex flex-col w-full mb-6',
+          'items-start justify-start text-left', // Align text left on smaller screens
+          'sm:items-center sm:text-center' // Center text on larger screens
         ]"
       >
-        Sign in
-      </p>
-
+        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
+          Welcome back!
+        </p>
+        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+          Please enter login details below
+        </p>
+      </div>
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
           <label
             for="email"
-            :class="[isDark ? 'text-white' : ' text-neutral-800', 'block font-bold']"
+            :class="[isDark ? 'text-white' : 'text-neutral-800', 'block font-bold']"
             >Email</label
           >
           <input
@@ -107,36 +195,44 @@ const signInWithProvider = async (provider) => {
             required
             :class="[
               isDark
-                ? 'text-white  bg-neutral-900'
+                ? 'text-white bg-neutral-900'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500'
+              'mt-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
             ]"
+            @input="emailError = false"
+            @blur="validateEmail"
           />
         </div>
 
         <label
           for="password"
-          :class="[isDark ? 'text-white ' : ' text-neutral-800', 'block font-bold']"
+          :class="[isDark ? 'text-white' : 'text-neutral-800', 'block font-bold']"
           >Password</label
         >
+
         <Password
-          id="password"
           v-model="password"
+          inputId="password"
+          id="password"
           toggleMask
-          :invalid="value === null"
           required
-          :feedback="false"
-          :class="[
-            !isDark ? 'text-white' : 'text-neutral-800',
-            'focus:ring-0 hover:ring-0 mb-6 mt-2'
-          ]"
+          class="mt-2 w-full p-password"
+          @input="passwordError = false"
+          @blur="validatePassword"
         />
-        <router-link to="/forgot-password" class="text-center text-md text-orange-500">
+        <div v-if="passwordError || isCooldownActive" class="w-full bg-red-200 border-red-500 border-2 rounded-md mt-8">
+          <p class="text-red-500 p-4">Incorrect email or password.</p>
+          <p v-if="cooldownMessage" class="text-red-500 p-4">{{ cooldownMessage }}</p>
+        </div>
+
+        <router-link to="/forgot-password" class="mt-6 text-center text-md text-orange-500">
           Forgot Password ?</router-link
         >
         <button
           type="submit"
-          class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold hover:transform hover:-translate-y-1 transition duration-300"
+          class="my-6 sign-in-button w-full py-2 bg-orange-500 text-white rounded-lg text-lg font-semibold transition-transform duration-300 ease-in-out transform hover:translate-y-[-4px]"
+          :disabled="isCooldownActive"
+          :class="isCooldownActive ? 'opacity-50 cursor-not-allowed' : ''"
         >
           Sign In
         </button>
@@ -187,28 +283,9 @@ const signInWithProvider = async (provider) => {
           <router-link to="/SignUp" class="ml-2 text-orange-500"> Sign up</router-link>
         </p>
       </form>
-    </div>
-    <div class="flex-col">
-      <div
-        @click="toggleDark"
-        :class="[
-          isDark ? 'bg-neutral-800' : 'text-neutral-800 bg-white shadow-sm border border-gray-300',
-          'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 mb-4 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-        ]"
-      >
-        <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-          <span v-if="isDark">Light Mode</span>
-          <span v-else>Dark Mode</span>
-        </p>
-
-        <button class="focus:outline-none">
-          <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-        </button>
-      </div>
-
       <p
         @click="toggleDialog"
-        class="flex items-center justify-center mr-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        class="mt-4 flex items-center justify-center text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
       >
         Help
       </p>
@@ -217,7 +294,7 @@ const signInWithProvider = async (provider) => {
     <div>
       <DialogComponent
         v-if="showDialog"
-        imagePath="/Members/Photos/Login _ landing page.png"
+        imagePath="../assets/Photos/Login _ landing page.png"
         altText="Alternative Image"
         title="Contact Support"
         :contacts="[
@@ -231,11 +308,10 @@ const signInWithProvider = async (provider) => {
     <DialogComponent
       v-if="showDialog"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
-        // Add more images as needed
+        { src: '../assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '../assets/Photos/Sign-up.png', alt: 'Image 2' }
       ]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -256,12 +332,10 @@ const toggleDialog = () => {
   showDialog.value = !showDialog.value
 }
 </script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
-.p-dialog .p-dialog-header-icon {
-  display: none;
-}
 .p-dialog-header {
   display: none;
 }
@@ -297,7 +371,10 @@ body {
   border-color: rgb(161 98 7);
   box-shadow: none;
 }
-
+.p-icon-field-right > .p-input-icon:last-of-type {
+  right: 0rem;
+  color: rgba(255, 255, 255, 0.6);
+}
 .p-password .p-password-toggle-icon {
   color: rgb(161 98 7);
   cursor: pointer;
@@ -337,5 +414,37 @@ body {
 }
 .p-dialog .p-dialog-header {
   background: white;
+}
+
+input.border-red-500 {
+  border-color: #ff0000 !important;
+}
+input.border-red-500:focus {
+  border-color: #ff0000 !important;
+  box-shadow: none;
+}
+
+/* Dark mode error styling */
+.dark .border-red-500 {
+  border-color: #ff0000 !important;
+}
+
+/* Error message styling */
+.text-red-500 {
+  color: #ff0000;
+}
+
+.p-password.password-error input {
+  border: 2px solid #ff0000 !important;
+}
+
+.light .p-icon-field-right > .p-input-icon:last-of-type {
+  right: 0rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.dark .p-icon-field-right > .p-input-icon:last-of-type {
+  right: 0rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 </style>

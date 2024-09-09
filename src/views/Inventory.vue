@@ -28,7 +28,6 @@ const onGlobalFilterChange = (e) => {
 const packages = ref([])
 const getAllPackages = async () => {
   try {
-    // console.log('TRYING')
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({ type: 'getAllPackages' }),
       method: 'POST'
@@ -37,7 +36,6 @@ const getAllPackages = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      console.log(data.data)
       packages.value = data.data
       const formattedShipments = data.data.map((packages) => ({
         ...packages,
@@ -53,7 +51,6 @@ async function setupSubscription() {
   await supabase
     .channel('*')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, (payload) => {
-      // console.log(payload.new)
       updateUserInTable(payload.new)
     })
     .subscribe()
@@ -70,7 +67,7 @@ const loading = ref(false)
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
       'w-full h-full flex flex-row shadow-lg'
     ]"
   >
@@ -237,7 +234,7 @@ const loading = ref(false)
     <DialogComponent
       v-if="showDialog"
       :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
-      title="Contact Support"
+      title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }

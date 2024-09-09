@@ -7,10 +7,11 @@ const supabaseKey =
 
 const supabaseUser = createClient(supabaseUrl, supabaseKey)
 
-//ALGO
-
 import { getPackagesById } from '../core/Packages/getPackagesById.ts'
 import { updateFitnessValue } from './updateFitnessValue.ts'
+import { fetchSolution } from './fetchSolution.ts'
+import { uploadSolution } from './uploadSolution.ts'
+import { deleteSavedSoln } from './deleteSavedSoln.ts'
 
 function defaultResponse() {
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
@@ -48,13 +49,24 @@ Deno.serve(async (req) => {
 
         if (error) {
           console.error('Error fetching packages:', error)
-          // Handle the error (e.g., return an error response, throw an exception, etc.)
+
           return responseBuilder({ error: 'Failed to fetch packages.' })
         } else {
           return responseBuilder(data)
         }
       }
 
+      if (requestBody.type == 'fetchSolution') {
+        return responseBuilder(await fetchSolution(supabaseUser, requestBody.shipmentId))
+      }
+      if (requestBody.type == 'uploadSolution') {
+        return responseBuilder(
+          await uploadSolution(supabaseUser, requestBody.shipmentId, requestBody.solution)
+        )
+      }
+      if (requestBody.type == 'deleteSavedSoln') {
+        return responseBuilder(await deleteSavedSoln(supabaseUser, requestBody.shipmentId))
+      }
       if (requestBody.type == 'updateFitnessValue') {
         return responseBuilder(
           await updateFitnessValue(
