@@ -6,8 +6,8 @@
     <img
       :src="
         isDark
-          ? '/Members/Photos/Logos/Logo-Light-Transparent.svg'
-          : '/Members/Photos/Logos/Logo-Dark-Transparent.svg'
+          ? '../assets/Photos/Logos/Logo-Light-Transparent.svg'
+          : '../assets/Photos/Logos/Logo-Dark-Transparent.svg'
       "
       class="logo"
       alt="Logo"

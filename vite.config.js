@@ -4,17 +4,30 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from 'tailwindcss'
 import path from 'path'
-import { fileURLToPath } from 'url' // Import fileURLToPath
+import { fileURLToPath } from 'url'
+
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default defineConfig({
-  plugins: [vue(), vueJsx(), VueDevTools()],
-  base: '/',
+  root: 'src',
+  plugins: [
+    vue(), // Add the Vue plugin here
+    vueJsx(),
+    VueDevTools(),
+  ],
   css: {
     postcss: {
-      plugins: [tailwindcss()]
-    }
+      plugins: [tailwindcss()],
+    },
+  },
+  build: {
+    outDir: '../dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: path.resolve(dirname, 'src/index.html'),
+    },
   },
   resolve: {
     alias: {

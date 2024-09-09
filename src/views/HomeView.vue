@@ -55,7 +55,7 @@ const logout = async () => {
   >
     <div class="video-container flex items-center justify-center w-full lg:w-1/2 lg:h-full">
       <video
-        src="/Members/Videos/truck-landing.mp4.mp4"
+        src="@/assets/Videos/truck-landing.mp4.mp4"
         autoplay
         loop
         muted

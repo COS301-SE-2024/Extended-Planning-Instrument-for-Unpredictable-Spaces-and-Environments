@@ -92,14 +92,14 @@ const signInWithProvider = async (provider) => {
       >
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
           style="width: 15rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
           style="width: 15rem; height: auto"
@@ -243,11 +243,25 @@ const signInWithProvider = async (provider) => {
       </div> -->
     </div>
 
+    <div>
+      <DialogComponent
+        v-if="showDialog"
+        imagePath="../assets/Photos/Login _ landing page.png"
+        altText="Alternative Image"
+        title="Contact Support"
+        :contacts="[
+          { name: 'Call', phone: '+27 12 345 6789', underline: true },
+          { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+        ]"
+        :dialogVisible="showDialog"
+        @close-dialog="toggleDialog"
+      />
+    </div>
     <DialogComponent
       v-if="showDialog"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '../assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '../assets/Photos/Sign-up.png', alt: 'Image 2' }
       ]"
       title="Help Menu"
       :contacts="[

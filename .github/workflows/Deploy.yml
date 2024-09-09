@@ -23,10 +23,10 @@ jobs:
         run: npm install netlify-cli@17.10.1 -g
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build project
-        run: npm run build
+        run: vite build
         env:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
           VITE_GITHUB_CLIENT_SECRET: ${{ secrets.VITE_GITHUB_CLIENT_SECRET }}
@@ -34,6 +34,10 @@ jobs:
           VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.VITE_GOOGLE_CLIENT_SECRET }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_GOOGLE_DISTANCE_API: ${{ secrets.VITE_GOOGLE_DISTANCE_API }}  # Add the new API key here
+
+      - name: Add _redirects file
+        run: echo "/* /index.html 200" > dist/_redirects
 
       - name: Deploy to Netlify
         id: netlify_deploy

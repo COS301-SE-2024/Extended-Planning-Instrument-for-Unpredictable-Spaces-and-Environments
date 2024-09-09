@@ -57,8 +57,19 @@ const resetPassword = async () => {
   passwordError.value = false
 
   try {
+    const { data: sessionData } = await supabase.auth.getSession()
+
+    if (!sessionData || !sessionData.session) {
+      console.error('No session found')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No active session found. Please try again.',
+        life: 3000
+      })
+      return
+    }
     const { error } = await supabase.auth.updateUser({
-      email: userEmail.value,
       password: password1.value
     })
 
@@ -78,7 +89,9 @@ const resetPassword = async () => {
         detail: 'Password updated successfully.',
         life: 3000
       })
-      router.push('/')
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
     }
   } catch (error) {
     console.error('Unexpected error:', error)
@@ -126,14 +139,14 @@ onMounted(() => {
       >
         <img
           v-if="isDark"
-          src="/Members/Photos/Logos/Wording-Thin-Dark.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
           class="mb-10"
           style="width: 15rem; height: auto"
         />
         <img
           v-else
-          src="/Members/Photos/Logos/Wording-Thin-Light.svg"
+          src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
           class="mb-10"
           style="width: 15rem; height: auto"
@@ -255,7 +268,7 @@ onMounted(() => {
     <div>
       <DialogComponent
         v-if="dialogVisible"
-        imagePath="/Members/Photos/Login _ landing page.png"
+        imagePath="src/assets/Photos/Login _ landing page.png"
         altText="Alternative Image"
         title="Help Menu"
         :contacts="[
@@ -269,8 +282,8 @@ onMounted(() => {
     <DialogComponent
       v-if="dialogVisible"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '@/assets/Photos/Login _ landing page.png', alt: 'Image 1' },
+        { src: '@/assets/Photos/Sign-up.png', alt: 'Image 2' }
       ]"
       title="Help Menu"
       :contacts="[
