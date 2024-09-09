@@ -354,9 +354,12 @@ const nameWithYou = (user) => {
           class="form-control"
           @input="emailDuplicate = false"
         />
-        <span v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm mb-4">
+        <p v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm mt-6">
+          Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
+        </p>
+        <!-- <span v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm mb-4">
           Please enter a valid email address.
-        </span>
+        </span> -->
       </div>
       <div class="field flex flex-col">
         <label class="text-xl font-semibold" for="Role">Role</label>
@@ -393,9 +396,12 @@ const nameWithYou = (user) => {
           placeholder="e.g. +27123456789"
           class="form-control"
         />
-        <span v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm mb-4">
+        <!-- <span v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm mb-4">
           Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
-        </span>
+        </span> -->
+        <p v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm mt-6">
+          Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
+        </p>
       </div>
       <div class="mt-6 flex flex-col items-center align-center">
         <Button
