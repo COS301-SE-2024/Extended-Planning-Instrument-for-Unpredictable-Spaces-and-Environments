@@ -34,8 +34,6 @@ const filteredDeliveries = computed(() => {
 })
 
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
-// Use a single state variable for the dialog
-// const dialogPopUpVisible = ref(false)
 
 const showDialog = ref(false)
 const isLoading = ref(false)
@@ -197,15 +195,13 @@ const items = [
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      console.log('Toggling Dark Mode')
-      toggleDark() // Correctly call the toggle function
+      toggleDark()
     }
   },
   {
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      console.log('Logging Out')
       logout()
     }
   },
@@ -213,7 +209,6 @@ const items = [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
-      console.log('Opening Help Menu')
       toggleDialog2()
     }
   }

@@ -8,7 +8,6 @@ const fullScreenImage = ref(null)
 const emit = defineEmits(['close-dialog'])
 
 const closeDialog = () => {
-  console.log('CLOSING')
   emit('close-dialog')
 }
 
