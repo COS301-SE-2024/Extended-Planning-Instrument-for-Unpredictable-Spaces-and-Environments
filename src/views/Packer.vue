@@ -1179,9 +1179,15 @@ async function generateNewSolution(shipmentID) {
     <DialogComponent
       v-if="showHelpDialog"
       :images="[
-        { src: '/Members/Photos/main dashboard (packer).png', alt: 'Alternative Image 1' },
-        { src: '/Members/Photos/packer-nav.png', alt: 'Alternative Image 2' },
-        { src: '/Members/Photos/adding a box _ pallett.png', alt: 'Alternative Image 3' }
+        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
       ]"
       title="Help Menu"
       :contacts="[

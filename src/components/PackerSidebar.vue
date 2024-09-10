@@ -9,9 +9,15 @@ import { isLoading, useToggleDialog } from './packerDialog'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import DialogComponent from '@/components/DialogComponent.vue'
 
 const containerDimensions = [1200, 1930, 1000]
 
+const showHelpDialog = ref(false)
+const toggleDialogHelp = () => {
+  console.log('helo')
+  showHelpDialog.value = !showHelpDialog.value
+}
 const packingResults = ref({})
 const shipmentsToPack = ref(null)
 const showShipmentSelection = ref(false)
@@ -180,9 +186,15 @@ const items = [
       console.log('Logging Out')
       logout()
     }
+  },
+  {
+    label: 'Help',
+    icon: 'pi pi-fw pi-question',
+    command: () => {
+      toggleDialogHelp()
+    }
   }
 ]
-
 function loadProgress() {
   const savedProgress = localStorage.getItem('packingProgress')
   if (savedProgress) {
@@ -474,6 +486,27 @@ onMounted(() => {
         >
       </div>
     </Dialog>
+    <DialogComponent
+      v-if="showHelpDialog"
+      :images="[
+        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
+      ]"
+      title="Help Menu"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showHelpDialog"
+      @close-dialog="toggleDialogHelp"
+    />
   </div>
 </template>
 
