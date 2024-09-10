@@ -329,16 +329,15 @@ const items = [
       <DialogComponent
         v-if="showDialog"
         :images="[
-          { src: '/Members/Photos/delivery-dashboard.png', alt: 'Alternative Image 1' },
-          { src: '/Members/Photos/delivery-sidebar.png', alt: 'Alternative Image 2' },
-          {
-            src: '/Members/Photos/manager dashboard (Tracking page).png',
-            alt: 'Alternative Image 3'
-          },
-          {
-            src: '/Members/Photos/manager dashboard (Shipments page).png',
-            alt: 'Alternative Image 4'
-          }
+          { src: '../assets/Photos/Help/Driver/1.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/8.png', alt: 'Alternative Image 1' },
+
+          { src: '../assets/Photos/Help/Driver/3.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/2.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/7.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/4.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/5.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/6.png', alt: 'Alternative Image 1' }
         ]"
         title="Help Menu"
         :contacts="[

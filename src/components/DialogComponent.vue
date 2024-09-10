@@ -143,7 +143,7 @@ const titleClass = computed(() => [
     :visible="!!fullScreenImage"
     :modal="true"
     :closable="false"
-    class="p-0 m-0 w-screen h-screen flex items-center justify-center bg-white"
+    class="p-0 m-0 w-screen h-screen flex items-center justify-center bg-black"
     :contentStyle="{ padding: '0', margin: '0', width: '100vw', height: '100vh' }"
   >
     <img
@@ -151,11 +151,13 @@ const titleClass = computed(() => [
       :alt="fullScreenImage.alt"
       class="max-w-full max-h-full w-full h-full object-contain"
     />
-    <Button
-      @click="closeFullScreen"
-      icon="pi pi-times"
-      class="absolute top-4 right-4 p-button-rounded p-button-text text-white hover:text-gray-300 transition-colors duration-200 text-2xl z-50"
-    />
+    <div class="absolute top-5 right-0 p-4 flex">
+      <Button
+        @click="closeFullScreen"
+        icon="pi pi-times"
+        class="bg-red-600 p-button-rounded p-button-text text-white hover:text-gray-300 transition-colors duration-200 text-3xl w-12 h-12 flex items-center justify-center"
+      />
+    </div>
   </Dialog>
 </template>
 

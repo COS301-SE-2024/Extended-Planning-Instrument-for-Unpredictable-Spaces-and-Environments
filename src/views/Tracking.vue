@@ -13,7 +13,7 @@ const isDark = useDark()
 const showDialog = ref(false)
 const toggleDialog = () => {
   console.log('Toggling dialog')
-  dialogVisible.value = !dialogVisible.value
+  showDialog.value = !showDialog.value
 }
 const dialogVisible = ref(false)
 const shipmentsByDelivery = ref([])
@@ -270,7 +270,7 @@ const loading = ref(false)
       <div
         class="loading-new"
         v-if="visible"
-        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
+        :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
       >
         <ProgressSpinner
           style="width: 150px; height: 150px"
@@ -375,7 +375,7 @@ const loading = ref(false)
   <div>
     <DialogComponent
       v-if="showDialog"
-      :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
+      :images="[{ src: '../assets/Photos/Help/Manager/5.png', alt: 'Alternative Image 1' }]"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -677,6 +677,6 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 
 /* Target the spinner's circle directly */
 .p-progress-spinner-circle {
-  stroke: rgb(182, 119, 2) !important;
+  stroke: rgb(255, 136, 0) !important;
 }
 </style>

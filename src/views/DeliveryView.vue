@@ -10,6 +10,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
+
 import CryptoJS from 'crypto-js'
 import { useToast } from 'primevue/usetoast'
 
@@ -217,6 +218,7 @@ const updateShipmentStartTime = async (shipmentID) => {
   }
 }
 
+
 const encryptionKey = import.meta.env.VITE_SUPABASE_KEY
 const uploadSignature = async (signature, shipmentID) => {
   try {
@@ -265,7 +267,9 @@ const openDialog = (item) => {
     destination: item.destination,
     status: item.status
   }
+  isPopiAccepted.value = false // Reset the checkbox
 }
+
 const completeDelivery = async () => {
   try {
     await addDeliveryEndTime()
@@ -755,9 +759,12 @@ export default {
           />
           <!-- Checkbox and Link -->
           <div class="flex justify-center items-center mt-4">
-            <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2" />
+            <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2 w-5 h-5" />
             <br /><br />
-            <label for="acceptPopi" class="text-sm">
+            <label
+              for="acceptPopi"
+              :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+            >
               I accept the
               <a href="#" @click="showPopiInfo" class="underline text-blue-500">POPI information </a
               >.
@@ -822,7 +829,8 @@ export default {
           <div>
             <Button
               :disabled="!isPopiAccepted"
-              class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
+              class="w-full mb-2 rounded-md justify-center py-2 px-4"
+              :class="[isDark ? ' text-white ' : '   text-white', 'bg-green-900']"
               @click="save(selectedShipmentId)"
               >Save</Button
             >
