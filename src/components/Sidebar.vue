@@ -33,8 +33,8 @@
               v-else
               :src="
                 isDark
-                  ? '/Members/Photos/Logos/Wording-Thin-Dark.svg'
-                  : '/Members/Photos/Logos/Wording-Thin-Light.svg'
+                  ? '../assets/Photos/Logos/Wording-Thin-Dark.svg'
+                  : '../assets/Photos/Logos/Wording-Thin-Light.svg'
               "
               alt="Janeeb Solutions Logo"
               class="mr-4 mb-4 mt-2 ml-2"
@@ -180,17 +180,14 @@
       @close-dialog="toggleDialog"
       title="Help Menu"
       :images="[
-        { src: '/Members/Photos/manager dashboard.png', alt: 'Alternative Image 1' },
-        { src: '/Members/Photos/manager dashboard (Sidebar).png', alt: 'Alternative Image 2' },
-        { src: '/Members/Photos/edit-user.png', alt: 'Alternative Image 3' },
-        {
-          src: '/Members/Photos/manager dashboard (Tracking page).png',
-          alt: 'Alternative Image 4'
-        },
-        {
-          src: '/Members/Photos/manager dashboard (Shipments page).png',
-          alt: 'Alternative Image 5'
-        }
+        { src: '../assets/Photos/Help/Manager/1.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Manager/4.png', alt: 'Alternative Image 4' },
+        { src: '../assets/Photos/Help/Manager/3.png', alt: 'Alternative Image 3' },
+        { src: '../assets/Photos/Help/Manager/6.png', alt: 'Alternative Image 6' },
+        { src: '../assets/Photos/Help/Manager/2.png', alt: 'Alternative Image 2' },
+        { src: '../assets/Photos/Help/Manager/5.png', alt: 'Alternative Image 5' },
+        { src: '../assets/Photos/Help/Manager/7.png', alt: 'Alternative Image 7' },
+        { src: '../assets/Photos/Help/Manager/8.png', alt: 'Alternative Image 8' }
       ]"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },

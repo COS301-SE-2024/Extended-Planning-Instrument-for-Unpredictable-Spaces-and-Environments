@@ -1063,7 +1063,7 @@ async function generateNewSolution(shipmentID) {
               v-for="item in scannedBoxes"
               :key="item.id"
               @click="highlightItem(item.id, item.type)"
-              class="cursor-pointer hover:bg-gray-200 p-2 rounded"
+              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-md p-2"
             >
               {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
             </li>
