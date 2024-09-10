@@ -27,17 +27,19 @@ async function setupSubscription() {
     .subscribe()
 }
 
+const videoRef = ref(null)
+
 onMounted(() => {
   setupSubscription()
 
-  const video = document.querySelector('video')
-  if (video) {
-    video.muted = true
-    video.play().catch((error) => {
+  if (videoRef.value) {
+    videoRef.value.muted = true
+    videoRef.value.play().catch((error) => {
       console.error('Error playing video:', error)
     })
   }
 })
+
 const logout = async () => {
   const { error } = await supabase.auth.signOut()
 
@@ -59,10 +61,12 @@ const logout = async () => {
   >
     <div class="video-container flex items-center justify-center w-full lg:w-1/2 lg:h-full">
       <video
+        ref="videoRef"
         src="../assets/Videos/Error.mp4"
         autoplay
         loop
         muted
+        preload="auto"
         :class="['rounded-lg shadow-lg']"
         style="max-width: 100%; max-height: 100%"
       ></video>

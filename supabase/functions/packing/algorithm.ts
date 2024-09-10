@@ -72,7 +72,7 @@ class Container {
   }
 
   addBox(box: Box): boolean {
-    this.remainingSpace.sort((a, b) => a[2] - b[2] || a[1] - b[1])
+    this.remainingSpace.sort((a, b) => a[1] - b[1] || a[2] - b[2] || a[0] - b[0])
 
     for (const space of this.remainingSpace) {
       for (const orientation of this.generateOrientations(box)) {
@@ -104,10 +104,8 @@ class Container {
         bz < z + newBox.length &&
         bz + box.length > z
       ) {
-        // Check if the new box is above an existing one
         if (by < y) {
-          // Ensure the box below can support the new one
-          if (box.density * 1.1 < newBox.density) {
+          if (box.density < newBox.density) {
             return false
           }
         }
@@ -224,32 +222,57 @@ class Container {
 function initializePopulation(popSize: number, boxes: Box[]): Box[][] {
   const population: Box[][] = []
   for (let i = 0; i < popSize; i++) {
-    const individual = [...boxes].sort((a) => -a.volume)
+    const individual = [...boxes].sort(() => Math.random() - 0.5)
     population.push(individual)
   }
   return population
 }
 
-function calculateAboveWeight(
-  box: Box,
-  x: number,
-  y: number,
-  z: number,
-  placedBoxes: [Box, number, number, number][]
-): number {
-  let aboveWeight = 0
-  for (const [otherBox, bx, by, bz] of placedBoxes) {
-    if (
-      bx < x + box.width &&
-      bx + otherBox.width > x &&
-      bz < z + box.length &&
-      bz + otherBox.length > z &&
-      by > y
-    ) {
-      aboveWeight += otherBox.weight
+function calculateCompactness(container: Container): number {
+  let totalSurfaceArea = 0
+  for (const [box, x, y, z] of container.boxes) {
+    totalSurfaceArea +=
+      2 * (box.width * box.length + box.width * box.height + box.length * box.height)
+  }
+  const containerSurfaceArea =
+    2 *
+    (container.width * container.length +
+      container.width * container.height +
+      container.length * container.height)
+  return 1 - totalSurfaceArea / containerSurfaceArea
+}
+
+function calculateProximityPenalty(container: Container): number {
+  let totalPenalty = 0
+  for (let i = 0; i < container.boxes.length; i++) {
+    const [box1, x1, y1, z1] = container.boxes[i]
+    for (let j = i + 1; j < container.boxes.length; j++) {
+      const [box2, x2, y2, z2] = container.boxes[j]
+      const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) + Math.pow(z2 - z1, 2))
+      totalPenalty += 1 / (1 + distance)
     }
   }
-  return aboveWeight
+  return totalPenalty / ((container.boxes.length * (container.boxes.length - 1)) / 2)
+}
+
+function calculateWeightDistributionPenalty(container: Container): number {
+  let totalPenalty = 0
+  for (const [box, x, y, z] of container.boxes) {
+    const boxesAbove = container.boxes.filter(
+      ([, bx, by, bz]) =>
+        by > y &&
+        bx < x + box.width &&
+        bx + box.width > x &&
+        bz < z + box.length &&
+        bz + box.length > z
+    )
+    const weightAbove = boxesAbove.reduce((sum, [b]) => sum + b.weight, 0)
+    if (weightAbove > box.weight * 2) {
+      // Allow more weight, but still penalize extreme cases
+      totalPenalty += (weightAbove - box.weight * 2) / box.weight
+    }
+  }
+  return totalPenalty / container.boxes.length
 }
 
 function evaluateFitness(
@@ -259,7 +282,6 @@ function evaluateFitness(
   const [containerWidth, containerHeight, containerLength] = containerDimensions
   const container = new Container(containerWidth, containerHeight, containerLength)
   const unplacedBoxes: Box[] = []
-  let weightPenalty = 0
 
   for (const box of individual) {
     if (!container.addBox(box)) {
@@ -271,19 +293,79 @@ function evaluateFitness(
 
   const placedVolume = container.totalVolume - container.totalRemainingVolume
   const totalBoxVolume = individual.reduce((sum, box) => sum + box.volume, 0)
-
   const volumeUtilization = totalBoxVolume > 0 ? placedVolume / totalBoxVolume : 0
+
+  // Center of mass calculation (already implemented)
+  let totalWeight = 0
+  let weightedX = 0,
+    weightedY = 0,
+    weightedZ = 0
+  for (const [box, x, y, z] of container.boxes) {
+    totalWeight += box.weight
+    weightedX += box.weight * (x + box.width / 2)
+    weightedY += box.weight * (y + box.height / 2)
+    weightedZ += box.weight * (z + box.length / 2)
+  }
+  const centerOfMassX = weightedX / totalWeight
+  const centerOfMassY = weightedY / totalWeight
+  const centerOfMassZ = weightedZ / totalWeight
+
+  // Spread factor (already implemented)
+  const idealCenterX = containerWidth / 2
+  const idealCenterY = containerHeight / 2
+  const idealCenterZ = containerLength / 2
+  const spreadFactor =
+    1 -
+    (Math.abs(centerOfMassX - idealCenterX) / containerWidth +
+      Math.abs(centerOfMassY - idealCenterY) / containerHeight +
+      Math.abs(centerOfMassZ - idealCenterZ) / containerLength) /
+      3
+
+  // Layer-based compactness
+  const layerHeight = 200
+  const layers: Box[][] = []
+  for (const [box, , y] of container.boxes) {
+    const layerIndex = Math.floor(y / layerHeight)
+    if (!layers[layerIndex]) layers[layerIndex] = []
+    layers[layerIndex].push(box)
+  }
+
+  let totalLayerUtilization = 0
+  for (const layer of layers) {
+    if (layer) {
+      const layerVolume = layer.reduce((sum, box) => sum + box.volume, 0)
+      totalLayerUtilization += layerVolume / (containerWidth * containerLength * layerHeight)
+    }
+  }
+  const averageLayerUtilization = totalLayerUtilization / layers.length
+
+  // Weight distribution penalty
+  let weightPenalty = 0
+  for (const [box, , y] of container.boxes) {
+    const boxesAbove = container.boxes.filter(([, , by]) => by > y)
+    const weightAbove = boxesAbove.reduce((sum, [b]) => sum + b.weight, 0)
+    if (weightAbove > box.weight) {
+      weightPenalty += (weightAbove - box.weight) / box.weight
+    }
+  }
+  const weightDistributionPenalty = calculateWeightDistributionPenalty(container)
+
+  const packingRatio = container.boxes.length / individual.length
 
   const unplacedPenalty = (unplacedBoxes.length / individual.length) * 1.5
 
-  for (const [box, x, y, z] of container.boxes) {
-    const aboveWeight = calculateAboveWeight(box, x, y, z, container.boxes)
-    if (aboveWeight > box.weight) {
-      weightPenalty += aboveWeight - box.weight
-    }
-  }
+  const compactness = calculateCompactness(container)
 
-  const fitness = volumeUtilization / (1 + unplacedPenalty + weightPenalty) - unplacedPenalty
+  const proximityPenalty = calculateProximityPenalty(container)
+
+  const fitness =
+    volumeUtilization * 0.2 +
+    spreadFactor * 0.1 +
+    averageLayerUtilization * 0.2 +
+    (1 - weightDistributionPenalty) * 0.1 +
+    packingRatio * 0.4 +
+    compactness * 0.1 +
+    ((1 - proximityPenalty) * 0.1) / ((1 + unplacedPenalty) * 1.5)
 
   return [fitness, container, unplacedBoxes]
 }
@@ -335,9 +417,6 @@ function mutate(individual: Box[], mutationRate: number): void {
   }
 }
 
-let bestFitness = Number.NEGATIVE_INFINITY
-let currentIterations = 0
-
 export function geneticAlgorithm(
   boxesData: BoxData[],
   containerDimensions: [number, number, number],
@@ -349,12 +428,18 @@ export function geneticAlgorithm(
     console.error('Invalid or empty boxesData:', boxesData)
     return { data: { fitness: 0, boxes: [] } }
   }
+
+  let iterations = 0
   const boxes = boxesData.map((data) => new Box(data))
-  console.log('Boxes', boxes)
   let population = initializePopulation(popSize, boxes)
 
-  let bestContainer: Container | null = null
-  let bestIndividual: Box[] | null = null
+  let globalBestFitness = 0
+  let globalBestContainer: Container | undefined
+  let globalBestIndividual: Box[] | undefined
+
+  let currentBestFitness = 0
+  let currentBestContainer: Container | undefined
+  let currentBestIndividual: Box[] | undefined
 
   for (let generation = 0; generation < numGenerations; generation++) {
     const fitnessResults = population.map((individual) =>
@@ -363,18 +448,23 @@ export function geneticAlgorithm(
     const fitness = fitnessResults.map((result) => result[0])
     const containers = fitnessResults.map((result) => result[1])
 
-    const currentBestFitness = Math.max(...fitness)
-    const currentBestIndex = fitness.indexOf(currentBestFitness)
-    const currentBestIndividual = population[currentBestIndex]
-    const currentBestContainer = containers[currentBestIndex]
+    const generationBestFitness = Math.max(...fitness)
+    const generationBestIndex = fitness.indexOf(generationBestFitness)
 
-    if (currentBestFitness > bestFitness) {
-      bestFitness = currentBestFitness
-      bestContainer = currentBestContainer
-      bestIndividual = currentBestIndividual
-      currentIterations = 0
+    if (generationBestFitness > currentBestFitness) {
+      currentBestFitness = generationBestFitness
+      currentBestContainer = containers[generationBestIndex]
+      currentBestIndividual = population[generationBestIndex]
+    }
+
+    if (currentBestFitness > globalBestFitness) {
+      globalBestFitness = currentBestFitness
+      globalBestContainer = currentBestContainer
+      globalBestIndividual = currentBestIndividual
+
+      iterations = 0
     } else {
-      currentIterations++
+      iterations += 1
     }
 
     const parents = selectParents(population, fitness, Math.floor(popSize / 2))
@@ -389,35 +479,51 @@ export function geneticAlgorithm(
       nextPopulation.push(child1, child2)
     }
 
-    nextPopulation[0] = bestIndividual ? [...bestIndividual] : nextPopulation[0]
+    nextPopulation[0] = currentBestIndividual ? [...currentBestIndividual] : nextPopulation[0]
 
     population = nextPopulation
 
-    if (currentIterations >= 16) {
+    if (iterations > 55) {
       break
     }
   }
-  console.log('Current iterations', currentIterations)
-  console.log('Current best Container', bestContainer)
 
-  if (!bestContainer) {
-    console.error('No valid container was found during the genetic algorithm execution.')
+  if (globalBestFitness > 0 && globalBestContainer && globalBestIndividual) {
+    return {
+      data: {
+        fitness: globalBestFitness,
+        boxes: globalBestContainer.boxes.map(([box, x, y, z]) => ({
+          id: box.id,
+          width: box.width,
+          height: box.height,
+          length: box.length,
+          weight: box.weight,
+          volume: box.volume,
+          x,
+          y,
+          z
+        }))
+      }
+    }
+  } else if (currentBestFitness > 0 && currentBestContainer && currentBestIndividual) {
+    return {
+      data: {
+        fitness: currentBestFitness,
+        boxes: currentBestContainer.boxes.map(([box, x, y, z]) => ({
+          id: box.id,
+          width: box.width,
+          height: box.height,
+          length: box.length,
+          weight: box.weight,
+          volume: box.volume,
+          x,
+          y,
+          z
+        }))
+      }
+    }
+  } else {
+    console.error('No valid solution found.')
     return { data: { fitness: 0, boxes: [] } }
   }
-
-  const finalSolution = {
-    fitness: bestFitness,
-    boxes: bestContainer!.boxes.map(([box, x, y, z]) => ({
-      id: box.id,
-      width: box.width,
-      height: box.height,
-      length: box.length,
-      weight: box.weight,
-      volume: box.volume,
-      x,
-      y,
-      z
-    }))
-  }
-  return { data: finalSolution }
 }

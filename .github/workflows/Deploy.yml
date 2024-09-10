@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - development
     types: [opened, synchronize, reopened]
 
 jobs:
@@ -17,7 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install Netlify
         run: npm install netlify-cli@17.10.1 -g
@@ -34,7 +35,7 @@ jobs:
           VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.VITE_GOOGLE_CLIENT_SECRET }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_GOOGLE_DISTANCE_API: ${{ secrets.VITE_GOOGLE_DISTANCE_API }}  # Add the new API key here
+          VITE_GOOGLE_DISTANCE_API: ${{ secrets.VITE_GOOGLE_DISTANCE_API }} # Add the new API key here
 
       - name: Add _redirects file
         run: echo "/* /index.html 200" > dist/_redirects

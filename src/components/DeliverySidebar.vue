@@ -34,8 +34,6 @@ const filteredDeliveries = computed(() => {
 })
 
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
-// Use a single state variable for the dialog
-// const dialogPopUpVisible = ref(false)
 
 const showDialog = ref(false)
 const isLoading = ref(false)
@@ -53,12 +51,10 @@ const toggleDialog = () => {
 
 const toggleDialog2 = () => {
   showDialog.value = !showDialog.value
-  console.log('Toggling showDialog:', showDialog.value)
 }
 
 const handleOpenDeliveryDialog = () => {
   toggleDialog()
-  console.log('Emmit has been recieved and dialog has been toggled')
 }
 
 async function getSession() {
@@ -94,8 +90,21 @@ async function checkRole(email) {
   }
 }
 
-//API CALLS FOR SHIPMENTS
+async function setupSubscription() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Deliveries' }, () => {
+        getDeliveriesByStatus()
+      })
+      .subscribe()
+  } catch (error) {
+    console.error('Failed to fetch all shipped deliveries')
+  }
+}
+
 const deliveriesByStatus = ref([])
+
 const getDeliveriesByStatus = async () => {
   try {
     const { data, error } = await supabase.functions.invoke('core', {
@@ -105,9 +114,7 @@ const getDeliveriesByStatus = async () => {
     if (error) {
       console.log('API Error:', error)
     } else {
-      // console.log('Data', data.data)
       deliveriesByStatus.value = data.data
-      // console.log('getDeliveriesByStatus Result:  ', deliveriesByStatus)
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -172,6 +179,7 @@ async function logout() {
 
 onMounted(() => {
   getDeliveriesByStatus()
+  setupSubscription()
 })
 
 const items = [
@@ -187,15 +195,13 @@ const items = [
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      console.log('Toggling Dark Mode')
-      toggleDark() // Correctly call the toggle function
+      toggleDark()
     }
   },
   {
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      console.log('Logging Out')
       logout()
     }
   },
@@ -203,8 +209,7 @@ const items = [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
-      console.log('Opening Help Menu')
-      // toggleDialog()
+      toggleDialog2()
     }
   }
 ]
@@ -247,25 +252,7 @@ const items = [
         </a>
       </template>
       <template #end>
-        <div class="flex items-center gap-2">
-          <!-- <div
-            :class="[
-              isDark
-                ? 'border-neutral-500 bg-neutral-950 text-white'
-                : 'border-gray-500 bg-white text-black',
-              'border flex items-center px-4 py-2 rounded-md focus-within:ring-2 focus-within:ring-yellow-600'
-            ]"
-          >
-            <i :class="[isDark ? 'text-white' : 'text-black', 'pi pi-search mr-2']"></i>
-            <InputText
-              placeholder="Search"
-              :class="[
-                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-                'focus:outline-none focus:ring-0 w-32 sm:w-auto'
-              ]"
-            />
-          </div> -->
-        </div>
+        <div class="flex items-center gap-2"></div>
       </template>
     </Menubar>
     <div class="bg-black opacity-50 backdrop-blur-lg">
@@ -342,16 +329,15 @@ const items = [
       <DialogComponent
         v-if="showDialog"
         :images="[
-          { src: '/Members/Photos/delivery-dashboard.png', alt: 'Alternative Image 1' },
-          { src: '/Members/Photos/delivery-sidebar.png', alt: 'Alternative Image 2' },
-          {
-            src: '/Members/Photos/manager dashboard (Tracking page).png',
-            alt: 'Alternative Image 3'
-          },
-          {
-            src: '/Members/Photos/manager dashboard (Shipments page).png',
-            alt: 'Alternative Image 4'
-          }
+          { src: '../assets/Photos/Help/Driver/1.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/8.png', alt: 'Alternative Image 1' },
+
+          { src: '../assets/Photos/Help/Driver/3.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/2.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/7.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/4.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/5.png', alt: 'Alternative Image 1' },
+          { src: '../assets/Photos/Help/Driver/6.png', alt: 'Alternative Image 1' }
         ]"
         title="Help Menu"
         :contacts="[
