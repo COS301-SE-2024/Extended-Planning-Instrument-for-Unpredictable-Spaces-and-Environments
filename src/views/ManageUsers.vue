@@ -412,7 +412,10 @@ const nameWithYou = (user) => {
   <div>
     <DialogComponent
       v-if="showDialog"
-      :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
+      :images="[
+        { src: '../assets/Photos/Help/Manager/7.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Manager/8.png', alt: 'Alternative Image 1' }
+      ]"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
