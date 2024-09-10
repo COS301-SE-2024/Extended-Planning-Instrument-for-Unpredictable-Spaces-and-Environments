@@ -22,8 +22,8 @@
               v-if="isMobileSidebarCollapsed"
               :src="
                 isDark
-                  ? '/Members/Photos/Logos/Logo-Icon-Dark.svg'
-                  : '/Members/Photos/Logos/Logo-Icon-Light.svg'
+                  ? '../assets/Photos/Logos/Logo-Icon-Dark.svg'
+                  : '../assets/Photos/Logos/Logo-Icon-Light.svg'
               "
               alt="JS Logo"
               class="mr-4 mb-4 mt-2"
@@ -545,15 +545,17 @@ const processShipment = async () => {
               life: 4000
             })
 
-            const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('core', {
-              body: JSON.stringify({ type: 'deleteCSV', fileName: selectedFile.value.name }),
-              method: 'POST'
-            });
+            const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke(
+              'core',
+              {
+                body: JSON.stringify({ type: 'deleteCSV', fileName: selectedFile.value.name }),
+                method: 'POST'
+              }
+            )
 
             if (deleteError) {
-              console.error('Error deleting the CSV file:', deleteError);
+              console.error('Error deleting the CSV file:', deleteError)
             }
-
           }
         }
       }
