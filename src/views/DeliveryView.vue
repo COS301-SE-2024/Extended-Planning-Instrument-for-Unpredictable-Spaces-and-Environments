@@ -10,19 +10,22 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
-import loader from '../googleMapsLoader.js'
-import CryptoJS from 'crypto-js';
 
+import CryptoJS from 'crypto-js'
+import { useToast } from 'primevue/usetoast'
 
 const isDark = useDark()
+const toast = useToast()
 
 const showStartNewDeliveryOverlay = ref(true)
-
+const isLoading = ref(false)
 const currentShipmentDetails = ref(null)
 
 const dialogVisible = ref(false)
 const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
+
+const tripFinished = ref(false)
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
@@ -41,7 +44,6 @@ function saveDeliveryProgress() {
 
 const togglePopUpDialog = () => {
   dialogPopUpVisible.value = !dialogPopUpVisible.value
-  showStartNewDeliveryOverlay.value = !showStartNewDeliveryOverlay.value
 }
 
 const shipmentsByDelivery = ref([])
@@ -97,6 +99,8 @@ async function sortLocationsByDistance(origins, destinations) {
 
 const getShipmentByDeliveryId = async () => {
   try {
+    showStartNewDeliveryOverlay.value = false
+    isLoading.value = true
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'getShipmentByDeliveryID',
@@ -107,6 +111,8 @@ const getShipmentByDeliveryId = async () => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
+      console.log(data)
+
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
@@ -119,6 +125,7 @@ const getShipmentByDeliveryId = async () => {
         return data.data.find((shipment) => shipment.Destination === location)
       })
 
+      console.log('sortedShipments', sortedShipments)
       shipmentsByDelivery.value[currentDelivery.value.id] = sortedShipments
 
       if (sortedLocations.length > 0) {
@@ -128,11 +135,15 @@ const getShipmentByDeliveryId = async () => {
       identifyPendingLocations()
       updateTimelineEvents()
 
-      // Save progress
       saveDeliveryProgress()
+      isLoading.value = false
     }
   } catch (error) {
-    console.error(`Error fetching shipments for delivery ${currentDelivery.value.id}:`, error)
+    console.error(
+      `Error fetching shipments for delivery ${currentDelivery.value.id} or there are no shipments associated with this delivery:`,
+      error
+    )
+    showStartNewDeliveryOverlay.value = true
   }
 }
 
@@ -146,6 +157,7 @@ const identifyPendingLocations = () => {
   if (pendingLocations.value.length > 0) {
     currentDestination.value = pendingLocations.value[0]
   }
+  console.log('pending locations')
 }
 
 const getStatusColor = (status) => {
@@ -206,27 +218,26 @@ const updateShipmentStartTime = async (shipmentID) => {
   }
 }
 
-const encryptionKey = import.meta.env.ENCRYPTION_KEY;
+
+const encryptionKey = import.meta.env.VITE_SUPABASE_KEY
 const uploadSignature = async (signature, shipmentID) => {
   try {
-    // Encrypt the signature
-    const encryptedSignature = encryptData(signature, encryptionKey);
-    // Call the API function to upload the signature
+    const encryptedSignature = encryptData(signature, encryptionKey)
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
         dataURL: encryptedSignature
       }),
       method: 'POST'
-    });
+    })
 
     if (uploadError) {
-      console.error('API Error for uploading signature:', uploadError);
-      return;
+      console.error('API Error for uploading signature:', uploadError)
+      return
     }
 
     // Update the shipment end time after successful upload
-    const currentDate = new Date().toISOString();
+    const currentDate = new Date().toISOString()
     const { error: updateError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'updateShipmentEndTime',
@@ -234,21 +245,19 @@ const uploadSignature = async (signature, shipmentID) => {
         newEndTime: currentDate
       }),
       method: 'POST'
-    });
+    })
 
     if (updateError) {
-      console.error('API Error for updating EndTime for delivery:', updateError);
+      console.error('API Error for updating EndTime for delivery:', updateError)
     }
   } catch (error) {
-    console.error('Error uploading signature or updating shipment:', error);
+    console.error('Error uploading signature or updating shipment:', error)
   }
-};
-
-// Helper function to encrypt data
-function encryptData(data, key) {
-  return CryptoJS.AES.encrypt(data, key).toString();
 }
 
+function encryptData(data, key) {
+  return CryptoJS.AES.encrypt(data, key).toString()
+}
 
 const openDialog = (item) => {
   dialogVisible.value = true
@@ -258,14 +267,23 @@ const openDialog = (item) => {
     destination: item.destination,
     status: item.status
   }
+  isPopiAccepted.value = false // Reset the checkbox
 }
+
 const completeDelivery = async () => {
   try {
     await addDeliveryEndTime()
     await updateDeliveryStatus()
-    alert('All destinations visited')
-    // Clear the saved delivery progress
+    toast.add({
+      severity: 'success',
+      summary: 'All Destinations Visited',
+      detail: 'All destinations successfully visited, routing you home',
+      life: 3000
+    })
+
     localStorage.removeItem('deliveryProgress')
+    tripFinished.value = true
+    // showStartNewDeliveryOverlay.value = true
   } catch (error) {
     console.error('Error completing delivery:', error)
   }
@@ -312,33 +330,37 @@ function save(shipmentid) {
   if (signaturePad.value) {
     const { data } = signaturePad.value.saveSignature()
     uploadSignature(data, shipmentid)
-    if (pendingLocations.value.length > 0) {
-      pendingLocations.value.shift() // Remove the first (current) destination
-      if (pendingLocations.value.length > 0) {
-        currentDestination.value = pendingLocations.value[0]
-        mapDestination.value = pendingLocations.value[0]
-        upDateShipmentStatus(shipmentid)
 
-        const nextShipmentIndex = activeShipmentIndex.value + 1
-        if (nextShipmentIndex < timelineEvents.value.length) {
-          const nextShipmentId = timelineEvents.value[nextShipmentIndex].shipment_id
-          updateShipmentStartTime(nextShipmentId)
-        }
-      } else {
-        currentDestination.value = ''
-        upDateShipmentStatus(shipmentid)
-        mapDestination.value = 'University of Pretoria'
+    // Update the current shipment status
+    upDateShipmentStatus(shipmentid)
 
-        addDeliveryEndTime()
-        updateDeliveryStatus()
+    // Find the next undelivered shipment
+    const nextUndeliveredIndex = timelineEvents.value.findIndex(
+      (event, index) => index > activeShipmentIndex.value && event.status !== 'Delivered'
+    )
 
-        // Call completeDelivery here
-        completeDelivery()
-      }
+    if (nextUndeliveredIndex !== -1) {
+      // Move to the next undelivered shipment
+      activeShipmentIndex.value = nextUndeliveredIndex
+      currentDestination.value = timelineEvents.value[nextUndeliveredIndex].destination
+      setMapDestination()
+
+      // Update the start time for the next shipment
+      updateShipmentStartTime(timelineEvents.value[nextUndeliveredIndex].shipment_id)
+    } else {
+      // All shipments are delivered
+      currentDestination.value = ''
+      mapDestination.value = 'University of Pretoria'
+
+      // Complete the delivery
+      completeDelivery()
     }
-    activeShipmentIndex.value++
+
     confirmedShipments.value.add(shipmentid)
     toggleDialog()
+
+    // Save the updated delivery progress
+    saveDeliveryProgress()
   } else {
     console.error('Signature pad ref is not available')
   }
@@ -363,11 +385,10 @@ const updateTimelineEvent = (updatedShipment) => {
     timelineEvents.value[index] = {
       ...timelineEvents.value[index],
       status: newStatus,
-      color: newColor,
-      line_colour: newColor
+      color: newColor
     }
 
-    // Update the next event's line_colour if it exists
+    // Update the current event's line_colour (for the connector below it)
     if (index < timelineEvents.value.length - 1) {
       timelineEvents.value[index] = {
         ...timelineEvents.value[index],
@@ -378,20 +399,48 @@ const updateTimelineEvent = (updatedShipment) => {
     // Force Vue to react to the change
     timelineEvents.value = [...timelineEvents.value]
 
-    currentShipmentDetails.value = {
-      id: updatedShipment.id,
-      destination: updatedShipment.Destination,
-      status: newStatus
+    // Update currentShipmentDetails if it's the active shipment
+    if (index === activeShipmentIndex.value) {
+      currentShipmentDetails.value = {
+        id: updatedShipment.id,
+        destination: updatedShipment.Destination,
+        status: newStatus
+      }
     }
+
+    // If the updated shipment is the active one and it's now delivered, move to the next
+    if (index === activeShipmentIndex.value && newStatus === 'Delivered') {
+      const nextUndeliveredIndex = timelineEvents.value.findIndex(
+        (event, idx) => idx > activeShipmentIndex.value && event.status !== 'Delivered'
+      )
+
+      if (nextUndeliveredIndex !== -1) {
+        activeShipmentIndex.value = nextUndeliveredIndex
+        currentDestination.value = timelineEvents.value[nextUndeliveredIndex].destination
+        setMapDestination()
+      } else {
+        // All shipments are delivered
+        completeDelivery()
+      }
+    }
+
+    // Save the updated delivery progress
+    saveDeliveryProgress()
   }
 }
 
-const isPopiAccepted = ref(false);
-const isPopiDialogVisible = ref(false);
+const isPopiAccepted = ref(false)
+const isPopiDialogVisible = ref(false)
 
 const showPopiInfo = () => {
-  isPopiDialogVisible.value = true;
-};
+  isPopiDialogVisible.value = true
+}
+
+const Home = () => {
+  localStorage.removeItem('lastTripData')
+  tripFinished.value = false
+  showStartNewDeliveryOverlay.value = true
+}
 
 const startNewDelivery = () => {
   showStartNewDeliveryOverlay.value = false
@@ -408,6 +457,15 @@ const startNewDelivery = () => {
   if (timelineEvents.value.length > 0) {
     const firstShipmentId = timelineEvents.value[0].shipment_id
     updateShipmentStartTime(firstShipmentId)
+  }
+}
+
+const setMapDestination = () => {
+  if (timelineEvents.value.length > 0 && activeShipmentIndex.value !== -1) {
+    const activeShipment = timelineEvents.value[activeShipmentIndex.value]
+    if (activeShipment && activeShipment.destination) {
+      mapDestination.value = activeShipment.destination
+    }
   }
 }
 
@@ -441,12 +499,18 @@ const updateTimelineEvents = () => {
         end_time: shipment.End_time,
         icon: 'pi pi-box',
         color: color,
-        line_colour: index === shipments.length - 1 ? '#6b7280' : color,
+        line_colour: index === shipments.length ? '#6b7280' : color,
         index: events.length
       })
     })
   }
   timelineEvents.value = events
+
+  activeShipmentIndex.value = findFirstUndeliveredShipmentIndex()
+
+  if (activeShipmentIndex.value === -1) {
+    activeShipmentIndex.value = timelineEvents.value.length - 1
+  }
 }
 
 //OPEN IN GOOGLE MAPS FUNCTONALITY
@@ -461,6 +525,11 @@ const openInGoogleMaps = () => {
     alert('Destination is not set')
   }
 }
+
+const findFirstUndeliveredShipmentIndex = () => {
+  return timelineEvents.value.findIndex((event) => event.status !== 'Delivered')
+}
+
 onMounted(() => {
   const savedProgress = localStorage.getItem('deliveryProgress')
   if (savedProgress) {
@@ -470,8 +539,16 @@ onMounted(() => {
     pendingLocations.value = deliveryData.pendingLocations
     currentDestination.value = deliveryData.currentDestination
     timelineEvents.value = deliveryData.timelineEvents
-    activeShipmentIndex.value = deliveryData.activeShipmentIndex
-    showStartNewDeliveryOverlay.value = !showStartNewDeliveryOverlay.value
+
+    activeShipmentIndex.value = findFirstUndeliveredShipmentIndex()
+
+    if (activeShipmentIndex.value === -1) {
+      activeShipmentIndex.value = timelineEvents.value.length - 1
+    }
+    setMapDestination()
+    showStartNewDeliveryOverlay.value = false
+  } else {
+    showStartNewDeliveryOverlay.value = true
   }
 
   window.addEventListener('resize', updateScreenSize)
@@ -514,19 +591,27 @@ export default {
       ' h-[auto] flex flex-col '
     ]"
   >
-  
     <DeliverySidebar
       @handle-delivery="handleDeliveryFromSidebar"
       @start-new-delivery="startNewDelivery"
       v-model:dialogPopUpVisible="dialogPopUpVisible"
     />
     <div
+      v-if="isLoading"
+      :class="[
+        isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black',
+        'card w-full h-screen flex flex-col justify-center items-center'
+      ]"
+    >
+      <img src="../assets/Photos/truck.png" alt="Truck" class="w-64 h-64 animate-bounce" />
+    </div>
+    <div
+      v-if="!isLoading"
       :class="[
         isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-200 text-black',
         'w-full  text-white flex-col mb-10'
       ]"
     >
-    
       <div
         :class="[
           isDark ? 'dark bg-neutral-900 text-white ' : 'light bg-gray-200 text-black',
@@ -547,7 +632,18 @@ export default {
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
         </h2>
-        <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+        <div v-if="tripFinished">
+          <Button
+            :disabled="!isPopiAccepted"
+            class="w-full mb-2 rounded-md bg-orange-500 justify-center py-2 px-4"
+            @click="Home()"
+            >Home Safe</Button
+          >
+        </div>
+        <div
+          v-if="!tripFinished"
+          :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']"
+        >
           <div class="flex flex-row">
             <Timeline
               :value="timelineEvents"
@@ -601,6 +697,7 @@ export default {
                           </div>
                         </div>
                         <button
+                          v-if="slotProps.item.status !== 'Delivered'"
                           class="p-button p-component mt-4 py-2 px-4 w-full justify-center"
                           :class="[
                             slotProps.index !== activeShipmentIndex
@@ -661,14 +758,16 @@ export default {
             v-else
           />
           <!-- Checkbox and Link -->
-                    <div class="flex justify-center items-center mt-4">
-            <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2">
-            <br><br>
-            <label for="acceptPopi" class="text-sm">
-              I accept the 
-              <a href="#" @click="showPopiInfo" class="underline text-blue-500">POPI information
-              </a>.
-            
+          <div class="flex justify-center items-center mt-4">
+            <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2 w-5 h-5" />
+            <br /><br />
+            <label
+              for="acceptPopi"
+              :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+            >
+              I accept the
+              <a href="#" @click="showPopiInfo" class="underline text-blue-500">POPI information </a
+              >.
             </label>
           </div>
 
@@ -676,43 +775,47 @@ export default {
           <Dialog v-model:visible="isPopiDialogVisible" :modal="true" :closable="true">
             <div class="p-4">
               <h2 class="text-xl font-bold mb-4">POPI Information</h2>
-              
+
               <!-- Why We Store Signatures -->
               <h3 class="text-lg font-semibold mt-2">Why We Store Your Signature</h3>
               <p class="text-sm mb-4">
-                Your signature is collected and stored to verify the authenticity of deliveries and to ensure that the 
-                correct recipient has received the goods. This is part of our commitment to maintaining high standards 
-                of security and accuracy in our delivery processes. By storing your signature, we can prevent fraud, 
-                resolve disputes, and improve the overall delivery experience.
+                Your signature is collected and stored to verify the authenticity of deliveries and
+                to ensure that the correct recipient has received the goods. This is part of our
+                commitment to maintaining high standards of security and accuracy in our delivery
+                processes. By storing your signature, we can prevent fraud, resolve disputes, and
+                improve the overall delivery experience.
               </p>
-              
+
               <!-- How Long We Store It -->
               <h3 class="text-lg font-semibold mt-2">How Long We Will Store Your Signature</h3>
               <p class="text-sm mb-4">
-                We retain your signature for a period of 2 years, which is the minimum period required by law 
-                or our internal policies. After this period, your signature will be securely deleted from our systems.
-                This retention period allows us to meet legal obligations and ensure that we can provide support in case 
-                of any future queries or disputes regarding your delivery.
+                We retain your signature for a period of 2 years, which is the minimum period
+                required by law or our internal policies. After this period, your signature will be
+                securely deleted from our systems. This retention period allows us to meet legal
+                obligations and ensure that we can provide support in case of any future queries or
+                disputes regarding your delivery.
               </p>
-              
+
               <!-- How We Protect It -->
               <h3 class="text-lg font-semibold mt-2">How We Protect Your Signature</h3>
               <p class="text-sm mb-4">
-                Protecting your personal information is our top priority. Your signature is encrypted using 
-                industry-standard encryption protocols both in transit and at rest. Only authorized personnel 
-                have access to this information, and we regularly review our security practices to ensure that 
-                your data remains safe from unauthorized access, loss, or misuse.
+                Protecting your personal information is our top priority. Your signature is
+                encrypted using industry-standard encryption protocols both in transit and at rest.
+                Only authorized personnel have access to this information, and we regularly review
+                our security practices to ensure that your data remains safe from unauthorized
+                access, loss, or misuse.
               </p>
-              
+
               <!-- Where We Store It -->
               <h3 class="text-lg font-semibold mt-2">Where We Store Your Signature</h3>
               <p class="text-sm mb-4">
-                Your signature is stored securely in our supabase servers located in New York. 
-                These servers comply with all relevant data protection regulations and are managed by trusted service providers 
-                who adhere to strict security standards. We ensure that all data storage practices meet the requirements of the 
-                POPI Act and other applicable laws.
+                Your signature is stored securely in our supabase servers located in New York. These
+                servers comply with all relevant data protection regulations and are managed by
+                trusted service providers who adhere to strict security standards. We ensure that
+                all data storage practices meet the requirements of the POPI Act and other
+                applicable laws.
               </p>
-              
+
               <!-- Close Button -->
               <button
                 @click="isPopiDialogVisible = false"
@@ -723,11 +826,11 @@ export default {
             </div>
           </Dialog>
 
-
           <div>
             <Button
-            :disabled="!isPopiAccepted"
-              class="w-full mb-2 rounded-md bg-green-900 justify-center py-2 px-4"
+              :disabled="!isPopiAccepted"
+              class="w-full mb-2 rounded-md justify-center py-2 px-4"
+              :class="[isDark ? ' text-white ' : '   text-white', 'bg-green-900']"
               @click="save(selectedShipmentId)"
               >Save</Button
             >

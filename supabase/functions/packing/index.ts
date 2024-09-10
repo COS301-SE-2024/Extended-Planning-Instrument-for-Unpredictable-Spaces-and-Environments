@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       }
       if (requestBody.type == 'uploadSolution') {
         return responseBuilder(
-          await uploadSolution(supabaseUser, requestBody.shipmentId, requestBody.solution)
+          await uploadSolution(supabaseUser, requestBody.jsonObject, requestBody.shipmentId)
         )
       }
       if (requestBody.type == 'deleteSavedSoln') {

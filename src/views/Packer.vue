@@ -9,7 +9,7 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog, isLoading } from '../components/packerDialog'
-import ProgressSpinner from 'primevue/progressspinner'
+import Loading from '../views/Loading.vue'
 import { supabase } from '../supabase.js'
 
 const packingData = ref([])
@@ -57,8 +57,6 @@ function startNewDelivery() {
   shipments.value = []
   activeShipment.value = null
 
-  // Reset UI states
-  showStartPackingOvererlay.value = false
   isNewSceneVisible.value = false
   cratePacked.value = false
   toggleDialog()
@@ -310,7 +308,7 @@ function initThreeJS(containerId, isDark, packingDataType) {
   }
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(container.clientWidth, container.clientHeight)
-  renderer.setClearColor(isDark ? '#262626' : 0xffffff)
+  renderer.setClearColor(isDark ? '#171717' : 0xffffff)
   container.appendChild(renderer.domElement)
 
   controls = new OrbitControls(camera, renderer.domElement)
@@ -391,8 +389,6 @@ function cleanupThreeJS() {
 }
 
 function createContainer(scene, CONTAINER_SIZE, isDark) {
-  console.log('Creating container', CONTAINER_SIZE)
-
   const geometry = new THREE.BoxGeometry(CONTAINER_SIZE[0], CONTAINER_SIZE[1], CONTAINER_SIZE[2])
   const material = new THREE.MeshBasicMaterial({
     color: '#64748b',
@@ -412,6 +408,7 @@ function createContainer(scene, CONTAINER_SIZE, isDark) {
 }
 
 function createBoxesFromData(scene, boxesData, truckPacked) {
+  console.log('boxesData incoming', boxesData)
   // Check if boxesData is a Vue ref and extract the actual value
   if (boxesData && boxesData.__v_isRef) {
     boxesData = boxesData._value
@@ -458,6 +455,7 @@ function createBoxesFromData(scene, boxesData, truckPacked) {
     const edgesGeometry = new THREE.EdgesGeometry(geometry)
     const edgesMaterial = new THREE.LineBasicMaterial({ color: isDark ? 0xffffff : 0x000000 })
     const wireframe = new THREE.LineSegments(edgesGeometry, edgesMaterial)
+    wireframe.material.color.set(isDark.value ? 0xffffff : 0x000000)
     mesh.add(wireframe)
   })
 }
@@ -593,7 +591,7 @@ const onDetect = (result) => {
                 (child) => child instanceof THREE.LineSegments
               )
               if (wireframe) {
-                wireframe.material.color.set('#000000')
+                wireframe.material.color.set(isDark.value ? 0xffffff : 0x000000)
               }
             }
           } else {
@@ -881,67 +879,80 @@ async function generateNewSolution(shipmentID) {
 
     if (error) {
       console.log(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
+    }
+
+    const { data, error2 } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'getPackages',
+        ShipmentID: shipmentID
+      }),
+      method: 'POST'
+    })
+    console.log('Successfully deleted saved solution, heres its packages', data)
+    if (error2) {
+      console.error('Error fetching packages for shipment: ', error)
       return
+    }
+
+    if (!data || !data.data) {
+      console.error('Invalid data structure received:', data)
+      return
+    }
+
+    const result = data
+
+    const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
+
+    const { error: errorSaving } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'uploadSolution',
+        shipmentId: shipmentID,
+        jsonObject: response
+      }),
+      method: 'POST'
+    })
+    if (errorSaving) {
+      console.error('Failed to store solution')
     } else {
-      console.log(`Successfully deleted saved solution for shiment`)
-      const { data, error2 } = await supabase.functions.invoke('packing', {
-        body: JSON.stringify({
-          type: 'getPackages',
-          ShipmentID: shipmentID
-        }),
-        method: 'POST'
-      })
-
-      if (error2) {
-        console.error('Error fetching packages for shipment: ', error)
-        return
-      }
-
-      if (!data || !data.data) {
-        console.error('Invalid data structure received:', data)
-        return
-      }
-
-      const result = data
-
-      // const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
-      // console.log('RESPONSE: ', response)
-      const response = await fetch(
-        'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            shipmentID: shipmentID,
-            containerSize: CONTAINER_SIZE,
-            boxes: result
-          })
-        }
-      )
-      const responsedata = await response.json()
-      console.log('Here is the new solution', responsedata)
-
-      if (responsedata == null) {
-        console.error('Failed to upload solution', responsedata)
+      if (response == null) {
+        console.error('Failed to upload solution', response)
       } else {
         const { error: updateError } = await supabase.functions.invoke('packing', {
           body: JSON.stringify({
             type: 'updateFitnessValue',
             ShipmentId: shipmentID,
-            newFitnessValue: parseFloat(responsedata.fitness)
+            newFitnessValue: parseFloat(response.fitness)
           }),
           method: 'POST'
         })
 
         if (updateError) {
           console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        } else {
+          const json = response.boxes
+          const newPackingData = json._isRef ? json.value : json
+          if (!newPackingData) {
+            console.error('Invalid packing data received:', newPackingData)
+            toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Invalid packing data received',
+              life: 3000
+            })
+            return
+          }
+          const shipmentIndex = shipments.value.findIndex((shipment) => shipment.id === shipmentID)
+
+          const updatedData = newPackingData.map((box) => ({
+            ...box,
+            scanned: false
+          }))
+
+          packingData.value[shipmentIndex] = updatedData
+
+          saveProgress()
+          toggleShipment(shipmentID)
         }
-        console.log('OLD PACKING DATA', packingData.value[0], packingData.value[1])
-        handleJsonData(responsedata.boxes)
-        console.log('NEW PACKING DATA', packingData.value[0], packingData.value[1])
-        toggleShipment(shipmentID)
       }
     }
   } catch (error) {
@@ -965,21 +976,7 @@ async function generateNewSolution(shipmentID) {
       v-if="loadingShipments"
       :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
     >
-      <img
-        :src="
-          isDark
-            ? '/Members/Photos/Logos/Logo-Light-Transparent.svg'
-            : '/Members/Photos/Logos/Logo-Dark-Transparent.svg'
-        "
-        class="logo"
-        alt="Logo"
-      />
-      <ProgressSpinner
-        style="width: 150px; height: 150px"
-        strokeWidth="4"
-        animationDuration=".5s"
-        aria-label="Custom ProgressSpinner"
-      />
+      <Loading />
     </div>
 
     <div
@@ -1066,7 +1063,7 @@ async function generateNewSolution(shipmentID) {
               v-for="item in scannedBoxes"
               :key="item.id"
               @click="highlightItem(item.id, item.type)"
-              class="cursor-pointer hover:bg-gray-200 p-2 rounded"
+              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-md p-2"
             >
               {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
             </li>
@@ -1123,7 +1120,11 @@ async function generateNewSolution(shipmentID) {
           >
             <div id="new-three-container" class="w-full h-full"></div>
           </div>
-          <div v-else :id="`three-container-${activeShipment}`" class="w-full h-full">
+          <div
+            v-else
+            :id="`three-container-${activeShipment}`"
+            class="w-full h-full flex justify-center align-center"
+          >
             <div
               v-if="isKeyVisible"
               :class="[
@@ -1178,9 +1179,15 @@ async function generateNewSolution(shipmentID) {
     <DialogComponent
       v-if="showHelpDialog"
       :images="[
-        { src: '/Members/Photos/main dashboard (packer).png', alt: 'Alternative Image 1' },
-        { src: '/Members/Photos/packer-nav.png', alt: 'Alternative Image 2' },
-        { src: '/Members/Photos/adding a box _ pallett.png', alt: 'Alternative Image 3' }
+        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
       ]"
       title="Help Menu"
       :contacts="[
