@@ -1,7 +1,7 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
-import { ref, onMounted, computed} from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
@@ -142,7 +142,7 @@ const DelteUser = async () => {
 
 onMounted(() => {
   fetchUsers()
-  fetchCurrentUser() // Fetch current user info on mount
+  fetchCurrentUser()
   setupSubscription()
 })
 
@@ -169,6 +169,12 @@ const roles = ref([
   { name: 'Driver', code: 'Driver' },
   { name: 'unassigned', code: 'unassigned' }
 ])
+const name = ref('')
+
+const isValidName = computed(() => {
+  const nameRegex = /^[a-zA-Z\s]{2,100}$/
+  return nameRegex.test(selectedUser.value.FullName)
+})
 
 const isValidEmail = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -181,7 +187,7 @@ const isValidPhoneNumber = computed(() => {
 })
 
 const saveChanges = async () => {
-  if (!isValidEmail.value || !isValidPhoneNumber.value) {
+  if (!isValidEmail.value || !isValidPhoneNumber.value || !isValidName.value) {
     return
   }
 
@@ -206,7 +212,7 @@ const saveChanges = async () => {
       handleError(error, 'saveChanges')
     } else {
       dialogVisible.value = false
-      const index = customers.value.findIndex(user => user.Email === selectedUser.value.Email)
+      const index = customers.value.findIndex((user) => user.Email === selectedUser.value.Email)
       if (index !== -1) {
         customers.value[index] = { ...selectedUser.value, Role: selectedRole.value.name }
       }
@@ -320,24 +326,29 @@ const nameWithYou = (user) => {
       class="flex flex-col"
     >
       <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="FullName">Full Name</label>
+        <label class="text-xl" for="FullName">Full Name</label>
         <input
-            :class="[
-              isDark
-                ? 'text-white border bg-neutral-900 border-transparent'
-                : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
-            ]"
-            type="text"
-            id="name"
-            v-model="name"
-            required
-            placeholder="eg. John Doe"
-            class="form-control"
-          />
+          :class="[
+            isDark
+              ? 'text-white border bg-neutral-900 border-transparent'
+              : 'border border-neutral-900 bg-white text-neutral-800',
+            'mt-2 mb-2 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+            { 'border-red-500 border-2': !isValidName && selectedUser.FullName !== '' }
+          ]"
+          type="text"
+          id="name"
+          v-model="selectedUser.FullName"
+          required
+          placeholder="eg. John Doe"
+          @input="isvalidateName"
+          maxlength="100"
+        />
+        <p v-if="!isValidName && selectedUser.FullName !== ''" class="text-red-500 text-sm">
+          Please enter a valid full name (2-100 characters, letters and spaces only).
+        </p>
       </div>
       <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="Email">Email</label>
+        <label class="text-xl" for="Email">Email</label>
         <input
           :class="[
             isDark
@@ -354,15 +365,12 @@ const nameWithYou = (user) => {
           class="form-control"
           @input="emailDuplicate = false"
         />
-        <p v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm mt-6">
-          Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
+        <p v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm">
+          Please enter a valid email address i.e johndoe@tuks.co.za
         </p>
-        <!-- <span v-if="!isValidEmail && selectedUser.Email !== ''" class="text-red-500 text-sm mb-4">
-          Please enter a valid email address.
-        </span> -->
       </div>
       <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="Role">Role</label>
+        <label class="text-xl" for="Role">Role</label>
 
         <Dropdown
           :class="[
@@ -370,7 +378,7 @@ const nameWithYou = (user) => {
               ? 'text-white border bg-neutral-950 border-transparent'
               : 'border border-neutral-900 bg-white text-neutral-800',
             'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
-            { 'z-99999999999999999': true } // Adjust z-index here
+            { 'z-99999999999999999': true }
           ]"
           v-model="selectedRole"
           :options="roles"
@@ -380,7 +388,7 @@ const nameWithYou = (user) => {
         />
       </div>
       <div class="field flex flex-col">
-        <label class="text-xl font-semibold" for="Phone">Phone Number</label>
+        <label class="text-xl" for="Phone">Phone Number</label>
         <input
           :class="[
             isDark
@@ -396,23 +404,20 @@ const nameWithYou = (user) => {
           placeholder="e.g. +27123456789"
           class="form-control"
         />
-        <!-- <span v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm mb-4">
-          Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
-        </span> -->
-        <p v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm mt-6">
+        <p v-if="!isValidPhoneNumber && selectedUser.Phone !== ''" class="text-red-500 text-sm">
           Please enter a valid phone number starting with +27, 27, or 0, followed by 9 digits.
         </p>
       </div>
       <div class="mt-6 flex flex-col items-center align-center">
         <Button
           label="Save"
-          class="w-full font-semibold p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
+          class="w-full p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
           :loading="loading"
           @click="saveChanges"
         />
         <Button
           label="Delete User"
-          class="w-full font-semibold p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
+          class="w-full p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
           :loading="loadingDel"
           @click="DelteUser"
         />
@@ -420,7 +425,7 @@ const nameWithYou = (user) => {
           icon="pi pi-arrow-left"
           iconPos="left"
           label="Back"
-          class="font-semibold w-auto p-button-text text-orange-500 p-2"
+          class="w-auto p-button-text text-orange-500 p-2"
           @click="dialogVisible = false"
         />
       </div>
@@ -429,7 +434,7 @@ const nameWithYou = (user) => {
   <div>
     <DialogComponent
       v-if="showDialog"
-      :images="[{ src: '/Members/Photos/manage-users.png', alt: 'Alternative Image 1' }]"
+      :images="[{ src: '../assets/Photos/manage-users.png', alt: 'user Help menu' }]"
       title="Contact Support"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
