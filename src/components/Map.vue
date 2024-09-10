@@ -1,5 +1,5 @@
 <template>
-  <div :class="[' h-[auto] flex flex-col rounded-md ']">
+  <div class="h-auto flex flex-col rounded-md">
     <div id="map" style="width: 100%; height: 400px"></div>
     <p v-if="errorMessage" class="error-message mt-4">{{ errorMessage }}</p>
   </div>
@@ -7,86 +7,108 @@
 
 <script>
 import { ref, onMounted, watch } from 'vue'
-// import { Loader } from '@googlemaps/js-api-loader'
 import loader from '../googleMapsLoader.js'
-// import { useDark } from '@vueuse/core'
 
-const startingPosition = ref(null)
-
-let markers = []
-
-// const isDark = useDark()
-// const toggleDark = () => {
-//   isDark.value = !isDark.value
-//   // console.log('Dark mode:', isDark.value ? 'on' : 'off')
-// }
 export default {
   props: {
     destination: {
       type: String,
-      default: '1268 Burnett Street, Pretoria' // Default destination address
+      default: '1268 Burnett Street, Pretoria'
     }
   },
   setup(props) {
+    const startingPosition = ref(null)
     const coordinates = ref({ lat: null, long: null })
     const destinationCoords = ref({ lat: null, long: null })
     const errorMessage = ref('')
     const isNavigating = ref(false)
     const currentStep = ref('')
-    const currentDirectionsRenderer = ref(null)
+    // const currentDirectionsRenderer = ref(null)
     const directionsRenderer = ref(null)
     const steps = ref([])
     const currentStepIndex = ref(0)
     let map = null
-    let google = null
-    // let watchId = null
+    let markers = []
 
-    const getLocation = () => {
-      return new Promise((resolve, reject) => {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              coordinates.value = {
-                lat: position.coords.latitude,
-                long: position.coords.longitude
-              }
-              resolve(coordinates.value)
-            },
-            (error) => {
-              console.error('Error getting location:', error)
-              reject(error)
-            }
-          )
-        } else {
-          const error = new Error('Geolocation is not supported by this browser.')
-          console.error(error)
-          reject(error)
+    const deleteSavedTripData = () => {
+      localStorage.removeItem('lastTripData')
+      // Reset the relevant data in the component
+      coordinates.value = { lat: null, long: null }
+      destinationCoords.value = { lat: null, long: null }
+      errorMessage.value = ''
+      isNavigating.value = false
+      currentStep.value = ''
+      steps.value = []
+      currentStepIndex.value = 0
+
+      // Clear the map
+      if (map) {
+        markers.forEach((marker) => marker.setMap(null))
+        markers = []
+        if (directionsRenderer.value) {
+          directionsRenderer.value.setMap(null)
         }
-      })
+      }
+
+      console.log('Saved trip data has been deleted')
+    }
+
+    const saveTripData = () => {
+      localStorage.setItem(
+        'lastTripData',
+        JSON.stringify({
+          coordinates: coordinates.value,
+          destination: props.destination,
+          destinationCoords: destinationCoords.value
+        })
+      )
+    }
+
+    const loadTripData = () => {
+      const savedData = localStorage.getItem('lastTripData')
+      if (savedData) {
+        const parsedData = JSON.parse(savedData)
+        coordinates.value = parsedData.coordinates
+        destinationCoords.value = parsedData.destinationCoords
+      }
+    }
+
+    const getLocation = async (retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject)
+          })
+          coordinates.value = {
+            lat: position.coords.latitude,
+            long: position.coords.longitude
+          }
+          return coordinates.value
+        } catch (error) {
+          console.error(`Error getting location (attempt ${i + 1}):`, error)
+          if (i === retries - 1) {
+            errorMessage.value = 'Unable to get your location. Please check your browser settings.'
+            throw error
+          }
+          await new Promise((resolve) => setTimeout(resolve, 3000))
+        }
+      }
     }
 
     const geocodeDestination = async () => {
-      if (!google) {
-        console.error('Google Maps API not loaded')
-        return
-      }
-
-      const geocoder = new google.maps.Geocoder()
       try {
-        const result = await new Promise((resolve, reject) => {
-          const fullAddress = `${props.destination}, South Africa`
-          geocoder.geocode({ address: fullAddress }, (results, status) => {
-            if (status === 'OK') {
-              resolve(results[0].geometry.location)
-            } else {
-              reject(new Error(`Geocode was not successful. Status: ${status}`))
-            }
-          })
-        })
-
-        destinationCoords.value = {
-          lat: result.lat(),
-          long: result.lng()
+        const { Geocoder } = await loader.importLibrary('geocoding')
+        const geocoder = new Geocoder()
+        const fullAddress = `${props.destination}, South Africa`
+        const result = await geocoder.geocode({ address: fullAddress })
+        if (result.results.length > 0) {
+          const location = result.results[0].geometry.location
+          destinationCoords.value = {
+            lat: location.lat(),
+            long: location.lng()
+          }
+        } else {
+          throw new Error('No results found')
         }
       } catch (error) {
         console.error('Error geocoding destination:', error)
@@ -95,27 +117,30 @@ export default {
     }
 
     const initMap = async () => {
-      if (coordinates.value.lat === null || coordinates.value.long === null) {
-        console.error('Coordinates are not available yet')
-        return
-      }
-
       try {
         const { Map } = await loader.importLibrary('maps')
-        google = window.google
+        const { AdvancedMarkerElement } = await loader.importLibrary('marker')
+        const { DirectionsRenderer } = await loader.importLibrary('routes')
+
+        if (!coordinates.value.lat || !coordinates.value.long) {
+          await getLocation()
+        }
 
         if (!map) {
           map = new Map(document.getElementById('map'), {
             center: { lat: coordinates.value.lat, lng: coordinates.value.long },
-            zoom: 12
+            zoom: 12,
+            mapId: 'DeliveryMap1'
           })
         }
 
         await geocodeDestination()
 
-        const { Marker } = await loader.importLibrary('marker')
+        // Clear existing markers
+        markers.forEach((marker) => marker.setMap(null))
+        markers = []
 
-        const startMarker = new Marker({
+        const startMarker = new AdvancedMarkerElement({
           position: { lat: coordinates.value.lat, lng: coordinates.value.long },
           map: map,
           title: 'Current Location'
@@ -123,7 +148,7 @@ export default {
         markers.push(startMarker)
 
         if (destinationCoords.value.lat && destinationCoords.value.long) {
-          const destinationMarker = new Marker({
+          const destinationMarker = new AdvancedMarkerElement({
             position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
             map: map,
             title: 'Destination'
@@ -131,33 +156,27 @@ export default {
           markers.push(destinationMarker)
         }
 
-        const { DirectionsRenderer } = await loader.importLibrary('routes')
         directionsRenderer.value = new DirectionsRenderer()
         directionsRenderer.value.setMap(map)
+
+        saveTripData()
       } catch (error) {
-        console.error('Error loading Google Maps:', error)
-        errorMessage.value = 'Error loading Google Maps. Please try again later.'
+        console.error('Error initializing map:', error)
+        errorMessage.value = 'Error initializing map. Please try again later.'
       }
     }
 
     const calculateRoute = async () => {
-      if (!google || !google.maps.DirectionsService) {
-        console.error('Google Maps DirectionsService is not available')
-        return
-      }
       try {
         const { DirectionsService } = await loader.importLibrary('routes')
+        const { LatLng } = await loader.importLibrary('core')
         const directionsService = new DirectionsService()
-        const request = {
-          origin: new google.maps.LatLng(coordinates.value.lat, coordinates.value.long),
-          destination: new google.maps.LatLng(
-            destinationCoords.value.lat,
-            destinationCoords.value.long
-          ),
-          travelMode: google.maps.TravelMode.DRIVING
-        }
-        const result = await directionsService.route(request)
-        currentDirectionsRenderer.value.setDirections(result)
+        const result = await directionsService.route({
+          origin: new LatLng(coordinates.value.lat, coordinates.value.long),
+          destination: new LatLng(destinationCoords.value.lat, destinationCoords.value.long),
+          travelMode: 'DRIVING'
+        })
+        directionsRenderer.value.setDirections(result)
         steps.value = result.routes[0].legs[0].steps
         currentStep.value = steps.value[0].instructions
         isNavigating.value = true
@@ -166,12 +185,7 @@ export default {
         errorMessage.value = 'Unable to calculate route. Please check your API key permissions.'
       }
     }
-
     const startNavigation = () => {
-      if (!google || !map) {
-        console.error('Google Maps not initialized yet')
-        return
-      }
       isNavigating.value = true
       calculateRoute()
     }
@@ -186,80 +200,30 @@ export default {
     }
 
     const updateMap = async () => {
-      if (!map || !google) {
-        console.error('Map or Google API not initialized')
-        return
-      }
-
-      // Remove existing markers
-      markers.forEach((marker) => marker.setMap(null))
-      markers = []
-
-      if (currentDirectionsRenderer.value) {
-        currentDirectionsRenderer.value.setMap(null)
-        currentDirectionsRenderer.value = null
-      }
-
-      const { DirectionsRenderer } = await loader.importLibrary('routes')
-      currentDirectionsRenderer.value = new DirectionsRenderer()
-      currentDirectionsRenderer.value.setMap(map)
-
-      const startMarker = new google.maps.Marker({
-        position: { lat: coordinates.value.lat, lng: coordinates.value.long },
-        map: map,
-        title: 'Starting Position'
-      })
-      markers.push(startMarker)
-
-      if (destinationCoords.value.lat && destinationCoords.value.long) {
-        const destinationMarker = new google.maps.Marker({
-          position: { lat: destinationCoords.value.lat, lng: destinationCoords.value.long },
-          map: map,
-          title: 'Destination'
-        })
-        markers.push(destinationMarker)
-      }
-
-      const bounds = new google.maps.LatLngBounds()
-      bounds.extend({ lat: coordinates.value.lat, lng: coordinates.value.long })
-      bounds.extend({ lat: destinationCoords.value.lat, lng: destinationCoords.value.long })
-      map.fitBounds(bounds)
-
+      await initMap()
       await calculateRoute()
     }
 
     onMounted(async () => {
-      try {
-        await getLocation()
-        initMap()
-      } catch (error) {
-        console.error('Error in onMounted:', error)
-        errorMessage.value = 'Unable to get your location. Please check your browser settings.'
-      }
-    })
-
-    watch(coordinates, (newCoordinates) => {
-      if (newCoordinates.lat !== null && newCoordinates.long !== null) {
-        initMap()
-      }
+      loadTripData()
+      await initMap()
     })
 
     watch(
       () => props.destination,
       async (newDestination) => {
         if (newDestination) {
-          if (startingPosition.value) {
-            // Make the old destination the new starting position
-            coordinates.value = { ...destinationCoords.value }
-          } else {
-            // For the first time, use the current location as starting position
-            startingPosition.value = { ...coordinates.value }
-          }
-          await geocodeDestination()
-          if (map) {
-            updateMap()
-          } else {
-            initMap()
+          try {
+            if (startingPosition.value) {
+              coordinates.value = { ...destinationCoords.value }
+            } else {
+              startingPosition.value = { ...coordinates.value }
+            }
+            await geocodeDestination()
+            await updateMap()
+          } catch (error) {
+            console.error('Error updating map:', error)
+            errorMessage.value = 'Unable to update the map. Please try again later.'
           }
         }
       },
@@ -272,11 +236,13 @@ export default {
       isNavigating,
       currentStep,
       startNavigation,
-      nextStep
+      nextStep,
+      deleteSavedTripData
     }
   }
 }
 </script>
+
 <style scoped>
 .error-message {
   color: red;
