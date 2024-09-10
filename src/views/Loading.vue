@@ -4,11 +4,11 @@
     :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
   >
     <img
-      :src="
+      :src="[
         isDark
           ? '../assets/Photos/Logos/Logo-Light-Transparent.svg'
-          : '../assests/Photos/Logos/Logo-Dark-Transparent.svg'
-      "
+          : '../assets/Photos/Logos/Logo-Dark-Transparent.svg'
+      ]"
       class="logo"
       alt="Logo"
     />
@@ -49,6 +49,6 @@ const isDark = useDark()
 }
 
 :deep(.p-progress-spinner-circle) {
-  stroke: rgb(182, 119, 2) !important;
+  stroke: rgb(255, 136, 0) !important;
 }
 </style>

@@ -6,13 +6,23 @@ import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
 import { FilterMatchMode } from 'primevue/api'
 import { isLoading, useToggleDialog } from './packerDialog'
+import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
+import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import DialogComponent from '@/components/DialogComponent.vue'
 
 const containerDimensions = [1200, 1930, 1000]
 
+const showHelpDialog = ref(false)
+const toggleDialogHelp = () => {
+  console.log('helo')
+  showHelpDialog.value = !showHelpDialog.value
+}
 const packingResults = ref({})
 const shipmentsToPack = ref(null)
 const showShipmentSelection = ref(false)
+
+const toast = useToast()
 
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -41,9 +51,14 @@ const toggleDark = useToggle(isDark) // Proper toggle function
 const router = useRouter() // Use the router instance
 // const dialogVisible = ref(false)
 
-const { dialogVisible, toggleStartNewPacking, toggleDialog } = useToggleDialog()
+const { dialogVisible, showStartPackingOvererlay, toggleStartNewPacking, toggleDialog } =
+  useToggleDialog()
 
 const { loadingShipments, startLoading, stopLoading } = isLoading()
+
+onMounted(() => {
+  loadProgress()
+})
 
 async function logout() {
   const { error } = await supabase.auth.signOut()
@@ -135,9 +150,19 @@ const items = [
     label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      toggleDialog()
-      getAllProcessing()
-    }
+      if (showStartPackingOvererlay.value) {
+        toggleDialog()
+        getAllProcessing()
+      } else {
+        toast.add({
+          severity: 'warn',
+          summary: 'Action Disabled',
+          detail: 'You cant start a new shipment until the active shipment is complete',
+          life: 3000
+        })
+      }
+    },
+    disabled: !showStartPackingOvererlay.value
   },
 
   {
@@ -161,12 +186,35 @@ const items = [
       console.log('Logging Out')
       logout()
     }
+  },
+  {
+    label: 'Help',
+    icon: 'pi pi-fw pi-question',
+    command: () => {
+      toggleDialogHelp()
+    }
   }
 ]
+function loadProgress() {
+  const savedProgress = localStorage.getItem('packingProgress')
+  if (savedProgress) {
+    const progressData = JSON.parse(savedProgress)
+    packingResults.value = progressData.packingData
+    shipmentsToPack.value = progressData.shipments
+
+    return true
+  }
+  return false
+}
 
 function printQRcode() {
   if (Object.keys(packingResults.value).length === 0) {
-    alert('No shipments have been packed yet.')
+    toast.add({
+      severity: 'error',
+      summary: 'No Delivery has been selected to Pack',
+      detail: 'You need to choose a delivery to pack before you can print the QR codes ',
+      life: 3000
+    })
     return
   }
   showShipmentSelection.value = true
@@ -205,38 +253,33 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
     updateShipmentStatus(shipment.id, 'Processing')
     updateShipmentStartTime(shipment.id)
   }
+
   stopLoading()
 }
 
 const runPackingAlgo = async (shipmentId) => {
+  console.log('Trying shipment', shipmentId)
   try {
-    const response = await fetch(
-      'https://my-flask-app-376304333680.africa-south1.run.app/getSolution',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          shipmentID: shipmentId
-        })
-      }
-    )
-    const responsedata = await response.json()
-    let errorObj = null
-    if (responsedata.details) {
-      try {
-        errorObj = JSON.parse(responsedata.details.replace(/'/g, '"'))
-      } catch (parseError) {
-        console.error('Error parsing details:', parseError)
-      }
-    }
+    const { data: response } = await supabase.functions.invoke('packing', {
+      body: JSON.stringify({
+        type: 'fetchSolution',
+        shipmentId: shipmentId
+      }),
+      method: 'POST'
+    })
 
-    if (errorObj && errorObj.error) {
+    console.log('result from fetch', response)
+    if (response.error) {
+      console.error('Failed to fetch solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
-      packingResults.value[shipmentId] = responsedata.boxes
-      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      if (response && response.data && response.data.boxes) {
+        packingResults.value[shipmentId] = response.data.boxes
+        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      } else {
+        console.error('Invalid or missing data in the response')
+        return
+      }
     }
   } catch (e) {
     console.error('Failure to fetch solution', e)
@@ -263,43 +306,38 @@ async function uploadSolution(shipmentId, containerDimensions) {
       return
     }
 
-    const result = data
-
-    console.log('Sending in Packages', result)
-
-    const response = await fetch(
-      'https://my-flask-app-376304333680.africa-south1.run.app/uploadSolution',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          shipmentID: shipmentId,
-          containerSize: containerDimensions,
-          boxes: result
-        })
-      }
-    )
-    const responsedata = await response.json()
-
-    if (responsedata == null) {
-      console.error('Failed to upload solution', responsedata)
+    const response = geneticAlgorithm(data.data, containerDimensions, 150, 300, 0.01)
+    if (response.data.boxes.length == 0) {
+      console.error('Failed to calculate solution')
+      return
     } else {
-      const { error: updateError } = await supabase.functions.invoke('packing', {
+      const { error: errorSaving } = await supabase.functions.invoke('packing', {
         body: JSON.stringify({
-          type: 'updateFitnessValue',
-          ShipmentId: shipmentId,
-          newFitnessValue: parseFloat(responsedata.fitness)
+          type: 'uploadSolution',
+          shipmentId: shipmentId,
+          jsonObject: response
         }),
         method: 'POST'
       })
+      if (errorSaving) {
+        console.error('Failed to store solution')
+      } else {
+        const { error: updateError } = await supabase.functions.invoke('packing', {
+          body: JSON.stringify({
+            type: 'updateFitnessValue',
+            ShipmentId: parseInt(shipmentId),
+            newFitnessValue: parseFloat(response.fitness)
+          }),
+          method: 'POST'
+        })
 
-      if (updateError) {
-        console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        if (updateError) {
+          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        }
+        console.log('Response.data', response)
+        packingResults.value[shipmentId] = response.data.boxes
+        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
       }
-      packingResults.value = responsedata.boxes
-      emit('handle-json', JSON.parse(JSON.stringify(packingResults.value)))
     }
   } catch (error) {
     console.error('Error in getSolution:', error)
@@ -333,7 +371,11 @@ onMounted(() => {
         </svg>
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
-        <a v-ripple class="flex items-center p-6" v-bind="props.action">
+        <a
+          v-bind="props.action"
+          :class="{ 'disabled-link': !showStartPackingOvererlay }"
+          @click="item.command()"
+        >
           <span :class="item.icon" />
           <span class="ml-2">{{ item.label }}</span>
           <Badge
@@ -444,11 +486,37 @@ onMounted(() => {
         >
       </div>
     </Dialog>
+    <DialogComponent
+      v-if="showHelpDialog"
+      :images="[
+        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
+        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
+      ]"
+      title="Help Menu"
+      :contacts="[
+        { name: 'Call', phone: '+27 12 345 6789', underline: true },
+        { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
+      ]"
+      :dialogVisible="showHelpDialog"
+      @close-dialog="toggleDialogHelp"
+    />
   </div>
 </template>
 
 <style>
 /* General styles */
+
+.disabled-link {
+  pointer-events: none;
+  opacity: 0.5;
+}
 .mobile-icon {
   display: none;
 }

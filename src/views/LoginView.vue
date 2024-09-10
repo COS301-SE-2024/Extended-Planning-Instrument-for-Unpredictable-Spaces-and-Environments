@@ -61,7 +61,7 @@ const signIn = async () => {
   }
 
   if (failedAttempts.value >= 10) {
-    alert("You have exceeded the maximum number of attempts. Please reset your password.")
+    alert('You have exceeded the maximum number of attempts. Please reset your password.')
     router.push({ name: 'forgot-password' }) // Redirect to password reset page
     return
   }
@@ -70,11 +70,11 @@ const signIn = async () => {
     email: email.value,
     password: password.value
   })
-  
+
   if (error) {
     console.log(error)
     failedAttempts.value++
-    
+
     if (error.message.includes('email')) {
       emailError.value = true
       passwordError.value = false
@@ -94,7 +94,7 @@ const signIn = async () => {
       // Save the cooldownEndTime to localStorage
       localStorage.setItem('cooldownEndTime', cooldownEndTime.value.toString())
     }
-    
+
     // You might want to set a more specific error message here
     console.error(error.message)
   } else {
@@ -127,7 +127,6 @@ const signInWithProvider = async (provider) => {
   }
 }
 </script>
-
 
 <template>
   <div
@@ -220,7 +219,10 @@ const signInWithProvider = async (provider) => {
           @input="passwordError = false"
           @blur="validatePassword"
         />
-        <div v-if="passwordError || isCooldownActive" class="w-full bg-red-200 border-red-500 border-2 rounded-md mt-8">
+        <div
+          v-if="passwordError || isCooldownActive"
+          class="w-full bg-red-200 border-red-500 border-2 rounded-md mt-8"
+        >
           <p class="text-red-500 p-4">Incorrect email or password.</p>
           <p v-if="cooldownMessage" class="text-red-500 p-4">{{ cooldownMessage }}</p>
         </div>
@@ -308,8 +310,11 @@ const signInWithProvider = async (provider) => {
     <DialogComponent
       v-if="showDialog"
       :images="[
-        { src: '../assets/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '../assets/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '../assets/Photos/Help/LoginSignup/1.png', alt: 'Image 1' },
+        { src: '../assets/Photos/Help/LoginSignup/2.png', alt: 'Image 2' },
+        { src: '../assets/Photos/Help/LoginSignup/3.png', alt: 'Image 3' },
+        { src: '../assets/Photos/Help/LoginSignup/4.png', alt: 'Image 4' },
+        { src: '../assets/Photos/Help/LoginSignup/5.png', alt: 'Image 5' }
       ]"
       title="Help Menu"
       :contacts="[
