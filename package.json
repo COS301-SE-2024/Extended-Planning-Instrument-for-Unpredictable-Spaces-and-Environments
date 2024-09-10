@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp public/_redirects dist/_redirects",
     "preview": "vite preview",
     "test:unit": "vitest",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
