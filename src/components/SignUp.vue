@@ -67,7 +67,7 @@ const signUp = async () => {
       })
       const { data, error } = await supabase.functions.invoke('core', {
         body: {
-          type: 'insertUser',
+          type: 'updateUser',
           fullname: name.value,
           email: email.value,
           role: 'unassigned',
