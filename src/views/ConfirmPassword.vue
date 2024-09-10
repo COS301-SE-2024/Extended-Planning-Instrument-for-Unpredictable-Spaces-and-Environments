@@ -265,25 +265,15 @@ onMounted(() => {
       </form>
     </div>
 
-    <div>
-      <DialogComponent
-        v-if="dialogVisible"
-        imagePath="src/assets/Photos/Login _ landing page.png"
-        altText="Alternative Image"
-        title="Help Menu"
-        :contacts="[
-          { name: 'Call', phone: '+27 12 345 6789', underline: true },
-          { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
-        ]"
-        :dialogVisible="dialogVisible"
-        @close-dialog="toggleDialog"
-      />
-    </div>
+    <div></div>
     <DialogComponent
       v-if="dialogVisible"
       :images="[
-        { src: '@/assets/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '@/assets/Photos/Sign-up.png', alt: 'Image 2' }
+        { src: '../assets/Photos/Help/LoginSignup/1.png', alt: 'Image 1' },
+        { src: '../assets/Photos/Help/LoginSignup/2.png', alt: 'Image 2' },
+        { src: '../assets/Photos/Help/LoginSignup/3.png', alt: 'Image 3' },
+        { src: '../assets/Photos/Help/LoginSignup/4.png', alt: 'Image 4' },
+        { src: '../assets/Photos/Help/LoginSignup/5.png', alt: 'Image 5' }
       ]"
       title="Help Menu"
       :contacts="[

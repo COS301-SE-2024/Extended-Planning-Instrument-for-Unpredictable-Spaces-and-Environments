@@ -11,10 +11,6 @@ const toast = useToast()
 
 const isDark = useDark()
 const router = useRouter()
-const toggleDark = () => {
-  isDark.value = !isDark.value
-  console.log('Dark mode:', isDark.value ? 'on' : 'off')
-}
 
 const name = ref('')
 const number = ref('')
