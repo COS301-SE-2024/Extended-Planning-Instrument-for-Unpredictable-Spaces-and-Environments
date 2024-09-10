@@ -300,9 +300,11 @@ const signUp = async () => {
     <DialogComponent
       v-if="showDialog"
       :images="[
-        { src: '/Members/Photos/Login _ landing page.png', alt: 'Image 1' },
-        { src: '/Members/Photos/Sign-up.png', alt: 'Image 2' }
-        // Add more images as needed
+        { src: '../assets/Photos/Help/LoginSignup/1.png', alt: 'Image 1' },
+        { src: '../assets/Photos/Help/LoginSignup/2.png', alt: 'Image 2' },
+        { src: '../assets/Photos/Help/LoginSignup/3.png', alt: 'Image 3' },
+        { src: '../assets/Photos/Help/LoginSignup/4.png', alt: 'Image 4' },
+        { src: '../assets/Photos/Help/LoginSignup/5.png', alt: 'Image 5' }
       ]"
       title="Help Menu"
       :contacts="[
