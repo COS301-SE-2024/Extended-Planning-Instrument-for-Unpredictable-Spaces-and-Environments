@@ -1,14 +1,11 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import { ref, onMounted } from 'vue'
-import { useToast } from 'primevue/usetoast'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const toast = useToast()
 const isDark = useDark()
-const activeIndex = ref(0)
 const videoRef = ref(null)
 const isVideoLoaded = ref(false)
 

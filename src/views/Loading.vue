@@ -49,6 +49,6 @@ const isDark = useDark()
 }
 
 :deep(.p-progress-spinner-circle) {
-  stroke: rgb(182, 119, 2) !important;
+  stroke: rgb(255, 136, 0) !important;
 }
 </style>

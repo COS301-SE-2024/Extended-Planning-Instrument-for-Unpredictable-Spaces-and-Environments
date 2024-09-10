@@ -204,7 +204,7 @@ const items = [
     icon: 'pi pi-fw pi-question',
     command: () => {
       console.log('Opening Help Menu')
-      // toggleDialog()
+      toggleDialog2()
     }
   }
 ]
