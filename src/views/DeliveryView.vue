@@ -256,7 +256,9 @@ const openDialog = (item) => {
     destination: item.destination,
     status: item.status
   }
+  isPopiAccepted.value = false // Reset the checkbox
 }
+
 const completeDelivery = async () => {
   try {
     await addDeliveryEndTime()
