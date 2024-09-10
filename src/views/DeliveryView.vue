@@ -12,7 +12,7 @@ import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
 import CryptoJS from 'crypto-js'
 import { useToast } from 'primevue/usetoast'
-import Loading from './Loading.vue'
+
 const isDark = useDark()
 const toast = useToast()
 
@@ -23,6 +23,8 @@ const currentShipmentDetails = ref(null)
 const dialogVisible = ref(false)
 const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
+
+const tripFinished = ref(false)
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
@@ -215,12 +217,10 @@ const updateShipmentStartTime = async (shipmentID) => {
   }
 }
 
-const encryptionKey = import.meta.env.ENCRYPTION_KEY
+const encryptionKey = import.meta.env.VITE_SUPABASE_KEY
 const uploadSignature = async (signature, shipmentID) => {
   try {
-    // Encrypt the signature
     const encryptedSignature = encryptData(signature, encryptionKey)
-    // Call the API function to upload the signature
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
@@ -253,7 +253,6 @@ const uploadSignature = async (signature, shipmentID) => {
   }
 }
 
-// Helper function to encrypt data
 function encryptData(data, key) {
   return CryptoJS.AES.encrypt(data, key).toString()
 }
@@ -279,7 +278,8 @@ const completeDelivery = async () => {
     })
 
     localStorage.removeItem('deliveryProgress')
-    showStartNewDeliveryOverlay.value = true
+    tripFinished.value = true
+    // showStartNewDeliveryOverlay.value = true
   } catch (error) {
     console.error('Error completing delivery:', error)
   }
@@ -339,7 +339,7 @@ function save(shipmentid) {
       // Move to the next undelivered shipment
       activeShipmentIndex.value = nextUndeliveredIndex
       currentDestination.value = timelineEvents.value[nextUndeliveredIndex].destination
-      mapDestination.value = currentDestination.value
+      setMapDestination()
 
       // Update the start time for the next shipment
       updateShipmentStartTime(timelineEvents.value[nextUndeliveredIndex].shipment_id)
@@ -413,7 +413,7 @@ const updateTimelineEvent = (updatedShipment) => {
       if (nextUndeliveredIndex !== -1) {
         activeShipmentIndex.value = nextUndeliveredIndex
         currentDestination.value = timelineEvents.value[nextUndeliveredIndex].destination
-        mapDestination.value = currentDestination.value
+        setMapDestination()
       } else {
         // All shipments are delivered
         completeDelivery()
@@ -432,6 +432,12 @@ const showPopiInfo = () => {
   isPopiDialogVisible.value = true
 }
 
+const Home = () => {
+  localStorage.removeItem('lastTripData')
+  tripFinished.value = false
+  showStartNewDeliveryOverlay.value = true
+}
+
 const startNewDelivery = () => {
   showStartNewDeliveryOverlay.value = false
   currentDelivery.value = null
@@ -447,6 +453,15 @@ const startNewDelivery = () => {
   if (timelineEvents.value.length > 0) {
     const firstShipmentId = timelineEvents.value[0].shipment_id
     updateShipmentStartTime(firstShipmentId)
+  }
+}
+
+const setMapDestination = () => {
+  if (timelineEvents.value.length > 0 && activeShipmentIndex.value !== -1) {
+    const activeShipment = timelineEvents.value[activeShipmentIndex.value]
+    if (activeShipment && activeShipment.destination) {
+      mapDestination.value = activeShipment.destination
+    }
   }
 }
 
@@ -489,7 +504,6 @@ const updateTimelineEvents = () => {
 
   activeShipmentIndex.value = findFirstUndeliveredShipmentIndex()
 
-
   if (activeShipmentIndex.value === -1) {
     activeShipmentIndex.value = timelineEvents.value.length - 1
   }
@@ -527,6 +541,7 @@ onMounted(() => {
     if (activeShipmentIndex.value === -1) {
       activeShipmentIndex.value = timelineEvents.value.length - 1
     }
+    setMapDestination()
     showStartNewDeliveryOverlay.value = false
   } else {
     showStartNewDeliveryOverlay.value = true
@@ -613,7 +628,18 @@ export default {
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Track deliveries</span>
         </h2>
-        <div :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']">
+        <div v-if="tripFinished">
+          <Button
+            :disabled="!isPopiAccepted"
+            class="w-full mb-2 rounded-md bg-orange-500 justify-center py-2 px-4"
+            @click="Home()"
+            >Home Safe</Button
+          >
+        </div>
+        <div
+          v-if="!tripFinished"
+          :class="[isDark ? 'dark text-neutral-400' : 'light text-neutral-900']"
+        >
           <div class="flex flex-row">
             <Timeline
               :value="timelineEvents"
