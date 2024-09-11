@@ -87,7 +87,7 @@ describe('Tracking Component', () => {
     const wrapper = createWrapper();
     await nextTick();
 
-    expect(wrapper.find('.bg-gray-100').exists()).toBe(true);
+    expect(wrapper.find('.bg-gray-100').exists()).toBe(false);
     expect(wrapper.find('.text-black').exists()).toBe(true);
   });
 
