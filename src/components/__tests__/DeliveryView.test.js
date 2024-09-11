@@ -6,12 +6,11 @@ import Map from '@/components/Map.vue';
 import Timeline from 'primevue/timeline';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
-import { RouterLinkStub } from '@vue/test-utils'; // Mock RouterLink
-import { getShipmentByDeliveryId } from '../../../supabase/functions/core/Shipments/getShipmentByDeliveryID'; // Import the actual method
+import Ripple from 'primevue/ripple';
 
 // Mock Supabase functions
 vi.mock('../../../supabase/functions/core/Shipments/getShipmentByDeliveryID', () => ({
-  getShipmentByDeliveryId: vi.fn(), // Mock the method
+  getShipmentByDeliveryId: vi.fn(),
 }));
 
 // Mock Supabase
@@ -28,6 +27,21 @@ vi.mock('@/supabase', () => ({
   },
 }));
 
+// Mock VueSignaturePad
+vi.mock('vue-signature-pad', () => ({
+  VueSignaturePad: {}, // Properly mock the component
+}));
+
+// Mock PrimeVue's useToast service
+const mockToast = {
+  add: vi.fn(), // Mock the 'add' method used by PrimeVue's Toast
+};
+
+// Mock injection system for useToast
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => mockToast, // Return the mocked toast service
+}));
+
 describe('DeliveryView.vue', () => {
   let wrapper;
 
@@ -42,18 +56,19 @@ describe('DeliveryView.vue', () => {
           Dialog,
         },
         stubs: {
-          Button: true,
+          VueSignaturePad: true, // Stub VueSignaturePad to completely avoid vnode issues
+          Button: true, // Stub any Button component
+        },
+        directives: {
+          ripple: Ripple, // Register Ripple directive globally
         },
         mocks: {
           $router: {
-            push: vi.fn(),
+            push: vi.fn(), // Mock router push
           },
           $route: {
-            query: {},
+            query: {}, // Provide an empty query for the route
           },
-        },
-        components: {
-          RouterLink: RouterLinkStub,
         },
       },
     });
@@ -76,14 +91,11 @@ describe('DeliveryView.vue', () => {
   });
 
   it('updates shipment status', async () => {
-    // Mock the API response
     const shipmentId = 1;
     vi.spyOn(wrapper.vm, 'upDateShipmentStatus').mockResolvedValue();
 
-    // Trigger status update
     await wrapper.vm.upDateShipmentStatus(shipmentId);
 
-    // Ensure the API call was made
     expect(wrapper.vm.upDateShipmentStatus).toHaveBeenCalledWith(shipmentId);
   });
 
@@ -93,11 +105,8 @@ describe('DeliveryView.vue', () => {
     expect(wrapper.vm.getStatusColor('delivered')).toBe('#14532d');
   });
 
-
   it('should initialize with the correct data', () => {
     expect(wrapper.vm.shipmentsByDelivery).toBeDefined();
     expect(wrapper.vm.currentDestination).toBeDefined();
   });
-
-
 });
