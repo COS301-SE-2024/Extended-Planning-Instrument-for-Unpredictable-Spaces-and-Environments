@@ -3,15 +3,7 @@
     class="loading"
     :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
   >
-    <img
-      :src="
-        isDark
-          ? '../assets/Photos/Logos/Logo-Light-Transparent.svg'
-          : '../assets/Photos/Logos/Logo-Dark-Transparent.svg'
-      "
-      class="logo"
-      alt="Logo"
-    />
+    <img :src="logoSrc" class="logo" alt="Logo" />
     <ProgressSpinner
       style="width: 150px; height: 150px"
       strokeWidth="4"
@@ -25,8 +17,11 @@
 import ProgressSpinner from 'primevue/progressspinner'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 import { useDark } from '@vueuse/core'
+import LogoDarkTransparent from '@/assets/Photos/Logos/Logo-Dark-Transparent.svg'
+import LogoLightTransparent from '@/assets/Photos/Logos/Logo-Light-Transparent.svg'
+
 const isDark = useDark()
 
 const router = useRouter()
@@ -82,6 +77,7 @@ async function checkRole(email) {
     router.push({ name: 'home' })
   }
 }
+const logoSrc = computed(() => (isDark.value ? LogoLightTransparent : LogoDarkTransparent))
 
 onMounted(() => {
   handleOAuthCallback()

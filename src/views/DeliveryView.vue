@@ -10,7 +10,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
-
+import { toggleDialogDelivery } from '@/components/packerDialog'
 import CryptoJS from 'crypto-js'
 import { useToast } from 'primevue/usetoast'
 
@@ -26,6 +26,8 @@ const dialogPopUpVisible = ref(false)
 const mapDestination = ref(null)
 
 const tripFinished = ref(false)
+
+const { toggleDialog2 } = toggleDialogDelivery()
 
 const toggleDialog = () => {
   dialogVisible.value = !dialogVisible.value
@@ -217,7 +219,6 @@ const updateShipmentStartTime = async (shipmentID) => {
     console.error(`API Error for updating EndTime for delivery`, error)
   }
 }
-
 
 const encryptionKey = import.meta.env.VITE_SUPABASE_KEY
 const uploadSignature = async (signature, shipmentID) => {
@@ -882,6 +883,12 @@ export default {
       >
         Start New Delivery
       </button>
+      <p
+        @click="toggleDialog2()"
+        class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+      >
+        Help
+      </p>
     </div>
   </div>
 </template>

@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
+import { toggleDialogDelivery } from '@/components/packerDialog'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
@@ -35,11 +36,12 @@ const filteredDeliveries = computed(() => {
 
 const emit = defineEmits(['handle-delivery', 'start-new-delivery', 'update:dialogPopUpVisible'])
 
-const showDialog = ref(false)
 const isLoading = ref(false)
 const errorMessage = ''
 
 const driverID = ref(false)
+
+const { showDialog, toggleDialog2 } = toggleDialogDelivery()
 
 const props = defineProps({
   dialogPopUpVisible: Boolean
@@ -47,10 +49,6 @@ const props = defineProps({
 
 const toggleDialog = () => {
   emit('update:dialogPopUpVisible', !props.dialogPopUpVisible)
-}
-
-const toggleDialog2 = () => {
-  showDialog.value = !showDialog.value
 }
 
 const handleOpenDeliveryDialog = () => {
@@ -328,17 +326,7 @@ const items = [
     <div>
       <DialogComponent
         v-if="showDialog"
-        :images="[
-          { src: '../assets/Photos/Help/Driver/1.png', alt: 'Alternative Image 1' },
-          { src: '../assets/Photos/Help/Driver/8.png', alt: 'Alternative Image 1' },
-
-          { src: '../assets/Photos/Help/Driver/3.png', alt: 'Alternative Image 1' },
-          { src: '../assets/Photos/Help/Driver/2.png', alt: 'Alternative Image 1' },
-          { src: '../assets/Photos/Help/Driver/7.png', alt: 'Alternative Image 1' },
-          { src: '../assets/Photos/Help/Driver/4.png', alt: 'Alternative Image 1' },
-          { src: '../assets/Photos/Help/Driver/5.png', alt: 'Alternative Image 1' },
-          { src: '../assets/Photos/Help/Driver/6.png', alt: 'Alternative Image 1' }
-        ]"
+        :images="images"
         title="Help Menu"
         :contacts="[
           { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -350,6 +338,20 @@ const items = [
     </div>
   </div>
 </template>
+<script>
+import { getAssetURL } from '@/assetHelper'
+
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/Driver/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/Driver/8.png'), alt: 'Alternative Image 8' },
+  { src: getAssetURL('Photos/Help/Driver/3.png'), alt: 'Alternative Image 3' },
+  { src: getAssetURL('Photos/Help/Driver/2.png'), alt: 'Alternative Image 2' },
+  { src: getAssetURL('Photos/Help/Driver/7.png'), alt: 'Alternative Image 7' },
+  { src: getAssetURL('Photos/Help/Driver/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Driver/5.png'), alt: 'Alternative Image 5' },
+  { src: getAssetURL('Photos/Help/Driver/6.png'), alt: 'Alternative Image 6' }
+])
+</script>
 
 <style>
 /* General styles */

@@ -6,28 +6,29 @@ import tailwindcss from 'tailwindcss'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default defineConfig({
+  base: './',
   root: 'src',
   plugins: [
     vue(), // Add the Vue plugin here
     vueJsx(),
-    VueDevTools(),
+    VueDevTools()
   ],
   css: {
     postcss: {
-      plugins: [tailwindcss()],
-    },
+      plugins: [tailwindcss()]
+    }
   },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
+    assetsDir: './src/assets',
     rollupOptions: {
-      input: path.resolve(dirname, 'src/index.html'),
-    },
+      input: path.resolve(dirname, './src/index.html')
+    }
   },
   resolve: {
     alias: {

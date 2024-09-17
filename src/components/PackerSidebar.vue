@@ -15,7 +15,6 @@ const containerDimensions = [1200, 1930, 1000]
 
 const showHelpDialog = ref(false)
 const toggleDialogHelp = () => {
-  console.log('helo')
   showHelpDialog.value = !showHelpDialog.value
 }
 const packingResults = ref({})
@@ -191,7 +190,7 @@ const items = [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
-      toggleDialogHelp()
+      showHelpDialog.value = !showHelpDialog.value
     }
   }
 ]
@@ -497,17 +496,7 @@ onMounted(() => {
     </Dialog>
     <DialogComponent
       v-if="showHelpDialog"
-      :images="[
-        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
-      ]"
+      :images="images"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -518,7 +507,21 @@ onMounted(() => {
     />
   </div>
 </template>
+<script>
+import { getAssetURL } from '@/assetHelper'
 
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/Packer/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/Packer/9.png'), alt: 'Alternative Image 9' },
+  { src: getAssetURL('Photos/Help/Packer/8.png'), alt: 'Alternative Image 8' },
+  { src: getAssetURL('Photos/Help/Packer/7.png'), alt: 'Alternative Image 7' },
+  { src: getAssetURL('Photos/Help/Packer/5.png'), alt: 'Alternative Image 5' },
+  { src: getAssetURL('Photos/Help/Packer/6.png'), alt: 'Alternative Image 6' },
+  { src: getAssetURL('Photos/Help/Packer/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Packer/2.png'), alt: 'Alternative Image 2' },
+  { src: getAssetURL('Photos/Help/Packer/3.png'), alt: 'Alternative Image 3' }
+])
+</script>
 <style>
 /* General styles */
 

@@ -5,6 +5,15 @@ import { ref, computed, watchEffect, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { getAssetURL } from '@/assetHelper'
+
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/LoginSignup/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/LoginSignup/2.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/LoginSignup/3.png'), alt: 'Alternative Image 3' },
+  { src: getAssetURL('Photos/Help/LoginSignup/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/LoginSignup/5.png'), alt: 'Alternative Image 5' }
+])
 
 // let localUser
 const emailError = ref(false)
@@ -308,13 +317,7 @@ const signInWithProvider = async (provider) => {
     </div>
     <DialogComponent
       v-if="showDialog"
-      :images="[
-        { src: '../assets/Photos/Help/LoginSignup/1.png', alt: 'Image 1' },
-        { src: '../assets/Photos/Help/LoginSignup/2.png', alt: 'Image 2' },
-        { src: '../assets/Photos/Help/LoginSignup/3.png', alt: 'Image 3' },
-        { src: '../assets/Photos/Help/LoginSignup/4.png', alt: 'Image 4' },
-        { src: '../assets/Photos/Help/LoginSignup/5.png', alt: 'Image 5' }
-      ]"
+      :images="images"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
