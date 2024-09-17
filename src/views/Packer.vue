@@ -158,6 +158,7 @@ function loadProgress() {
 
 function closeDelivery() {
   localStorage.removeItem('packingProgress')
+  localStorage.removeItem('printingStorage')
   updateDeliveryStatus(shipments.value[0].Delivery_id, 'Shipped')
 
   cleanupThreeJS()
@@ -733,7 +734,8 @@ const handleJsonData = (json) => {
 }
 
 const handleShipmentsLoaded = (loadedShipments) => {
-  shipments.value = loadedShipments
+  const sortedShipments = loadedShipments.sort((a, b) => a.id - b.id)
+  shipments.value = sortedShipments
   numberShipments.value = shipments.value.length
 }
 

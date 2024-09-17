@@ -25,11 +25,12 @@
 import ProgressSpinner from 'primevue/progressspinner'
 import { supabase } from '../supabase'
 import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useDark } from '@vueuse/core'
 const isDark = useDark()
 
 const router = useRouter()
+let redirectTimer
 
 async function handleOAuthCallback() {
   const { data, error } = await supabase.auth.getSession()
@@ -84,6 +85,16 @@ async function checkRole(email) {
 
 onMounted(() => {
   handleOAuthCallback()
+
+  redirectTimer = setTimeout(() => {
+    router.push({ name: 'error-404' })
+  }, 10000)
+})
+
+onUnmounted(() => {
+  if (redirectTimer) {
+    clearTimeout(redirectTimer)
+  }
 })
 </script>
 

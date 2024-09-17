@@ -98,7 +98,6 @@ const signIn = async () => {
     // You might want to set a more specific error message here
     console.error(error.message)
   } else {
-    console.log('User signed in:', user)
     failedAttempts.value = 0 // Reset failed attempts on successful login
 
     // Clear the cooldownEndTime from localStorage on successful login
