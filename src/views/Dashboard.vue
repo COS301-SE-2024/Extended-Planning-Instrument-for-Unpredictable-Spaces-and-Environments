@@ -1,11 +1,12 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { supabase } from '../supabase'
 import { format, parseISO } from 'date-fns'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
+import RadioButton from 'primevue/radiobutton'
 
 const isDark = useDark()
 const chartData = ref({
@@ -29,6 +30,46 @@ const maxDeliveries = ref(0)
 const knobValueDelivered = ref(0)
 
 // const router = useRouter()
+
+const selectedDataType = ref('shipments')
+
+const displayedChartData = computed(() => {
+  if (selectedDataType.value === 'shipments') {
+    return chartData.value
+  } else {
+    // Transform delivery data into a format suitable for a pie chart
+    const statusCounts = {
+      Processing: deliveries.value.filter((d) => d.Status == 'Processing').length,
+      Shipped: deliveries.value.filter((d) => d.Status === 'Shipped').length,
+      Ordered: deliveries.value.filter((d) => d.Status === 'Ordered').length
+    }
+    return {
+      labels: Object.keys(statusCounts),
+      datasets: [
+        {
+          data: Object.values(statusCounts),
+          backgroundColor: ['#f97316', '#5b21b6', '#262626']
+        }
+      ]
+    }
+  }
+})
+
+const chartOptions = computed(() => ({
+  responsive: true,
+  plugins: {
+    title: {
+      display: true,
+      text: selectedDataType.value === 'shipments' ? 'Shipment Overview' : 'Delivery Overview',
+      font: {
+        size: 16
+      }
+    },
+    legend: {
+      position: 'bottom'
+    }
+  }
+}))
 
 async function checkProcessing() {
   try {
@@ -89,7 +130,7 @@ async function getUsername() {
 async function setupSubscription() {
   try {
     await supabase
-      .channel('custom-all-channel')
+      .channel('custom-all-channel2')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'Deliveries' }, (payload) => {
         getAllDeliveries()
       })
@@ -243,7 +284,7 @@ const getAllDeliveries = async () => {
       deliveries.value = data.data
       maxDeliveries.value = deliveries.value.length // Ensure maxDeliveries is a number
       knobValueDelivered.value = deliveries.value.filter(
-        (delivery) => delivery.Status === 'Delivered'
+        (delivery) => delivery.Status === 'Shipped'
       ).length // Ensure knobValueDelivered is a number
       updateChartData()
     }
@@ -278,10 +319,6 @@ const events = [
   { status: 'Delivered', date: '16/10/2020 10:00', icon: 'pi pi-check', color: '#607D8B' }
 ]
 
-const chartOptions = {
-  responsive: true
-}
-
 onMounted(() => {
   getUsername()
   getAllShipments()
@@ -300,10 +337,7 @@ onMounted(() => {
     ]"
   >
     <Sidebar />
-    <!-- Main Content -->
     <div class="flex flex-col p-4 ml-2 w-full">
-      <!-- Search Input -->
-
       <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
         <span class="font-bold">Welcome back</span>
       </h2>
@@ -315,10 +349,37 @@ onMounted(() => {
               'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
             ]"
           >
-            <h2 class="mb-6 font-bold">Shipment Overview</h2>
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="font-bold">Overview</h2>
+              <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                  <RadioButton
+                    v-model="selectedDataType"
+                    inputId="shipments"
+                    name="dataType"
+                    value="shipments"
+                  />
+                  <label for="shipments" class="ml-2">Shipments</label>
+                </div>
+                <div class="flex items-center">
+                  <RadioButton
+                    v-model="selectedDataType"
+                    inputId="deliveries"
+                    name="dataType"
+                    value="deliveries"
+                  />
+                  <label for="deliveries" class="ml-2">Deliveries</label>
+                </div>
+              </div>
+            </div>
             <div class="flex justify-center items-center w-full h-full">
               <div class="w-[300px] h-[300px]">
-                <Chart type="pie" :data="chartData" cl ass="h-full w-full" />
+                <Chart
+                  type="pie"
+                  :data="displayedChartData"
+                  :options="chartOptions"
+                  class="h-full w-full"
+                />
               </div>
             </div>
           </div>
@@ -376,7 +437,7 @@ onMounted(() => {
                 :class="[isDark ? 'dark' : 'light']"
               />
               <div class="ml-4 flex flex-col">
-                <h2 class="mb-1 font-bold">Delivered</h2>
+                <h2 class="mb-1 font-bold">Shipped</h2>
                 <p class="font-light">{{ knobValueDelivered }}/{{ maxDeliveries }}</p>
                 <h2 class="mb-1 font-bold">In Progress</h2>
                 <p class="mb-1 font-light">{{ maxDeliveries - knobValueDelivered }}</p>
@@ -403,8 +464,6 @@ onMounted(() => {
 </template>
 
 <style>
-/* General styles */
-/* General styles for light mode */
 .light-calendar {
   background-color: white;
   color: black;
