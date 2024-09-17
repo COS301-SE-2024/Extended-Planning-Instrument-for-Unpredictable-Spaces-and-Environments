@@ -375,7 +375,7 @@ const loading = ref(false)
   <div>
     <DialogComponent
       v-if="showDialog"
-      :images="[{ src: '../assets/Photos/Help/Manager/5.png', alt: 'Alternative Image 1' }]"
+      :images="helpmenuimages"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -387,6 +387,12 @@ const loading = ref(false)
   </div>
 </template>
 <script>
+import { getAssetURL } from '@/assetHelper'
+
+const helpmenuimages = computed(() => [
+  { src: getAssetURL('Photos/Help/Manager/5.png'), alt: 'Alternative Image 1' }
+])
+
 export default {
   name: 'MySignaturePad',
   data() {

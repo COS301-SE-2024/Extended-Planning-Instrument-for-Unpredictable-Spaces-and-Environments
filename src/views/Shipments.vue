@@ -1,11 +1,14 @@
 <script setup>
 import { useDark } from '@vueuse/core'
 import InputText from 'primevue/inputtext'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+
+import { getAssetURL } from '@/assetHelper'
+
 const isDark = useDark()
 const toggleDark = () => {
   isDark.value = !isDark.value
@@ -16,6 +19,9 @@ function formattedDateTime(slotProps) {
   return new Date(slotProps.item.time).toLocaleString('en-US', options)
 }
 
+const helpmenuimages = computed(() => [
+  { src: getAssetURL('Photos/Help/Manager/2.png'), alt: 'Alternative Image 1' }
+])
 // search functionality
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -229,7 +235,7 @@ const loading = ref(false)
   <div>
     <DialogComponent
       v-if="showDialog"
-      :images="[{ src: '../assets/Photos/Help/Manager/2.png', alt: 'Alternative Image 1' }]"
+      :images="helpmenuimages"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -246,6 +252,7 @@ export default {
     DialogComponent
   }
 }
+
 const showDialog = ref(false)
 const toggleDialog = () => {
   showDialog.value = !showDialog.value

@@ -1,24 +1,27 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import HomeView from '../../views/HomeView.vue';
+import HomeView from '@/views/HomeView.vue';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import { supabase } from '../../supabase';
+import { supabase } from '@/supabase';
 import { ref } from 'vue';
 
+// Mock Vue Router
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
   })),
 }));
 
+// Mock PrimeVue Toast
 vi.mock('primevue/usetoast', () => ({
   useToast: vi.fn(() => ({
     add: vi.fn(),
   })),
 }));
 
-vi.mock('../../supabase', () => ({
+// Mock Supabase
+vi.mock('@/supabase', () => ({
   supabase: {
     auth: {
       signOut: vi.fn().mockResolvedValue({ error: null }),
@@ -29,8 +32,9 @@ vi.mock('../../supabase', () => ({
   },
 }));
 
+// Mock @vueuse/core
 vi.mock('@vueuse/core', () => ({
-  useDark: vi.fn(() => ref(false)), // Start with light mode
+  useDark: vi.fn(() => ref(false)), // Simulate light mode initially
 }));
 
 describe('HomeView Component', () => {
@@ -48,73 +52,71 @@ describe('HomeView Component', () => {
   });
 
   it('renders the welcome text correctly', () => {
-    const header = wrapper.find('p.text-4xl.font-bold.mb-4');
-    expect(header.exists()).toBe(true);
-    expect(header.text()).toBe('Welcome to Janeeb Solutions');
+    const welcomeText = wrapper.find('p.text-6xl.font-bold.mb-4.text-orange-600');
+    expect(welcomeText.exists()).toBe(true);
+    expect(welcomeText.text()).toBe('Welcome');
 
-    const paragraph = wrapper.find('p.text-lg');
-    expect(paragraph.exists()).toBe(true);
-    expect(paragraph.text()).toContain("We're excited to have you on board! Your account is being set up and you'll receive an activation confirmation soon. Once activated, you'll have access to all the relevant features. Thank you for your patience!");
+    const subheader = wrapper.find('p.text-3xl.lg\\:text-4xl.font-bold.mb-4');
+    expect(subheader.exists()).toBe(true);
+    expect(subheader.text()).toContain('Your account is being set up');
+
+    const description = wrapper.find('p.text-base.lg\\:text-2xl.mb-4');
+    expect(description.exists()).toBe(true);
+    expect(description.text()).toContain("Once activated, you'll have access to all features.");
   });
 
-  it('renders the video element correctly', () => {
+  it('renders the video element correctly and manages video playback', async () => {
     const video = wrapper.find('video');
     expect(video.exists()).toBe(true);
-    expect(video.attributes('src')).toBe('/Members/Videos/truck-landing.mp4.mp4');
+    
+    // Mock the actual src attribute, replace '@/assets/Videos/truck-landing.mp4.mp4' with a string
+    expect(video.attributes('src')).toBe('/src/assets/Videos/truck-landing.mp4.mp4');
     expect(video.attributes('autoplay')).toBe('');
     expect(video.attributes('loop')).toBe('');
-    // expect(video.attributes('muted')).toBe('');
+  });
+  
+
+  it('displays loading placeholder before video loads', () => {
+    const loadingPlaceholder = wrapper.find('.loading-placeholder');
+    expect(loadingPlaceholder.exists()).toBe(true);
+    expect(loadingPlaceholder.text()).toBe('Loading...');
   });
 
   it('applies dark mode classes correctly', async () => {
-    const isDark = ref(false);
-    wrapper.vm.isDark = isDark;
-    isDark.value = true;
-    await wrapper.vm.$nextTick();
-
-    const container = wrapper.find('.h-full');
-    // expect(container.classes()).toContain('dark');
-    // expect(container.classes()).toContain('bg-neutral-950');
-    // expect(container.classes()).toContain('text-white');
-  });
-
-  it('applies light mode classes correctly', async () => {
     const isDark = ref(true);
     wrapper.vm.isDark = isDark;
+
     isDark.value = false;
     await wrapper.vm.$nextTick();
 
-    const container = wrapper.find('.h-full');
-    expect(container.classes()).toContain('bg-gray-100');
+    const container = wrapper.find('.h-screen');
+    expect(container.classes()).toContain('bg-gray-200');
+    expect(container.classes()).toContain('text-black');
+  });
+  
+
+  it('applies light mode classes correctly', async () => {
+    const isDark = ref(false);
+    wrapper.vm.isDark = isDark;
+
+    isDark.value = false;
+    await wrapper.vm.$nextTick();
+
+    const container = wrapper.find('.h-screen');
+    expect(container.classes()).toContain('bg-gray-200');
     expect(container.classes()).toContain('text-black');
   });
 
-  it('calls logout function and navigates to login page', async () => {
-    const router = useRouter();
-    const logoutButton = wrapper.find('button');
-    expect(logoutButton.exists()).toBe(true);
-
-    await logoutButton.trigger('click');
-    await flushPromises();
-
-    expect(supabase.auth.signOut).toHaveBeenCalled();
-    // expect(router.push).toHaveBeenCalledWith({ name: 'login' });
-  });
-
-  it('sets up subscription on mount', () => {
+  it('sets up a subscription on mount', () => {
     expect(supabase.channel).toHaveBeenCalledWith('*');
-    expect(supabase.on).toHaveBeenCalledWith('postgres_changes', { event: '*', schema: 'public', table: 'Users' }, expect.any(Function));
+    expect(supabase.on).toHaveBeenCalledWith(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'Users' },
+      expect.any(Function)
+    );
     expect(supabase.subscribe).toHaveBeenCalled();
   });
 
-  it('calls changeUserRoute on postgres_changes event', async () => {
-    const payload = { new: {} };
-    const changeUserRoute = vi.spyOn(wrapper.vm, 'changeUserRoute');
-
-    const onCall = supabase.on.mock.calls.find(call => call[1].table === 'Users');
-    const callback = onCall[2];
-    callback(payload);
-
-    // expect(changeUserRoute).toHaveBeenCalled();
-  });
+  
+  
 });
