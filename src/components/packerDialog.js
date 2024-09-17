@@ -4,6 +4,17 @@ const dialogVisible = ref(false)
 const showStartPackingOvererlay = ref(true)
 
 const loadingShipments = ref(false)
+const showDialog = ref(false)
+
+export function toggleDialogDelivery() {
+  const toggleDialog2 = () => {
+    showDialog.value = !showDialog.value
+  }
+  return {
+    showDialog,
+    toggleDialog2
+  }
+}
 
 export function useToggleDialog() {
   const toggleDialog = () => {

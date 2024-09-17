@@ -15,7 +15,6 @@ const containerDimensions = [1200, 1930, 1000]
 
 const showHelpDialog = ref(false)
 const toggleDialogHelp = () => {
-  console.log('helo')
   showHelpDialog.value = !showHelpDialog.value
 }
 const packingResults = ref({})
@@ -191,20 +190,29 @@ const items = [
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
-      toggleDialogHelp()
+      showHelpDialog.value = !showHelpDialog.value
     }
   }
 ]
 function loadProgress() {
   const savedProgress = localStorage.getItem('packingProgress')
-  if (savedProgress) {
+  const printingProgress = localStorage.getItem('printingStorage')
+  if (savedProgress && printingProgress) {
     const progressData = JSON.parse(savedProgress)
-    packingResults.value = progressData.packingData
+    const printData = JSON.parse(printingProgress)
+    packingResults.value = printData.packingResults
     shipmentsToPack.value = progressData.shipments
-
     return true
   }
   return false
+}
+
+function saveProgress() {
+  localStorage.removeItem('printingStorage')
+  const progressData = {
+    packingResults: packingResults.value
+  }
+  localStorage.setItem('printingStorage', JSON.stringify(progressData))
 }
 
 function printQRcode() {
@@ -218,12 +226,13 @@ function printQRcode() {
     return
   }
   showShipmentSelection.value = true
+  console.log('packingresults', packingResults.value)
 }
 
 async function printSelectedShipment(shipmentId) {
   const selectedResult = packingResults.value[shipmentId]
   if (selectedResult) {
-    await createPDF(selectedResult)
+    await createPDF(selectedResult, `Shipment_#${shipmentId}`)
     showShipmentSelection.value = false
   } else {
     console.error(`No packing result found for shipment ${shipmentId}`)
@@ -253,7 +262,7 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
     updateShipmentStatus(shipment.id, 'Processing')
     updateShipmentStartTime(shipment.id)
   }
-
+  saveProgress()
   stopLoading()
 }
 
@@ -268,7 +277,6 @@ const runPackingAlgo = async (shipmentId) => {
       method: 'POST'
     })
 
-    console.log('result from fetch', response)
     if (response.error) {
       console.error('Failed to fetch solution')
       await uploadSolution(shipmentId, containerDimensions)
@@ -488,17 +496,7 @@ onMounted(() => {
     </Dialog>
     <DialogComponent
       v-if="showHelpDialog"
-      :images="[
-        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
-      ]"
+      :images="images"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -509,7 +507,21 @@ onMounted(() => {
     />
   </div>
 </template>
+<script>
+import { getAssetURL } from '@/assetHelper'
 
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/Packer/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/Packer/9.png'), alt: 'Alternative Image 9' },
+  { src: getAssetURL('Photos/Help/Packer/8.png'), alt: 'Alternative Image 8' },
+  { src: getAssetURL('Photos/Help/Packer/7.png'), alt: 'Alternative Image 7' },
+  { src: getAssetURL('Photos/Help/Packer/5.png'), alt: 'Alternative Image 5' },
+  { src: getAssetURL('Photos/Help/Packer/6.png'), alt: 'Alternative Image 6' },
+  { src: getAssetURL('Photos/Help/Packer/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Packer/2.png'), alt: 'Alternative Image 2' },
+  { src: getAssetURL('Photos/Help/Packer/3.png'), alt: 'Alternative Image 3' }
+])
+</script>
 <style>
 /* General styles */
 

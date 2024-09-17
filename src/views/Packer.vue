@@ -158,6 +158,7 @@ function loadProgress() {
 
 function closeDelivery() {
   localStorage.removeItem('packingProgress')
+  localStorage.removeItem('printingStorage')
   updateDeliveryStatus(shipments.value[0].Delivery_id, 'Shipped')
 
   cleanupThreeJS()
@@ -733,7 +734,8 @@ const handleJsonData = (json) => {
 }
 
 const handleShipmentsLoaded = (loadedShipments) => {
-  shipments.value = loadedShipments
+  const sortedShipments = loadedShipments.sort((a, b) => a.id - b.id)
+  shipments.value = sortedShipments
   numberShipments.value = shipments.value.length
 }
 
@@ -1178,17 +1180,7 @@ async function generateNewSolution(shipmentID) {
   <div>
     <DialogComponent
       v-if="showHelpDialog"
-      :images="[
-        { src: '../assets/Photos/Help/Packer/1.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/9.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/8.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/7.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/5.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/6.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/4.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/2.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Packer/3.png', alt: 'Alternative Image 1' }
-      ]"
+      :images="images"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -1226,11 +1218,24 @@ async function generateNewSolution(shipmentID) {
   <Toast />
 </template>
 <script>
+
+import { getAssetURL } from '@/assetHelper'
 export default {
   components: {
     DialogComponent
   }
 }
+
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/Packer/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/Packer/8.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Packer/7.png'), alt: 'Alternative Image 3' },
+  { src: getAssetURL('Photos/Help/Packer/5.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Packer/6.png'), alt: 'Alternative Image 6' },
+  { src: getAssetURL('Photos/Help/Packer/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Packer/2.png'), alt: 'Alternative Image 2' },
+  { src: getAssetURL('Photos/Help/Packer/3.png'), alt: 'Alternative Image 3' }
+])
 </script>
 <style scoped>
 .rotate-180 {
