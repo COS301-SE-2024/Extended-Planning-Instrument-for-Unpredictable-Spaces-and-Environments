@@ -20,22 +20,14 @@
           <div class="logo-container">
             <img
               v-if="isMobileSidebarCollapsed"
-              :src="
-                isDark
-                  ? '../assets/Photos/Logos/Logo-Icon-Dark.svg'
-                  : '../assets/Photos/Logos/Logo-Icon-Light.svg'
-              "
+              :src="logoIconSrc"
               alt="JS Logo"
               class="mr-4 mb-4 mt-2"
               style="width: 5rem; height: auto"
             />
             <img
               v-else
-              :src="
-                isDark
-                  ? '../assets/Photos/Logos/Wording-Thin-Dark.svg'
-                  : '../assets/Photos/Logos/Wording-Thin-Light.svg'
-              "
+              :src="logoWording"
               alt="Janeeb Solutions Logo"
               class="mr-4 mb-4 mt-2 ml-2"
               style="width: 10rem; height: auto"
@@ -179,16 +171,7 @@
       :dialogVisible="showDialog"
       @close-dialog="toggleDialog"
       title="Help Menu"
-      :images="[
-        { src: '../assets/Photos/Help/Manager/1.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Manager/4.png', alt: 'Alternative Image 4' },
-        { src: '../assets/Photos/Help/Manager/3.png', alt: 'Alternative Image 3' },
-        { src: '../assets/Photos/Help/Manager/6.png', alt: 'Alternative Image 6' },
-        { src: '../assets/Photos/Help/Manager/2.png', alt: 'Alternative Image 2' },
-        { src: '../assets/Photos/Help/Manager/5.png', alt: 'Alternative Image 5' },
-        { src: '../assets/Photos/Help/Manager/7.png', alt: 'Alternative Image 7' },
-        { src: '../assets/Photos/Help/Manager/8.png', alt: 'Alternative Image 8' }
-      ]"
+      :images="images"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
         { name: 'Email', phone: 'janeeb.solutions@gmail.com', underline: true }
@@ -207,8 +190,26 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+import LogoIconDark from '@/assets/Photos/Logos/Logo-Icon-Dark.svg'
+import LogoIconLight from '@/assets/Photos/Logos/Logo-Icon-Light.svg'
+import logoWordingDark from '@/assets/Photos/Logos/Wording-Thin-Dark.svg'
+import logoWordingLight from '@/assets/Photos/Logos/Wording-Thin-Light.svg'
+import { getAssetURL } from '@/assetHelper'
 
+const logoIconSrc = computed(() => (isDark.value ? LogoIconDark : LogoIconLight))
+const logoWording = computed(() => (isDark.value ? logoWordingLight : logoWordingDark))
 const toast = useToast()
+
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/Manager/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/Manager/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/Manager/3.png'), alt: 'Alternative Image 3' },
+  { src: getAssetURL('Photos/Help/Manager/6.png'), alt: 'Alternative Image 6' },
+  { src: getAssetURL('Photos/Help/Manager/2.png'), alt: 'Alternative Image 2' },
+  { src: getAssetURL('Photos/Help/Manager/5.png'), alt: 'Alternative Image 5' },
+  { src: getAssetURL('Photos/Help/Manager/7.png'), alt: 'Alternative Image 7' },
+  { src: getAssetURL('Photos/Help/Manager/8.png'), alt: 'Alternative Image 8' }
+])
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark) // Proper toggle function

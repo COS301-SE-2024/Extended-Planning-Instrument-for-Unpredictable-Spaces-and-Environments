@@ -6,6 +6,13 @@ import Sidebar from '@/components/Sidebar.vue'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
+import { getAssetURL } from '@/assetHelper'
+
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/Manager/7.png'), alt: 'Alternative Image 7' },
+  { src: getAssetURL('Photos/Help/Manager/8.png'), alt: 'Alternative Image 8' }
+])
+
 const isDark = useDark()
 const customers = ref([]) // Reactive variable to store customer data
 const dialogVisible = ref(false)
@@ -434,10 +441,7 @@ const nameWithYou = (user) => {
   <div>
     <DialogComponent
       v-if="showDialog"
-      :images="[
-        { src: '../assets/Photos/Help/Manager/7.png', alt: 'Alternative Image 1' },
-        { src: '../assets/Photos/Help/Manager/8.png', alt: 'Alternative Image 1' }
-      ]"
+      :images="images"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },

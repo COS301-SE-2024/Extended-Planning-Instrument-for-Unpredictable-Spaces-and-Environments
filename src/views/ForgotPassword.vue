@@ -50,22 +50,22 @@ const showError = () => {
 
 const requestPasswordReset = async () => {
   if (!passwordsMatch.value) {
-    passwordError.value = true;
-    alert('Passwords do not match. Please try again.');
-    return;
+    passwordError.value = true
+    alert('Passwords do not match. Please try again.')
+    return
   }
 
-  passwordError.value = false;
+  passwordError.value = false
 
   try {
     // Check if the email exists
     const { data, error } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'checkUserExistsByEmail',
-        email: email.value,
+        email: email.value
       }),
-      method: 'POST',
-    });
+      method: 'POST'
+    })
 
     if (error || !data.exists) {
       toast.add({
@@ -73,45 +73,46 @@ const requestPasswordReset = async () => {
         summary: 'Error',
         detail:
           'An Account with this Email Does not exist. Please check the email address or Sign Up with an Account.',
-        life: 3000,
-      });
-      return;
+        life: 3000
+      })
+      return
     }
 
     // Specify the redirect URL based on the environment
-    const redirectUrl = process.env.NODE_ENV === 'production'
-      ? 'https://janeebsolutions.co.za/confirm-password'
-      : 'http://localhost:5173/confirm-password';
+    const redirectUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://janeebsolutions.co.za/confirm-password'
+        : 'http://localhost:5173/confirm-password'
 
     // Proceed with password reset and use the appropriate redirect URL
     const { resetError } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: redirectUrl,
-    });
+      redirectTo: redirectUrl
+    })
 
     if (resetError) {
-      showError();
-      console.error('Error sending password recovery email:', resetError);
+      showError()
+      console.error('Error sending password recovery email:', resetError)
       toast.add({
         severity: 'error',
         summary: 'Error',
         detail: `Unexpected Error when sending password recovery email ${resetError.message}`,
-        life: 3000,
-      });
-      return;
+        life: 3000
+      })
+      return
     } else {
-      showSuccess();
-      emailSent.value = true;
+      showSuccess()
+      emailSent.value = true
     }
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error:', error)
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Unexpected Error when sending password recovery email ${error.message}`,
-      life: 3000,
-    });
+      life: 3000
+    })
   }
-};
+}
 
 // Function to handle password update
 const resetPassword = async () => {
@@ -258,13 +259,7 @@ onMounted(() => {
     <div>
       <DialogComponent
         v-if="dialogVisible"
-        :images="[
-          { src: '../assets/Photos/Help/LoginSignup/1.png', alt: 'Image 1' },
-          { src: '../assets/Photos/Help/LoginSignup/2.png', alt: 'Image 2' },
-          { src: '../assets/Photos/Help/LoginSignup/3.png', alt: 'Image 3' },
-          { src: '../assets/Photos/Help/LoginSignup/4.png', alt: 'Image 4' },
-          { src: '../assets/Photos/Help/LoginSignup/5.png', alt: 'Image 5' }
-        ]"
+        :images="images"
         altText="Alternative Image"
         title="Help Menu"
         :contacts="[
@@ -277,6 +272,17 @@ onMounted(() => {
     </div>
   </div>
 </template>
+<script>
+import { getAssetURL } from '@/assetHelper'
+
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/LoginSignup/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/LoginSignup/2.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/LoginSignup/3.png'), alt: 'Alternative Image 3' },
+  { src: getAssetURL('Photos/Help/LoginSignup/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/LoginSignup/5.png'), alt: 'Alternative Image 5' }
+])
+</script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');

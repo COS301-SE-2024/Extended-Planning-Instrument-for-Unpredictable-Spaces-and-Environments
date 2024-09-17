@@ -12,8 +12,7 @@ async function createQRCode(data: object): Promise<string> {
 }
 
 // Create a PDF
-export async function createPDF(jsonData: any) {
-  console.log('Here is what the input JSON looks like:', jsonData)
+export async function createPDF(jsonData: any, shipmentName: string) {
   const pdfDoc = await PDFDocument.create()
   let page = pdfDoc.addPage([612, 792]) // Letter size
   const qrSize = 2 * 72 // 2 inches in points
@@ -76,5 +75,5 @@ export async function createPDF(jsonData: any) {
   const pdfBytes = await pdfDoc.save()
 
   // Save the PDF using FileSaver.js
-  saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), `Shipment.pdf`)
+  saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), `${shipmentName}.pdf`)
 }

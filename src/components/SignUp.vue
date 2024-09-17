@@ -295,13 +295,7 @@ const signUp = async () => {
 
     <DialogComponent
       v-if="showDialog"
-      :images="[
-        { src: '../assets/Photos/Help/LoginSignup/1.png', alt: 'Image 1' },
-        { src: '../assets/Photos/Help/LoginSignup/2.png', alt: 'Image 2' },
-        { src: '../assets/Photos/Help/LoginSignup/3.png', alt: 'Image 3' },
-        { src: '../assets/Photos/Help/LoginSignup/4.png', alt: 'Image 4' },
-        { src: '../assets/Photos/Help/LoginSignup/5.png', alt: 'Image 5' }
-      ]"
+      :images="images"
       title="Help Menu"
       :contacts="[
         { name: 'Call', phone: '+27 12 345 6789', underline: true },
@@ -314,6 +308,7 @@ const signUp = async () => {
   <Toast />
 </template>
 <script>
+import { getAssetURL } from '@/assetHelper'
 export default {
   components: {
     DialogComponent
@@ -323,6 +318,13 @@ const showDialog = ref(false)
 const toggleDialog = () => {
   showDialog.value = !showDialog.value
 }
+const images = computed(() => [
+  { src: getAssetURL('Photos/Help/LoginSignup/1.png'), alt: 'Alternative Image 1' },
+  { src: getAssetURL('Photos/Help/LoginSignup/2.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/LoginSignup/3.png'), alt: 'Alternative Image 3' },
+  { src: getAssetURL('Photos/Help/LoginSignup/4.png'), alt: 'Alternative Image 4' },
+  { src: getAssetURL('Photos/Help/LoginSignup/5.png'), alt: 'Alternative Image 5' }
+])
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=SF+Compact&display=swap');
@@ -334,9 +336,6 @@ const toggleDialog = () => {
 .custom-icon-width {
   width: 50px; /* Adjust the width as needed */
 }
-
-/* Define specific styles for the Password component */
-/* LIGHT MODE INPUT */
 
 .p-password input {
   background-color: #262626;
