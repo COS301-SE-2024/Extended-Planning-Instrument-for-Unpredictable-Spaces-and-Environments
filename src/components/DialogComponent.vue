@@ -67,8 +67,8 @@ const titleClass = computed(() => [
         @click="closeDialog"
         icon="pi pi-times"
         :class="[
-          isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800',
-          'p-button-rounded p-button-text',
+          isDark ? 'text-gray-300 hover:text-white ' : 'text-gray-300 hover:text-gray-800',
+          'p-button-rounded p-button-text bg-red-600',
           'transition-colors duration-200 text-lg'
         ]"
       />
@@ -126,9 +126,13 @@ const titleClass = computed(() => [
                     class="text-white text-sm md:text-base hover:text-yellow-300 transition-colors duration-200 flex items-center"
                   >
                     <i
-                      :class="['pi', person.name === 'Call' ? 'pi-phone' : 'pi-envelope', 'mr-2']"
+                      :class="[
+                        'pi',
+                        person.name === 'Call' ? 'pi-phone' : 'pi-envelope',
+                        'mr-2 text-white'
+                      ]"
                     ></i>
-                    {{ person.phone }}
+                    <span class="text-white">{{ person.phone }}</span>
                   </a>
                 </div>
               </template>

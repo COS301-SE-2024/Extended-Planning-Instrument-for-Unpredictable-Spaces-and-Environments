@@ -182,7 +182,7 @@ const getStatusColor = (status) => {
   const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
   switch (cleanStatus) {
     case 'shipped':
-      return '#d97706'
+      return '#f97316'
     case 'processing':
       return '#6b7280'
     case 'delivered':
