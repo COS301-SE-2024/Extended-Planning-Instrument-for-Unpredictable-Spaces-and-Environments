@@ -4,17 +4,21 @@
     :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
   >
     <img :src="loadingIcon" class="logo" alt="Logo" />
-    <ProgressSpinner
+    <Spinner
       style="width: 150px; height: 150px"
       strokeWidth="4"
       animationDuration=".5s"
       aria-label="Custom ProgressSpinner"
+      :pt="{
+        root: { style: 'width: 150px; height: 150px' },
+        circle: { style: 'stroke: rgb(249, 115, 22);' }
+      }"
     />
   </div>
 </template>
 
 <script setup>
-import ProgressSpinner from 'primevue/progressspinner'
+import Spinner from 'primevue/progressspinner'
 import { useDark } from '@vueuse/core'
 import { getAssetURL } from '@/assetHelper'
 import { computed } from 'vue'
@@ -44,11 +48,5 @@ const isDark = useDark()
   margin-bottom: 20px; /* Space between logo and spinner */
 }
 
-.ProgressSpinner {
-  z-index: 2;
-}
-
-:deep(.p-progress-spinner-circle) {
-  stroke: rgb(255, 136, 0) !important;
-}
+/* Remove the :deep() selector as we're now using the pt prop */
 </style>

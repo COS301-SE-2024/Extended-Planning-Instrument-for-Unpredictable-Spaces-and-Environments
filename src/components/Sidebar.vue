@@ -197,7 +197,7 @@ import logoWordingLight from '@/assets/Photos/Logos/Wording-Thin-Light.svg'
 import { getAssetURL } from '@/assetHelper'
 
 const logoIconSrc = computed(() => (isDark.value ? LogoIconDark : LogoIconLight))
-const logoWording = computed(() => (isDark.value ? logoWordingLight : logoWordingDark))
+const logoWording = computed(() => (isDark.value ? logoWordingDark : logoWordingLight))
 const toast = useToast()
 
 const images = computed(() => [
