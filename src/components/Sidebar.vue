@@ -61,17 +61,18 @@
           :exact="false"
         >
           <template #item="{ item, props }">
-            <router-link v-if="item.route" v-slot="{ /*href,*/ navigate }" :to="item.route" custom>
+            <router-link v-if="item.route" v-slot="{ navigate }" :to="item.route" custom>
               <a
                 aria-hidden="false"
                 :class="[
-                  'h-[45px]  flex align-items-center mb-2',
+                  'h-[45px] flex align-items-center mb-2',
                   item.active ? 'active-menu-item' : ''
                 ]"
                 v-bind="props.action"
-                @click="navigate(item.route)"
+                @click="navigateWithLoading(item.route, navigate)"
               >
-                <i class="mr-2" :class="item.icon"></i>
+                <i v-if="!loadingStates[item.route]" class="mr-2" :class="item.icon"></i>
+                <i v-else class="pi pi-spin pi-spinner mr-2"></i>
                 <span v-if="!isMobileSidebarCollapsed">{{ item.label }}</span>
                 <Badge severity="contrast" v-if="item.badge" class="ml-auto" :value="item.badge" />
               </a>
@@ -195,6 +196,7 @@ import LogoIconLight from '@/assets/Photos/Logos/Logo-Icon-Light.svg'
 import logoWordingDark from '@/assets/Photos/Logos/Wording-Thin-Dark.svg'
 import logoWordingLight from '@/assets/Photos/Logos/Wording-Thin-Light.svg'
 import { getAssetURL } from '@/assetHelper'
+import { reactive } from 'vue'
 
 const logoIconSrc = computed(() => (isDark.value ? LogoIconDark : LogoIconLight))
 const logoWording = computed(() => (isDark.value ? logoWordingDark : logoWordingLight))
@@ -579,7 +581,15 @@ watch(
     activeRoute.value = newRoute.name || newRoute.path.split('/')[1]
   }
 )
+const loadingStates = reactive({})
 
+const navigateWithLoading = (route, navigate) => {
+  loadingStates[route] = true
+  navigate()
+  router.afterEach(() => {
+    loadingStates[route] = false
+  })
+}
 const navigate = (route) => {
   router.push(route)
   activeRoute.value = route.name || route.split('/')[1]
@@ -854,5 +864,9 @@ const items = computed(() => [
 .p-dialog {
   max-height: 100vh;
   overflow-y: auto;
+}
+
+.p-menu .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus > .p-menuitem-content {
+  border-radius: 1rem;
 }
 </style>
