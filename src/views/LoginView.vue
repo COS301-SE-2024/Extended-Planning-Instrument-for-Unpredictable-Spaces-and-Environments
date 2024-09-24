@@ -146,7 +146,7 @@ const signInWithProvider = async (provider) => {
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sign-in-container w-full min-h-screen px-4 py-8 sm:h-auto sm:w-[500px] sm:min-h-0 mx-auto sm:p-14',
         'sm:rounded-xl sm:shadow-xl',
         'flex flex-col justify-center'
       ]"
@@ -163,15 +163,13 @@ const signInWithProvider = async (provider) => {
           v-if="isDark"
           src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
-          class="mb-10"
-          style="width: 15rem; height: auto"
+          class="w-48 h-auto sm:w-60"
         />
         <img
           v-else
           src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
-          class="mb-10"
-          style="width: 15rem; height: auto"
+          class="w-48 h-auto sm:w-60"
         />
       </div>
       <div
