@@ -182,7 +182,7 @@ const getStatusColor = (status) => {
   const cleanStatus = status.replace(/\s+/g, '').toLowerCase()
   switch (cleanStatus) {
     case 'shipped':
-      return '#d97706'
+      return '#f97316'
     case 'processing':
       return '#6b7280'
     case 'delivered':
@@ -239,12 +239,15 @@ const loading = ref(false)
   <div
     :class="[
       isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
-      'w-full h-full flex flex-row shadow-lg'
+      'w-full min-h-screen flex'
     ]"
   >
-    <Sidebar />
+    <Sidebar class="w-64 flex-shrink-0 fixed h-full z-10" />
 
-    <div class="flex flex-col p-4 ml-2 w-full">
+    <div
+      class="flex-grow flex flex-col p-4 ml-2 w-full"
+      :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
+    >
       <!-- Search Input -->
       <div class="w-full md:w-[300px] mb-4">
         <div

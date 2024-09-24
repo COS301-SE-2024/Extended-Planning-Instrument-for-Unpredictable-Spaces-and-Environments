@@ -243,13 +243,16 @@ const nameWithYou = (user) => {
 <template>
   <div
     :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-100 text-black',
-      'w-full h-full flex flex-row shadow-lg'
+      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
+      'w-full min-h-screen flex'
     ]"
   >
-    <Sidebar />
+    <Sidebar class="w-64 flex-shrink-0 fixed h-full z-10" />
     <!-- Main Content -->
-    <div class="flex flex-col p-4 ml-2 w-full">
+    <div
+      class="flex-grow flex flex-col p-4 ml-2 w-full"
+      :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
+    >
       <!-- Search Input -->
       <div class="w-full md:w-[300px] mb-4">
         <div
@@ -677,5 +680,23 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 }
 .dark .p-dropdown-panel.p-component.p-ripple-disabled {
   z-index: 99999999 !important;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background-color: #f97316 !important;
+  color: white !important;
+}
+
+/* Dark mode active paginator page */
+.dark .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background-color: #f97316 !important;
+  color: white !important;
+}
+
+/* Hover state for consistency */
+.p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover,
+.dark .p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover {
+  background-color: #f97316 !important;
+  color: white !important;
 }
 </style>
