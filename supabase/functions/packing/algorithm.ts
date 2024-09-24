@@ -365,7 +365,7 @@ function evaluateFitness(
     (1 - weightDistributionPenalty) * 0.1 +
     packingRatio * 0.4 +
     compactness * 0.1 +
-    ((1 - proximityPenalty) * 0.1) / ((1 + unplacedPenalty) * 1.5)
+    ((1 - proximityPenalty) * 0.1) / ((1 + unplacedPenalty) * 2.5)
 
   return [fitness, container, unplacedBoxes]
 }

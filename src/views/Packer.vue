@@ -779,6 +779,9 @@ const scannedBoxes = computed(() => {
       (shipment) => shipment.id === activeShipment.value
     )
     if (shipmentIndex === -1) return []
+
+    if (!packingData.value[shipmentIndex]) return []
+
     return packingData.value[shipmentIndex]
       .filter((box) => box.scanned)
       .map((box) => ({
@@ -1218,7 +1221,6 @@ async function generateNewSolution(shipmentID) {
   <Toast />
 </template>
 <script>
-
 import { getAssetURL } from '@/assetHelper'
 export default {
   components: {
