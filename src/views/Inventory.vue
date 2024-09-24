@@ -125,14 +125,14 @@ const loading = ref(false)
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="id" header="Package ID"> </Column>
-          <Column field="Shipment_id" header="Shipment ID"></Column>
-          <Column field="Weight" header="Weight"></Column>
-          <Column field="Packed_time" header="Packed Time"></Column>
-          <Column field="Width" header="Width"></Column>
-          <Column field="Length" header="Length"></Column>
-          <Column field="Height" header="Height"></Column>
-          <Column field="Volume" header="Volume"></Column>
+          <Column field="id" header="Package ID" sortable> </Column>
+          <Column field="Shipment_id" header="Shipment ID" sortable></Column>
+          <Column field="Weight" header="Weight" sortable></Column>
+          <Column field="Packed_time" header="Packed Time" sortable></Column>
+          <Column field="Width" header="Width" sortable></Column>
+          <Column field="Length" header="Length" sortable></Column>
+          <Column field="Height" header="Height" sortable></Column>
+          <Column field="Volume" header="Volume" sortable></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">

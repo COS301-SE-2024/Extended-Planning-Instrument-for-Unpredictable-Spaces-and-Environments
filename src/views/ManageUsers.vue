@@ -287,14 +287,14 @@ const nameWithYou = (user) => {
           :globalFilterFields="['FullName', 'Email', 'Role', 'Phone']"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="FullName" header="Full Name" style="width: 25%">
+          <Column field="FullName" header="Full Name" sortable style="width: 25%">
             <template #body="slotProps">
               {{ nameWithYou(slotProps.data) }}
             </template>
           </Column>
-          <Column field="Email" header="Email" style="width: 25%"></Column>
-          <Column field="Role" header="Role" style="width: 25%"></Column>
-          <Column field="Phone" header="Phone Number" style="width: 25%"></Column>
+          <Column field="Email" header="Email" style="width: 25%" sortable></Column>
+          <Column field="Role" header="Role" style="width: 25%" sortable></Column>
+          <Column field="Phone" header="Phone Number" style="width: 25%" sortable></Column>
 
           <Column header="Edit" style="width: 25%">
             <template #body="slotProps">

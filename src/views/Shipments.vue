@@ -124,12 +124,12 @@ const loading = ref(false)
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="id" header="Shipment ID"> </Column>
-          <Column field="Start_time" header="Start Time"></Column>
-          <Column field="Destination" header="Destination"></Column>
-          <Column field="Status" header="Status"></Column>
-          <Column field="End_time" header="End Time"></Column>
-          <Column field="Delivery_id" header="Delivery ID"></Column>
+          <Column field="id" header="Shipment ID" sortable> </Column>
+          <Column field="Start_time" header="Start Time" sortable></Column>
+          <Column field="Destination" header="Destination" sortable></Column>
+          <Column field="Status" header="Status" sortable></Column>
+          <Column field="End_time" header="End Time" sortable></Column>
+          <Column field="Delivery_id" header="Delivery ID" sortable></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">
