@@ -179,10 +179,13 @@ const signInWithProvider = async (provider) => {
           'sm:items-center sm:text-center' // Center text on larger screens
         ]"
       >
-        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
+        <p
+          class="text-2xl font-bold mb-2 mt-4"
+          :class="[isDark ? 'text-white' : 'text-neutral-800']"
+        >
           Welcome back!
         </p>
-        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+        <p class="" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
           Please enter login details below
         </p>
       </div>
