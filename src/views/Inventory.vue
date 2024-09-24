@@ -73,14 +73,17 @@ const loading = ref(false)
   <div
     :class="[
       isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
-      'w-full h-full flex flex-row shadow-lg'
+      'w-full min-h-screen flex'
     ]"
   >
-    <Sidebar />
+    <Sidebar class="w-64 flex-shrink-0 fixed h-full z-10" />
     <!-- Main Content -->
-    <div class="flex flex-col p-4 ml-2 w-full">
+    <div
+      class="flex-grow flex flex-col p-4 ml-2 w-full"
+      :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
+    >
       <!-- Search Input -->
-      <div class="w-full md:w-[300px] mb-4">
+      <div class="w-full max-w-md mb-4">
         <div
           :class="[
             isDark
@@ -106,7 +109,7 @@ const loading = ref(false)
       </h2>
 
       <!-- Users Table -->
-      <div>
+      <div class="overflow-x-auto">
         <DataTable
           :class="[isDark ? 'dark' : '']"
           :value="packages"

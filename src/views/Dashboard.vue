@@ -331,67 +331,75 @@ onMounted(() => {
 
 <template>
   <div
-    :class="[
-      isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
-      'w-full h-full flex flex-row shadow-lg'
-    ]"
+    class="flex h-screen overflow-hidden"
+    :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
   >
-    <Sidebar />
-    <div class="flex flex-col p-4 ml-2 w-full">
-      <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
-        <span class="font-bold">Welcome back</span>
-      </h2>
-      <div class="flex flex-wrap mb-4">
-        <div class="justify-center w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
-          <div
-            :class="[
-              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
-            ]"
-          >
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="font-bold">Overview</h2>
-              <div class="flex items-center space-x-4">
-                <div class="flex items-center">
-                  <RadioButton
-                    v-model="selectedDataType"
-                    inputId="shipments"
-                    name="dataType"
-                    value="shipments"
-                  />
-                  <label for="shipments" class="ml-2">Shipments</label>
+    <!-- Sidebar -->
+    <Sidebar class="flex-shrink-0 w-64" />
+    <!-- Adjust width as needed -->
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-x-hidden overflow-y-auto">
+      <div class="p-4 ml-2 w-full">
+        <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+          <span class="font-bold">Welcome back</span>
+        </h2>
+
+        <div class="flex flex-wrap mb-4">
+          <div class="justify-center w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
+            <!-- Overview Chart -->
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
+              ]"
+            >
+              <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold">Overview</h2>
+                <div class="flex items-center space-x-4">
+                  <div class="flex items-center">
+                    <RadioButton
+                      v-model="selectedDataType"
+                      inputId="shipments"
+                      name="dataType"
+                      value="shipments"
+                    />
+                    <label for="shipments" class="ml-2">Shipments</label>
+                  </div>
+                  <div class="flex items-center">
+                    <RadioButton
+                      v-model="selectedDataType"
+                      inputId="deliveries"
+                      name="dataType"
+                      value="deliveries"
+                    />
+                    <label for="deliveries" class="ml-2">Deliveries</label>
+                  </div>
                 </div>
-                <div class="flex items-center">
-                  <RadioButton
-                    v-model="selectedDataType"
-                    inputId="deliveries"
-                    name="dataType"
-                    value="deliveries"
+              </div>
+              <div class="flex justify-center items-center w-full h-full">
+                <div class="w-[300px] h-[300px]">
+                  <Chart
+                    type="pie"
+                    :data="displayedChartData"
+                    :options="chartOptions"
+                    class="h-full w-full"
                   />
-                  <label for="deliveries" class="ml-2">Deliveries</label>
                 </div>
               </div>
             </div>
-            <div class="flex justify-center items-center w-full h-full">
-              <div class="w-[300px] h-[300px]">
-                <Chart
-                  type="pie"
-                  :data="displayedChartData"
-                  :options="chartOptions"
-                  class="h-full w-full"
-                />
+
+            <!-- Monthly Deliveries Chart -->
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
+              ]"
+            >
+              <h2 class="mb-6 font-bold">Monthly Deliveries</h2>
+              <div class="flex-grow">
+                <Chart type="bar" :data="chartDataDeliveries" class="h-full w-full" />
               </div>
-            </div>
-          </div>
-          <div
-            :class="[
-              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-[50%] h-auto'
-            ]"
-          >
-            <h2 class="mb-6 font-bold">Monthly Deliveries</h2>
-            <div class="flex-grow">
-              <Chart type="bar" :data="chartDataDeliveries" class="h-full w-full" />
             </div>
           </div>
         </div>
