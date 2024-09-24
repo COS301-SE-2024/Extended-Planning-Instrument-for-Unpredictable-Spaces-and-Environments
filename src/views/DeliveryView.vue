@@ -13,6 +13,7 @@ import Dialog from 'primevue/dialog'
 import { toggleDialogDelivery } from '@/components/packerDialog'
 import CryptoJS from 'crypto-js'
 import { useToast } from 'primevue/usetoast'
+import Loading from '@/views/Loading.vue'
 
 const isDark = useDark()
 const toast = useToast()
@@ -604,7 +605,7 @@ export default {
         'card w-full h-screen flex flex-col justify-center items-center'
       ]"
     >
-      <img src="../assets/Photos/truck.png" alt="Truck" class="w-64 h-64 animate-bounce" />
+      <Loading></Loading>
     </div>
     <div
       v-if="!isLoading"
