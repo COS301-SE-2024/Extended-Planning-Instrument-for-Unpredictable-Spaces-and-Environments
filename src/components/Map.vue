@@ -30,6 +30,16 @@ export default {
     let map = null
     let markers = []
 
+    const clearMap = () => {
+      if (map) {
+        markers.forEach((marker) => marker.setMap(null))
+        markers = []
+        if (directionsRenderer.value) {
+          directionsRenderer.value.setMap(null)
+        }
+      }
+    }
+
     const deleteSavedTripData = () => {
       localStorage.removeItem('lastTripData')
       // Reset the relevant data in the component
@@ -40,16 +50,7 @@ export default {
       currentStep.value = ''
       steps.value = []
       currentStepIndex.value = 0
-
-      // Clear the map
-      if (map) {
-        markers.forEach((marker) => marker.setMap(null))
-        markers = []
-        if (directionsRenderer.value) {
-          directionsRenderer.value.setMap(null)
-        }
-      }
-
+      clearMap()
       console.log('Saved trip data has been deleted')
     }
 
@@ -136,6 +137,7 @@ export default {
 
         await geocodeDestination()
 
+        clearMap()
         // Clear existing markers
         markers.forEach((marker) => marker.setMap(null))
         markers = []
@@ -214,6 +216,7 @@ export default {
       async (newDestination) => {
         if (newDestination) {
           try {
+            clearMap()
             if (startingPosition.value) {
               coordinates.value = { ...destinationCoords.value }
             } else {
