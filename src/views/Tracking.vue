@@ -8,14 +8,21 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
 import { FilterMatchMode } from 'primevue/api'
-import { supabase } from '@/supabase.js' // Import the Supabase client
+import { supabase } from '@/supabase.js'
+import CryptoJS from 'crypto-js'
+import Dialog from 'primevue/dialog'
+
 const isDark = useDark()
 const showDialog = ref(false)
 const toggleDialog = () => {
-  console.log('Toggling dialog')
   showDialog.value = !showDialog.value
 }
-const dialogVisible = ref(false)
+const showDialogSig = ref(false)
+const toggleDialogSig = () => {
+  showDialogSig.value = !showDialogSig.value
+}
+const signature = ref([])
+
 const shipmentsByDelivery = ref([])
 const deliveries = ref([])
 const shipments = ref([])
@@ -232,7 +239,42 @@ onMounted(() => {
   getAllShipments()
 })
 
-const loading = ref(false)
+function decryptData(encryptedData, key) {
+  const bytes = CryptoJS.AES.decrypt(encryptedData, key)
+  try {
+    return bytes.toString(CryptoJS.enc.Utf8)
+  } catch (error) {
+    console.error('Error parsing decrypted data:', error)
+    return bytes.toString(CryptoJS.enc.Utf8)
+  }
+}
+
+async function getSignature(shipmentID) {
+  console.log(shipmentID)
+  try {
+    const { data: data, error: getError } = await supabase.functions.invoke('core', {
+      body: JSON.stringify({
+        type: 'getSignature',
+        shipmentID: shipmentID
+      }),
+      method: 'POST'
+    })
+    if (getError) {
+      console.error('API Error for fetching signature:', getError)
+      return
+    }
+    const encryptionKey = import.meta.env.VITE_SUPABASE_KEY
+    const decryptedData = decryptData(data.data, encryptionKey)
+    if (!decryptedData || !decryptedData.startsWith('data:image')) {
+      console.error('Invalid decrypted data:', decryptedData)
+      return
+    }
+    signature.value = [decryptedData]
+    toggleDialogSig()
+  } catch (error) {
+    console.error('Error fetching signature ', error)
+  }
+}
 </script>
 
 <template>
@@ -341,6 +383,13 @@ const loading = ref(false)
                                 <p class="text-neutral-500">Shipment ID:</p>
                                 {{ slotProps.item.shipment_id }}
                               </div>
+                              <button
+                                v-if="slotProps.item.status === 'Delivered'"
+                                class="p-button p-component mt-4 py-2 px-4 w-full justify-center bg-green-800"
+                                @click="getSignature(slotProps.item.shipment_id)"
+                              >
+                                Show Signature
+                              </button>
                             </div>
                           </div>
                         </template>
@@ -370,6 +419,53 @@ const loading = ref(false)
         </p>
       </div>
     </div>
+  </div>
+
+  <div>
+    <Dialog v-model:visible="showDialogSig" :modal="true" :closable="false" class="!p-0">
+      <div
+        :class="[
+          isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
+          'rounded-lg shadow-xl overflow-hidden max-w-md w-full'
+        ]"
+      >
+        <div
+          class="flex justify-between items-center p-4 border-b"
+          :class="isDark ? 'border-neutral-700' : 'border-gray-200'"
+        >
+          <h2 class="text-xl font-semibold">Signature</h2>
+          <button
+            @click="toggleDialogSig()"
+            class="p-2 rounded-full bg-red-600 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="p-4">
+          <div :class="[isDark ? 'bg-neutral-700' : 'bg-gray-100', 'rounded-lg overflow-hidden']">
+            <img
+              v-if="signature && signature.length > 0"
+              :src="signature[0]"
+              alt="Signature"
+              class="w-full h-auto"
+            />
+          </div>
+        </div>
+      </div>
+    </Dialog>
   </div>
 
   <div>

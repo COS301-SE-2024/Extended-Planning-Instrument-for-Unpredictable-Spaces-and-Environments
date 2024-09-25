@@ -227,6 +227,7 @@ const uploadSignature = async (signature, shipmentID) => {
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
+        shipmentID:shipmentID,
         dataURL: encryptedSignature
       }),
       method: 'POST'
