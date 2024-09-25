@@ -37,7 +37,7 @@ import { updateDeliveryStartTime } from './Deliveries/updateDeliveryStartTime.ts
 import { updateDeliveryEndTime } from './Deliveries/updateDeliveryEndTime.ts'
 import { updateDeliveryStatus } from './Deliveries/updateDeliveryStatus.ts'
 import { getDeliveriesByProcessing } from './Deliveries/getDeliveriesByProcessing.ts'
-
+import { getSignature } from './Deliveries/getSignature.ts'
 // New Endpoints
 import { downloadFile } from './Storage/downloadFile.ts'
 import { parseCSV } from './Storage/parseCSV.ts'
@@ -123,6 +123,9 @@ Deno.serve(async (req) => {
       if (requestBody.type == 'uploadSignature') {
         return responseBuilder(await uploadSignature(supabaseUser, requestBody.dataURL, requestBody.shipmentID))
       }
+      if (requestBody.type == 'getSignature') {
+        return responseBuilder(await getSignature(supabaseUser, requestBody.shipmentID));
+      }      
       if (requestBody.type == 'getNameByEmail') {
         return responseBuilder(await getNameByEmail(supabaseUser, requestBody.email))
       }
