@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
         return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
       }
       if (requestBody.type == 'uploadSignature') {
-        return responseBuilder(await uploadSignature(supabaseUser, requestBody.dataURL))
+        return responseBuilder(await uploadSignature(supabaseUser, requestBody.dataURL, requestBody.shipmentID))
       }
       if (requestBody.type == 'getNameByEmail') {
         return responseBuilder(await getNameByEmail(supabaseUser, requestBody.email))

@@ -1,4 +1,4 @@
-export async function uploadSignature(supabase: any, encryptedSignature: string) {
+export async function uploadSignature(supabase: any, encryptedSignature: string, shipmentID: any) {
   try {
     // Log the incoming encrypted string for debugging
     console.log('Incoming Encrypted Signature:', encryptedSignature);
@@ -7,7 +7,7 @@ export async function uploadSignature(supabase: any, encryptedSignature: string)
     const encryptedBlob = new Blob([encryptedSignature], { type: 'application/octet-stream' });
 
     // Generate a unique file name
-    const fileName = `signature_${Date.now()}.encrypted`;
+    const fileName = `signature_${shipmentID}.encrypted`;
 
     // Upload the encrypted file to Supabase
     const { data: uploadData, error: uploadError } = await supabase.storage
