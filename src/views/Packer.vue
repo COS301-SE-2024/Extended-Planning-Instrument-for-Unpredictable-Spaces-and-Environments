@@ -202,7 +202,7 @@ onMounted(() => {
   }
   watch(isDark, (newValue) => {
     if (scene && renderer) {
-      renderer.setClearColor(newValue ? '#262626' : 0xffffff)
+      renderer.setClearColor(newValue ? '#171717' : 0xffffff)
 
       scene.traverse((object) => {
         if (object.type === 'LineSegments') {
@@ -241,7 +241,6 @@ async function getShipmentByID() {
 
     await CreateJSONBoxes(shipments.value, CONTAINER_SIZE)
     cratePacked.value = true
-    console.log('result of packing pallets', truckpackingData)
     nextTick(() => {
       cleanupThreeJS()
       initThreeJS('new-three-container', isDark.value, truckpackingData.value[0])
@@ -266,7 +265,7 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
     Volume: volume,
     Weight: 10000
   }))
-  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 300, 0.01).data
+  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 350, 0.01).data
 }
 
 function getColorForWeight(weight, minWeight, maxWeight) {
@@ -409,7 +408,6 @@ function createContainer(scene, CONTAINER_SIZE, isDark) {
 }
 
 function createBoxesFromData(scene, boxesData, truckPacked) {
-  console.log('boxesData incoming', boxesData)
   // Check if boxesData is a Vue ref and extract the actual value
   if (boxesData && boxesData.__v_isRef) {
     boxesData = boxesData._value
@@ -721,7 +719,6 @@ const handleJsonData = (json) => {
     })
     return
   }
-  console.log('Received packing data:', newPackingData)
 
   const updatedData = newPackingData.map((box) => ({
     ...box,
@@ -779,6 +776,9 @@ const scannedBoxes = computed(() => {
       (shipment) => shipment.id === activeShipment.value
     )
     if (shipmentIndex === -1) return []
+
+    if (!packingData.value[shipmentIndex]) return []
+
     return packingData.value[shipmentIndex]
       .filter((box) => box.scanned)
       .map((box) => ({

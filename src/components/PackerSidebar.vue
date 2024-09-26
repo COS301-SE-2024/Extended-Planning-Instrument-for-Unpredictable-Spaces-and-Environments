@@ -226,7 +226,6 @@ function printQRcode() {
     return
   }
   showShipmentSelection.value = true
-  console.log('packingresults', packingResults.value)
 }
 
 async function printSelectedShipment(shipmentId) {
@@ -267,7 +266,6 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  console.log('Trying shipment', shipmentId)
   try {
     const { data: response } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
@@ -278,7 +276,7 @@ const runPackingAlgo = async (shipmentId) => {
     })
 
     if (response.error) {
-      console.error('Failed to fetch solution')
+      console.warn('No saved solution Calculating solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
       if (response && response.data && response.data.boxes) {
@@ -342,8 +340,11 @@ async function uploadSolution(shipmentId, containerDimensions) {
         if (updateError) {
           console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
         }
-        console.log('Response.data', response)
-        packingResults.value[shipmentId] = response.data.boxes
+
+        const reviewedSoln = MarkUnplacedBoxes(data.data, response.data.boxes)
+        console.log('Reviewed: ', reviewedSoln)
+
+        packingResults.value[shipmentId] = reviewedSoln
         emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
       }
     }
@@ -355,6 +356,16 @@ async function uploadSolution(shipmentId, containerDimensions) {
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
   toggleStartNewPacking()
+}
+
+function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
+  // Create a Set of placed box IDs for quick lookup
+  const placedBoxIds = new Set(SolutionBoxes.map((box) => box.id))
+
+  return SolutionBoxes.map((box) => ({
+    ...box,
+    isPlaced: placedBoxIds.has(box.id)
+  }))
 }
 
 onMounted(() => {
