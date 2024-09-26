@@ -1173,13 +1173,6 @@ async function generateNewSolution(shipmentID) {
           </div>
         </div>
       </div>
-      <p
-        @click="toggleDialogHelp"
-        class="flex items-center justify-center mt-2 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
-        :class="[isDark ? 'bg-neutral-700 text-white' : 'bg-white text-black']"
-      >
-        Help
-      </p>
     </div>
   </div>
   <div>
