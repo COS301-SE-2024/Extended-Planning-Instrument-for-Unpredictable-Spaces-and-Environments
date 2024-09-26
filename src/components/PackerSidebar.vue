@@ -226,7 +226,6 @@ function printQRcode() {
     return
   }
   showShipmentSelection.value = true
-  console.log('packingresults', packingResults.value)
 }
 
 async function printSelectedShipment(shipmentId) {
@@ -267,7 +266,6 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  console.log('Trying shipment', shipmentId)
   try {
     const { data: response } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
@@ -278,7 +276,7 @@ const runPackingAlgo = async (shipmentId) => {
     })
 
     if (response.error) {
-      console.error('Failed to fetch solution')
+      console.warn('No saved solution Calculating solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
       if (response && response.data && response.data.boxes) {
