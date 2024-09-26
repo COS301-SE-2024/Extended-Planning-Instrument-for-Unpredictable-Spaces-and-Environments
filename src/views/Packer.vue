@@ -969,7 +969,7 @@ async function generateNewSolution(shipmentID) {
   <div
     :class="[
       isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-100 text-black',
-      ' h-full flex flex-col shadow-lg'
+      'h-full flex flex-col shadow-lg'
     ]"
   >
     <PackerSidebar @handle-json="handleJsonData" @shipments-loaded="handleShipmentsLoaded" />
@@ -1019,7 +1019,10 @@ async function generateNewSolution(shipmentID) {
       <div v-if="activeShipment && !loadingShipments" class="mt-4 flex flex-row justify-center">
         <Button
           @click="generateNewSolution(activeShipment)"
-          class="mb-4 w-1/8 bg-blue-500 p-2 rounded-xl"
+          :class="[
+            isDark ? ' text-neutral-200' : ' text-neutral-200',
+            'mb-4 w-1/8 bg-blue-500 p-2 rounded-xl'
+          ]"
         >
           Generate New Solution
         </Button>
@@ -1029,8 +1032,9 @@ async function generateNewSolution(shipmentID) {
           :class="[
             isDark ? 'bg-zinc-800 text-neutral-200' : 'bg-gray-100 text-neutral-800',
             isScannedBoxesCollapsed ? 'w-16' : 'w-1/4',
-            'transition-all duration-300   p-4 overflow-y-auto max-h-[80vh] shadow-inner'
+            'transition-all duration-300 p-4 overflow-y-auto max-h-[80vh] shadow-inner'
           ]"
+          :style="{ minWidth: isScannedBoxesCollapsed ? '4rem' : '25%' }"
         >
           <div class="flex flex-wrap flex-col justify-between items-center">
             <div
@@ -1071,11 +1075,11 @@ async function generateNewSolution(shipmentID) {
             </li>
           </ul>
           <Button
-            class="sm:text-lg text-sm w-full bg-violet-500 text-white mt-2 rounded-md flex items-center justify-center"
+            v-if="!isScannedBoxesCollapsed"
+            class="w-full bg-violet-500 text-white mt-2 rounded-md flex items-center justify-center p-2 sm:p-3"
             @click="dialogVisible = true"
-            v-if="!isScannedBoxesCollapsed && remainingShipmentToPack !== numberShipments"
           >
-            <span class="hidden sm:inline sm:p-2 sm:text-lg text-sm">Scan Barcode</span>
+            <span class="hidden sm:inline sm:text-lg sm:mr-2">Scan Barcode</span>
             <i class="pi pi-barcode"></i>
           </Button>
           <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
