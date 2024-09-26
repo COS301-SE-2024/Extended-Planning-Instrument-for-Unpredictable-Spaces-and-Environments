@@ -1218,7 +1218,6 @@ async function generateNewSolution(shipmentID) {
   <Toast />
 </template>
 <script>
-
 import { getAssetURL } from '@/assetHelper'
 export default {
   components: {
@@ -1436,5 +1435,54 @@ const images = computed(() => [
   position: relative;
   overflow: hidden;
   z-index: 99999;
+}
+
+.disabled-link {
+  pointer-events: none;
+  opacity: 1;
+}
+
+/* Common styles for both light and dark themes */
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+  transition:
+    border-bottom 0.3s ease,
+    color 0.3s ease;
+}
+
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: transparent !important;
+  cursor: pointer;
+  padding-bottom: 2px;
+}
+
+/* Light theme styles */
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  color: black !important;
+  border-bottom: 2px solid black !important;
+  background-color: white !important;
+}
+
+/* Dark theme styles */
+.packer-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  color: white !important;
+  border-bottom: 2px solid white !important;
+  background-color: #0a0a0a !important;
+}
+
+/* Focus styles */
+.packer-sidebar
+  .p-menubar
+  .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+  > .p-menuitem-content {
+  background-color: white !important;
+}
+
+.packer-sidebar.dark
+  .p-menubar
+  .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+  > .p-menuitem-content {
+  background-color: #0a0a0a !important;
 }
 </style>
