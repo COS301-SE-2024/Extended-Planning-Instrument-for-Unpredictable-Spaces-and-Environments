@@ -30,6 +30,9 @@ const remainingShipmentToPack = ref(0)
 
 const shipments = ref([])
 
+const cameraRef = ref(null)
+const controlsRef = ref(null)
+
 const { showStartPackingOvererlay, toggleDialog } = useToggleDialog()
 
 const { loadingShipments, startLoading, stopLoading } = isLoading()
@@ -39,6 +42,8 @@ const showHelpDialog = ref(false)
 const isScannedBoxesCollapsed = ref(false)
 
 const isKeyVisible = ref(true)
+
+const currentView = ref('front')
 
 function toggleKeyVisibility() {
   isKeyVisible.value = !isKeyVisible.value
@@ -311,11 +316,15 @@ function initThreeJS(containerId, isDark, packingDataType) {
   renderer.setClearColor(isDark ? '#171717' : 0xffffff)
   container.appendChild(renderer.domElement)
 
+  cameraRef.value = camera
+
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
   controls.dampingFactor = 0.25
   controls.screenSpacePanning = false
   controls.maxPolarAngle = Math.PI / 2
+
+  controlsRef.value = controls
 
   if (cratePacked.value) {
     createContainer(scene, truckSize, isDark)
@@ -963,6 +972,35 @@ async function generateNewSolution(shipmentID) {
     stopLoading()
   }
 }
+
+function changeView(view) {
+  currentView.value = view
+
+  let SIZE = CONTAINER_SIZE
+  if (remainingShipmentToPack.value === numberShipments.value) {
+    SIZE = truckSize
+  }
+
+  if (!cameraRef.value || !controlsRef.value) return
+
+  switch (view) {
+    case 'front':
+      cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] * 3)
+      break
+    case 'left':
+      cameraRef.value.position.set(-2 * SIZE[0], SIZE[1] / 3, SIZE[2] / 3)
+      break
+    case 'back':
+      cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, -2 * SIZE[2])
+      break
+    case 'right':
+      cameraRef.value.position.set(SIZE[0] * 3, SIZE[1] / 3, SIZE[2] / 3)
+      break
+  }
+
+  controlsRef.value.target.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] / 3)
+  controlsRef.value.update()
+}
 </script>
 
 <template>
@@ -988,6 +1026,17 @@ async function generateNewSolution(shipmentID) {
         'h-[100vh] flex flex-col items-center justify-center'
       ]"
     >
+      <div class="w-full max-w-2xl px-4 mb-8">
+        <img
+          :src="
+            isDark
+              ? '../assets/Photos/Logos/Wording-Thin-Dark.svg'
+              : '../assets/Photos/Logos/Wording-Thin-Light.svg'
+          "
+          :alt="isDark ? 'Dark Logo' : 'Light Logo'"
+          class="w-full h-auto max-h-48 object-contain"
+        />
+      </div>
       <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
       <Button
         @click="startNewDelivery"
@@ -1027,7 +1076,26 @@ async function generateNewSolution(shipmentID) {
           Generate New Solution
         </Button>
       </div>
-      <div v-if="activeShipment && !loadingShipments" class="mt-4 flex">
+      <div
+        v-if="activeShipment && !loadingShipments"
+        :class="[
+          isDark ? ' text-neutral-200' : ' text-neutral-200',
+          'flex justify-center space-x-4 p-4'
+        ]"
+      >
+        <button
+          v-for="view in ['front', 'left', 'right', 'back']"
+          :key="view"
+          @click="changeView(view)"
+          :class="[
+            'hover:bg-gray-400 text-white font-bold py-2 px-4 rounded',
+            currentView === view ? 'bg-gray-400' : 'bg-orange-500'
+          ]"
+        >
+          {{ view.charAt(0).toUpperCase() + view.slice(1) }}
+        </button>
+      </div>
+      <div v-if="activeShipment && !loadingShipments" class="flex">
         <div
           :class="[
             isDark ? 'bg-zinc-800 text-neutral-200' : 'bg-gray-100 text-neutral-800',
@@ -1144,7 +1212,7 @@ async function generateNewSolution(shipmentID) {
               </div>
               <div class="flex items-center mb-1">
                 <span class="w-4 h-4 inline-block mr-2" style="background-color: #c084fc"></span>
-                <span>Newly Scanned</span>
+                <span>Last Scanned</span>
               </div>
               <div class="flex items-center mb-1">
                 <span
@@ -1159,6 +1227,13 @@ async function generateNewSolution(shipmentID) {
                   style="background-color: #ef4444; opacity: 1"
                 ></span>
                 <span>Highlighted</span>
+              </div>
+              <div class="flex items-center mb-1">
+                <span
+                  class="w-4 h-4 inline-block mr-2"
+                  style="background-color: #3b82f6; opacity: 1"
+                ></span>
+                <span>Unpacked</span>
               </div>
             </div>
             <button
