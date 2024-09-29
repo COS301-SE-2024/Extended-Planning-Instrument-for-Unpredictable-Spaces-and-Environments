@@ -1,7 +1,7 @@
 # MP6 - Logistics Optimization System - Revolutionizing Logistics Efficiency 🚛
 
 <p align="center">
-  <img src="[path_to_image](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/main/src/assets/Photos/Logos/Logo-Dark.svg)" alt="Logistics System Dashboard" width="500"/>
+  <img src="https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/main/src/assets/Photos/Logos/Logo-Dark.svg" alt="Logistics System Dashboard" width="500"/>
 </p>
 
 ## Project Description 📦
