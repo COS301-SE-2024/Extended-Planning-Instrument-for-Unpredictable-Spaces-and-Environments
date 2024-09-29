@@ -1,5 +1,9 @@
 # MP6 - Logistics Optimization System - Revolutionizing Logistics Efficiency 🚛
 
+<p align="center">
+  <img src="[path_to_image](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/main/src/assets/Photos/Logos/Logo-Dark.svg)" alt="Logistics System Dashboard" width="500"/>
+</p>
+
 ## Project Description 📦
 
 **Logistics Optimization System** - Unlocking the potential within South Africa's logistics juggernaut: 1.5 billion tonnes of goods annually, 10% of the nation's GDP, and a million-strong workforce. In this landscape of untapped opportunities, our mission is clear – design a system that transforms inefficiency into a symphony of precision. Imagine a logistics realm where every truck is a marvel of intelligent packing and optimal space management. This project isn't just an upgrade; it's a revolution in efficiency.
