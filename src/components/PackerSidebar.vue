@@ -192,8 +192,32 @@ const items = [
     command: () => {
       showHelpDialog.value = !showHelpDialog.value
     }
+  },
+  {
+    label: 'ClearCache',
+    icon: 'pi pi-fw pi-refresh',
+    command: () => {
+      hardReload()
+    }
   }
 ]
+
+function hardReload() {
+  const userConfirmed = window.confirm(
+    'Are you sure you want to reload the page? All current shipment progress will be lost!'
+  )
+
+  if (userConfirmed) {
+    isLoading.value = true
+    localStorage.removeItem('packingProgress')
+    localStorage.removeItem('printingStorage')
+
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
+  }
+}
+
 function loadProgress() {
   const savedProgress = localStorage.getItem('packingProgress')
   const printingProgress = localStorage.getItem('printingStorage')
