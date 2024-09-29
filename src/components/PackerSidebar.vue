@@ -10,6 +10,7 @@ import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { debounce } from 'lodash'
 
 const containerDimensions = [1200, 1930, 1000]
 
@@ -31,6 +32,7 @@ const filters = ref({
 const onFilterChange = (type, value) => {
   filters.value[type].value = value
 }
+const debouncedHardReload = debounce(hardReload, 300)
 
 const filteredShipments = computed(() => {
   return DeliveriesByProcessing.value.filter((shipment) => {
@@ -197,7 +199,7 @@ const items = [
     label: 'ClearCache',
     icon: 'pi pi-fw pi-refresh',
     command: () => {
-      hardReload()
+      debouncedHardReload()
     }
   }
 ]
@@ -208,7 +210,6 @@ function hardReload() {
   )
 
   if (userConfirmed) {
-    isLoading.value = true
     localStorage.removeItem('packingProgress')
     localStorage.removeItem('printingStorage')
 

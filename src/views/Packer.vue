@@ -1026,6 +1026,17 @@ function changeView(view) {
         'h-[100vh] flex flex-col items-center justify-center'
       ]"
     >
+      <div class="w-full max-w-2xl px-4 mb-8">
+        <img
+          :src="
+            isDark
+              ? '../assets/Photos/Logos/Wording-Thin-Dark.svg'
+              : '../assets/Photos/Logos/Wording-Thin-Light.svg'
+          "
+          :alt="isDark ? 'Dark Logo' : 'Light Logo'"
+          class="w-full h-auto max-h-48 object-contain"
+        />
+      </div>
       <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
       <Button
         @click="startNewDelivery"
