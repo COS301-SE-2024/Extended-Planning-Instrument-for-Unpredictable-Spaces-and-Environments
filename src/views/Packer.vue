@@ -78,7 +78,7 @@ const updateShipmentStatus = async (shipmentID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -96,7 +96,7 @@ const updateDeliveryStatus = async (deliveryID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for delivery ${deliveryID}:`, error)
+      console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
@@ -116,7 +116,7 @@ const updateShipmentEndTime = async (shipmentID) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -227,7 +227,6 @@ onMounted(() => {
           const activePackingData = newPackingData.find(
             (data) => data.shipmentId === activeShipment.value
           )
-          console.log('This is active packing data', activePackingData)
           if (activePackingData && activePackingData.length > 0) {
             initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
           } else {
@@ -252,7 +251,7 @@ async function getShipmentByID() {
     })
     saveProgress()
   } else {
-    console.log('No shipments available to process.')
+    console.warn('No shipments available to process.')
   }
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
@@ -438,6 +437,8 @@ function createBoxesFromData(scene, boxesData, truckPacked) {
     let color
     if (box.scanned) {
       color = '#16a34a'
+    } else if (box.unplaced) {
+      return '#3b82f6'
     } else {
       color = getColorForWeight(box.weight, minWeight, maxWeight)
     }
@@ -512,7 +513,7 @@ const onInit = (promise) => {
 }
 
 const onCameraReady = () => {
-  console.log('Camera is ready')
+  console.info('Camera is ready')
 }
 
 const onError = (error) => {
@@ -532,7 +533,7 @@ function checkAllBoxesScanned(shipmentIndex) {
     iscurrentShipmentPacked.value = true
   } else {
     iscurrentShipmentPacked.value = false
-    console.log('Not all boxes have been scanned yet or invalid data structure.')
+    console.warn('Not all boxes have been scanned yet or invalid data structure.')
   }
 }
 const checkIfBoxIdInRange = (scannedBoxId, activePackingData) => {
@@ -889,7 +890,7 @@ async function generateNewSolution(shipmentID) {
     })
 
     if (error) {
-      console.log(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
+      console.error(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
     }
 
     const { data, error2 } = await supabase.functions.invoke('packing', {
@@ -899,7 +900,6 @@ async function generateNewSolution(shipmentID) {
       }),
       method: 'POST'
     })
-    console.log('Successfully deleted saved solution, heres its packages', data)
     if (error2) {
       console.error('Error fetching packages for shipment: ', error)
       return
@@ -1030,8 +1030,8 @@ function changeView(view) {
         <img
           :src="
             isDark
-              ? '../assets/Photos/Logos/Wording-Thin-Dark.svg'
-              : '../assets/Photos/Logos/Wording-Thin-Light.svg'
+              ? getAssetURL('Photos/Logos/Wording-Thin-Dark.svg')
+              : getAssetURL('Photos/Logos/Wording-Thin-Light.svg')
           "
           :alt="isDark ? 'Dark Logo' : 'Light Logo'"
           class="w-full h-auto max-h-48 object-contain"
@@ -1233,7 +1233,7 @@ function changeView(view) {
                   class="w-4 h-4 inline-block mr-2"
                   style="background-color: #3b82f6; opacity: 1"
                 ></span>
-                <span>Unpacked</span>
+                <span>Unplaced</span>
               </div>
             </div>
             <button
