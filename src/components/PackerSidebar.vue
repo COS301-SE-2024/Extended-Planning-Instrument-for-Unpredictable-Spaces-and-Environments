@@ -64,7 +64,7 @@ onMounted(() => {
 async function logout() {
   const { error } = await supabase.auth.signOut()
   if (error) {
-    console.log(error)
+    console.error(error)
   } else {
     router.push({ name: 'login' })
   }
@@ -81,7 +81,7 @@ const getAllProcessing = async () => {
       method: 'POST'
     })
     if (error) {
-      console.log('API Error:', error)
+      console.error('API Error:', error)
     } else {
       DeliveriesByProcessing.value = data.data
     }
@@ -101,7 +101,7 @@ const updateShipmentStatus = async (shipmentID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -119,7 +119,7 @@ const updateDeliveryStatus = async (deliveryID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for delivery ${deliveryID}:`, error)
+      console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
@@ -139,7 +139,7 @@ const updateShipmentStartTime = async (shipmentID) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -184,7 +184,7 @@ const items = [
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      console.log('Logging Out')
+      console.info('Logging Out')
       logout()
     }
   },
@@ -299,13 +299,15 @@ const runPackingAlgo = async (shipmentId) => {
       }),
       method: 'POST'
     })
-
     if (response.error) {
       console.warn('No saved solution Calculating solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
       if (response && response.data && response.data.boxes) {
         packingResults.value[shipmentId] = response.data.boxes
+        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      } else if (response && response.data && response.data.data.boxes) {
+        packingResults.value[shipmentId] = response.data.data.boxes
         emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
       } else {
         console.error('Invalid or missing data in the response')
@@ -367,7 +369,6 @@ async function uploadSolution(shipmentId, containerDimensions) {
         }
 
         const reviewedSoln = MarkUnplacedBoxes(data.data, response.data.boxes)
-        console.log('Reviewed: ', reviewedSoln)
 
         packingResults.value[shipmentId] = reviewedSoln
         emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
