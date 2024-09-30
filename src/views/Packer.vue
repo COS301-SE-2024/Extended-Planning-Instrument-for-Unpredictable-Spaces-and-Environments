@@ -519,7 +519,20 @@ const onCameraReady = () => {
 const onError = (error) => {
   console.error('QR code scanning error:', error)
 }
+const scannedShipments = computed(() => {
+  return shipments.value.reduce((acc, shipment) => {
+    const shipmentIndex = shipments.value.findIndex((s) => s.id === shipment.id)
+    const shipmentData = packingData.value[shipmentIndex]
 
+    if (shipmentData && Array.isArray(shipmentData)) {
+      acc[shipment.id] = shipmentData.every((box) => box.scanned)
+    } else {
+      acc[shipment.id] = false
+    }
+
+    return acc
+  }, {})
+})
 function checkAllBoxesScanned(shipmentIndex) {
   const currentSoln = packingData.value[shipmentIndex]
 
@@ -1075,9 +1088,7 @@ function changeView(view) {
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
-            numberShipments.value === remainingShipmentToPack.value
-              ? 'bg-green-700'
-              : 'bg-orange-500',
+            scannedShipments[shipment.id] ? 'bg-green-700' : 'bg-orange-500',
             'text-gray-200 rounded-xl p-2',
             { 'opacity-50': activeShipment === shipment.id }
           ]"
@@ -1137,7 +1148,7 @@ function changeView(view) {
             >
               <h3
                 class="text-center sm:text-xl text-sm mb-4 font-bold"
-                :class="[isDark ? ' text-neutral-200' : 'light text-neutral-800']"
+                :class="[isDark ? ' text-neutral-200' : ' text-neutral-800']"
               >
                 {{ remainingShipmentToPack }} / {{ numberShipments }} Shipments to Pack
               </h3>
@@ -1174,7 +1185,7 @@ function changeView(view) {
           <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
             <Button
               @click="resetShipment"
-              class="w-full p-2 mt-2 rounded-md justify-center bg-green-700 text-white"
+              class="w-full p-2 mt-4 rounded-xl justify-center bg-green-700 text-white"
               >Confirm Pallet</Button
             >
           </div>
@@ -1188,7 +1199,7 @@ function changeView(view) {
             class="flex justify-center mt-4"
           >
             <Button
-              class="w-full bg-orange-500 text-gray-200 rounded-md p-2 flex items-center justify-center space-x-"
+              class="w-full bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center"
               @click="getShipmentByID"
             >
               Confirm Shipment
