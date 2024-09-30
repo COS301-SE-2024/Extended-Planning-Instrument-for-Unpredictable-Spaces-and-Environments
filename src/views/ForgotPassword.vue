@@ -180,15 +180,13 @@ onMounted(() => {
           v-if="isDark"
           src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
-          class="mb-10"
-          style="width: 15rem; height: auto"
+          class="w-36 h-auto sm:w-48 mb-10"
         />
         <img
           v-else
           src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
-          class="mb-10"
-          style="width: 15rem; height: auto"
+          class="w-36 h-auto sm:w-48 mb-10"
         />
       </div>
       <div
