@@ -60,6 +60,10 @@ const logout = async () => {
     ]"
   >
     <div class="video-container flex items-center justify-center w-full lg:w-1/2 lg:h-full">
+      <!-- Preload the video resource -->
+      <link rel="preload" href="../assets/Videos/Error.mp4" as="video" type="video/mp4" />
+
+      <!-- Video element -->
       <video
         ref="videoRef"
         src="../assets/Videos/Error.mp4"
@@ -67,6 +71,7 @@ const logout = async () => {
         loop
         muted
         preload="auto"
+        playsinline
         :class="['rounded-lg shadow-lg']"
         style="max-width: 100%; max-height: 100%"
       ></video>

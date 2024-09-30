@@ -3,7 +3,7 @@
     class="loading"
     :class="[isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-200 text-black']"
   >
-    <img :src="loadingIcon" class="logo" alt="Logo" />
+    <img loading="eager" :src="loadingIcon" class="logo" alt="Logo" />
     <Spinner
       style="width: 150px; height: 150px"
       strokeWidth="4"

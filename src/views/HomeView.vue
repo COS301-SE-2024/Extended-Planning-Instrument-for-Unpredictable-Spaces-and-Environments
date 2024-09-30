@@ -55,6 +55,12 @@ const logout = async () => {
     ]"
   >
     <div class="video-container flex items-center justify-center w-full lg:w-1/2 lg:h-full">
+      <link
+        rel="preload"
+        href="@/assets/Videos/truck-landing.mp4.mp4"
+        as="video"
+        type="video/mp4"
+      />
       <video
         v-show="isVideoLoaded"
         ref="videoRef"
@@ -63,6 +69,7 @@ const logout = async () => {
         loop
         muted
         preload="auto"
+        playsinline
         :class="['rounded-lg shadow-lg']"
         style="max-width: 100%; max-height: 100%"
       ></video>
