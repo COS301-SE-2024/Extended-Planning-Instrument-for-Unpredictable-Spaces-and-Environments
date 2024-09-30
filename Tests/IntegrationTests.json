@@ -697,7 +697,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"type\":\"deleteUser\",\n    \"email\":\"zub@janeeb.com\"\n}",
+							"raw": "{\n    \"type\":\"deleteUser\",\n    \"email\":\"user@janeeb.com\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -6213,6 +6213,32 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
+					"let count = 10; // Number of requests to send",
+					"let delay = 800; // Delay between requests in milliseconds",
+					"",
+					"for (let i = 0; i < count; i++) {",
+					"    setTimeout(() => {",
+					"        pm.sendRequest({",
+					"            url: pm.request.url.toString(),",
+					"            method: pm.request.method,",
+					"            header: pm.request.headers,",
+					"            body: {",
+					"                mode: pm.request.body.mode,",
+					"                raw: pm.request.body.raw",
+					"            }",
+					"        }, function (err, res) {",
+					"            if (err) {",
+					"                console.log(\"Error in request \" + (i + 1), err);",
+					"            } else {",
+					"                console.log(\"Request \" + (i + 1) + \" completed with status \" + res.status);",
+					"                // Optional: Add assertions based on your test requirements",
+					"                pm.test(\"Response time should be less than 1000ms\", function () {",
+					"                    pm.expect(res.responseTime).to.be.below(1000);",
+					"                });",
+					"            }",
+					"        });",
+					"    }, i * delay); // Stagger the requests by the delay",
+					"}",
 					""
 				]
 			}
