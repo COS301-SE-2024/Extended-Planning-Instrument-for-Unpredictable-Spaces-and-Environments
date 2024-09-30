@@ -11,6 +11,7 @@ import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js'
 import CryptoJS from 'crypto-js'
 import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
 
 const isDark = useDark()
 const showDialog = ref(false)
@@ -26,6 +27,7 @@ const signature = ref([])
 const shipmentsByDelivery = ref([])
 const deliveries = ref([])
 const shipments = ref([])
+const SigLoad = ref(false)
 
 // search functionality
 const searchQuery = ref('')
@@ -152,7 +154,7 @@ const getAllDeliveries = async () => {
       method: 'POST'
     })
     if (error) {
-      console.log('API Error:', error)
+      console.error('API Error:', error)
     } else {
       deliveries.value = data.data
       await getShipmentsByDeliveryID()
@@ -250,7 +252,7 @@ function decryptData(encryptedData, key) {
 }
 
 async function getSignature(shipmentID) {
-  console.log(shipmentID)
+  SigLoad.value = true
   try {
     const { data: data, error: getError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
@@ -273,6 +275,8 @@ async function getSignature(shipmentID) {
     toggleDialogSig()
   } catch (error) {
     console.error('Error fetching signature ', error)
+  } finally {
+    SigLoad.value = false
   }
 }
 </script>
@@ -386,13 +390,15 @@ async function getSignature(shipmentID) {
                                 <p class="text-neutral-500">Shipment ID:</p>
                                 {{ slotProps.item.shipment_id }}
                               </div>
-                              <button
+                              <Button
+                                type="button"
                                 v-if="slotProps.item.status === 'Delivered'"
                                 class="p-button p-component mt-4 py-2 px-4 w-full justify-center bg-green-800"
+                                :loading="SigLoad"
                                 @click="getSignature(slotProps.item.shipment_id)"
                               >
                                 Show Signature
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         </template>

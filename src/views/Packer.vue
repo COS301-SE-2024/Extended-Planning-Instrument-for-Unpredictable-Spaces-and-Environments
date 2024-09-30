@@ -519,7 +519,20 @@ const onCameraReady = () => {
 const onError = (error) => {
   console.error('QR code scanning error:', error)
 }
+const scannedShipments = computed(() => {
+  return shipments.value.reduce((acc, shipment) => {
+    const shipmentIndex = shipments.value.findIndex((s) => s.id === shipment.id)
+    const shipmentData = packingData.value[shipmentIndex]
 
+    if (shipmentData && Array.isArray(shipmentData)) {
+      acc[shipment.id] = shipmentData.every((box) => box.scanned)
+    } else {
+      acc[shipment.id] = false
+    }
+
+    return acc
+  }, {})
+})
 function checkAllBoxesScanned(shipmentIndex) {
   const currentSoln = packingData.value[shipmentIndex]
 
@@ -1075,7 +1088,8 @@ function changeView(view) {
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
-            'bg-orange-500 text-gray-200 rounded-xl p-2',
+            scannedShipments[shipment.id] ? 'bg-green-700' : 'bg-orange-500',
+            'text-gray-200 rounded-xl p-2',
             { 'opacity-50': activeShipment === shipment.id }
           ]"
           @click="toggleShipment(shipment.id)"
@@ -1106,8 +1120,8 @@ function changeView(view) {
           :key="view"
           @click="changeView(view)"
           :class="[
-            'hover:bg-gray-400 text-white font-bold py-2 px-4 rounded',
-            currentView === view ? 'bg-gray-400' : 'bg-orange-500'
+            'hover:bg-violet-500 text-white font-bold py-2 px-4 rounded-xl',
+            currentView === view ? 'opacity-45 bg-orange-500	' : 'bg-orange-500'
           ]"
         >
           {{ view.charAt(0).toUpperCase() + view.slice(1) }}
@@ -1134,14 +1148,14 @@ function changeView(view) {
             >
               <h3
                 class="text-center sm:text-xl text-sm mb-4 font-bold"
-                :class="[isDark ? ' text-neutral-200' : 'light text-neutral-800']"
+                :class="[isDark ? ' text-neutral-200' : ' text-neutral-800']"
               >
                 {{ remainingShipmentToPack }} / {{ numberShipments }} Shipments to Pack
               </h3>
             </div>
             <button
               @click="toggleScannedBoxes"
-              class="bg-orange-500 text-white p-2 rounded w-full mb-4"
+              class="rounded-xl bg-orange-500 text-white p-2 w-full mb-4"
               :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
             >
               <i class="pi pi-chevron-left"></i>
@@ -1155,14 +1169,14 @@ function changeView(view) {
               v-for="item in scannedBoxes"
               :key="item.id"
               @click="highlightItem(item.id, item.type)"
-              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-md p-2"
+              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-xl p-2 mb-4"
             >
               {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
             </li>
           </ul>
           <Button
             v-if="!isScannedBoxesCollapsed"
-            class="w-full bg-violet-500 text-white mt-2 rounded-md flex items-center justify-center p-2 sm:p-3"
+            class="w-full bg-violet-500 rounded-xl text-white mt-2 flex items-center justify-center p-2 sm:p-3"
             @click="dialogVisible = true"
           >
             <span class="hidden sm:inline sm:text-lg sm:mr-2">Scan Barcode</span>
@@ -1171,7 +1185,7 @@ function changeView(view) {
           <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
             <Button
               @click="resetShipment"
-              class="w-full p-2 mt-2 rounded-md justify-center bg-green-700 text-white"
+              class="w-full p-2 mt-4 rounded-xl justify-center bg-green-700 text-white"
               >Confirm Pallet</Button
             >
           </div>
@@ -1185,7 +1199,7 @@ function changeView(view) {
             class="flex justify-center mt-4"
           >
             <Button
-              class="w-full bg-orange-500 text-gray-200 rounded-md p-2 flex items-center justify-center space-x-"
+              class="w-full bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center"
               @click="getShipmentByID"
             >
               Confirm Shipment
@@ -1295,7 +1309,7 @@ function changeView(view) {
       @camera-on="onCameraReady"
       class="mb-6 mt-6 rounded-lg"
     />
-    <div class="flex flex-col items-center align-center">
+    <div class="rounded-xl flex flex-col items-center align-center">
       <Button
         icon="pi pi-arrow-left"
         iconPos="left"

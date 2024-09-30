@@ -163,13 +163,13 @@ const signInWithProvider = async (provider) => {
           v-if="isDark"
           src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
-          class="w-48 h-auto sm:w-60"
+          class="w-36 h-auto sm:w-48"
         />
         <img
           v-else
           src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
-          class="w-48 h-auto sm:w-60"
+          class="w-36 h-auto sm:w-48"
         />
       </div>
       <div
@@ -178,17 +178,7 @@ const signInWithProvider = async (provider) => {
           'items-start justify-start text-left', // Align text left on smaller screens
           'sm:items-center sm:text-center' // Center text on larger screens
         ]"
-      >
-        <p
-          class="text-2xl font-bold mb-2 mt-4"
-          :class="[isDark ? 'text-white' : 'text-neutral-800']"
-        >
-          Welcome back!
-        </p>
-        <p class="" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
-          Please enter login details below
-        </p>
-      </div>
+      ></div>
       <form @submit.prevent="signIn" class="flex flex-col">
         <div class="form-group mb-8">
           <label
