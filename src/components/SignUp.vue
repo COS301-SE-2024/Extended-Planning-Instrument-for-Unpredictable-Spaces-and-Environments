@@ -123,26 +123,23 @@ const signUp = async () => {
           v-if="isDark"
           src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
-          class="w-48 h-auto sm:w-60"
+          class="w-36 h-auto sm:w-48"
         />
         <img
           v-else
           src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
-          class="w-48 h-auto sm:w-60"
+          class="w-36 h-auto sm:w-48"
         />
       </div>
       <div
         :class="[
-          'flex flex-col w-full mb-6',
+          'flex flex-col w-full mb-4',
           'items-start justify-start text-left', // Align text left on smaller screens
           'sm:items-center sm:text-center' // Center text on larger screens
         ]"
       >
-        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
-          Create your new account
-        </p>
-        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+        <p class="mb-2 mt-2" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
           Join us and revolutionize logistics efficiency.
         </p>
       </div>
@@ -282,23 +279,6 @@ const signUp = async () => {
       >
         Help
       </p>
-      <!-- <div class="flex items-center justify-center">
-        <div
-          @click="toggleDark"
-          :class="[
-            isDark ? 'text-white bg-neutral-900' : 'text-neutral-800 bg-gray-200 shadow-sm',
-            'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-          ]"
-        >
-          <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-            <span v-if="isDark">Light Mode</span>
-            <span v-else>Dark Mode</span>
-          </p>
-          <button class="focus:outline-none">
-            <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-          </button>
-        </div>
-      </div> -->
     </div>
 
     <DialogComponent
