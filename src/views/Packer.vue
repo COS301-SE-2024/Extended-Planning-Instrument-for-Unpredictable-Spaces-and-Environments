@@ -1075,7 +1075,10 @@ function changeView(view) {
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
-            'bg-orange-500 text-gray-200 rounded-xl p-2',
+            numberShipments.value === remainingShipmentToPack.value
+              ? 'bg-green-500'
+              : 'bg-orange-500',
+            'text-gray-200 rounded-xl p-2',
             { 'opacity-50': activeShipment === shipment.id }
           ]"
           @click="toggleShipment(shipment.id)"

@@ -114,7 +114,6 @@ const getShipmentByDeliveryId = async () => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      console.log(data)
 
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
@@ -128,7 +127,6 @@ const getShipmentByDeliveryId = async () => {
         return data.data.find((shipment) => shipment.Destination === location)
       })
 
-      console.log('sortedShipments', sortedShipments)
       shipmentsByDelivery.value[currentDelivery.value.id] = sortedShipments
 
       if (sortedLocations.length > 0) {
@@ -160,7 +158,6 @@ const identifyPendingLocations = () => {
   if (pendingLocations.value.length > 0) {
     currentDestination.value = pendingLocations.value[0]
   }
-  console.log('pending locations')
 }
 
 const getStatusColor = (status) => {
