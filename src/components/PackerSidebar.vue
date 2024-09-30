@@ -196,7 +196,7 @@ const items = [
     }
   },
   {
-    label: 'ClearCache',
+    label: 'Clear Cache',
     icon: 'pi pi-fw pi-refresh',
     command: () => {
       debouncedHardReload()

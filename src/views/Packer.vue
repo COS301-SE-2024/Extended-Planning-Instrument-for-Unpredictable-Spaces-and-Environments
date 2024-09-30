@@ -1076,7 +1076,7 @@ function changeView(view) {
           :key="shipment.id"
           :class="[
             numberShipments.value === remainingShipmentToPack.value
-              ? 'bg-green-500'
+              ? 'bg-green-700'
               : 'bg-orange-500',
             'text-gray-200 rounded-xl p-2',
             { 'opacity-50': activeShipment === shipment.id }
@@ -1109,8 +1109,8 @@ function changeView(view) {
           :key="view"
           @click="changeView(view)"
           :class="[
-            'hover:bg-gray-400 text-white font-bold py-2 px-4 rounded',
-            currentView === view ? 'bg-gray-400' : 'bg-orange-500'
+            'hover:bg-violet-500 text-white font-bold py-2 px-4 rounded-xl',
+            currentView === view ? 'opacity-45 bg-orange-500	' : 'bg-orange-500'
           ]"
         >
           {{ view.charAt(0).toUpperCase() + view.slice(1) }}
@@ -1144,7 +1144,7 @@ function changeView(view) {
             </div>
             <button
               @click="toggleScannedBoxes"
-              class="bg-orange-500 text-white p-2 rounded w-full mb-4"
+              class="rounded-xl bg-orange-500 text-white p-2 w-full mb-4"
               :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
             >
               <i class="pi pi-chevron-left"></i>
@@ -1158,14 +1158,14 @@ function changeView(view) {
               v-for="item in scannedBoxes"
               :key="item.id"
               @click="highlightItem(item.id, item.type)"
-              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-md p-2"
+              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-xl p-2 mb-4"
             >
               {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
             </li>
           </ul>
           <Button
             v-if="!isScannedBoxesCollapsed"
-            class="w-full bg-violet-500 text-white mt-2 rounded-md flex items-center justify-center p-2 sm:p-3"
+            class="w-full bg-violet-500 rounded-xl text-white mt-2 flex items-center justify-center p-2 sm:p-3"
             @click="dialogVisible = true"
           >
             <span class="hidden sm:inline sm:text-lg sm:mr-2">Scan Barcode</span>
@@ -1298,7 +1298,7 @@ function changeView(view) {
       @camera-on="onCameraReady"
       class="mb-6 mt-6 rounded-lg"
     />
-    <div class="flex flex-col items-center align-center">
+    <div class="rounded-xl flex flex-col items-center align-center">
       <Button
         icon="pi pi-arrow-left"
         iconPos="left"
