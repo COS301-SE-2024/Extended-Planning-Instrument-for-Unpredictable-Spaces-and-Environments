@@ -58,6 +58,7 @@ const { dialogVisible, showStartPackingOvererlay, toggleStartNewPacking, toggleD
 const { loadingShipments, startLoading, stopLoading } = isLoading()
 
 onMounted(() => {
+  setupSubscription()
   loadProgress()
 })
 
@@ -87,6 +88,19 @@ const getAllProcessing = async () => {
     }
   } catch (error) {
     console.error('Error fetching data:', error)
+  }
+}
+
+async function setupSubscription() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Deliveries' }, () => {
+        getAllProcessing()
+      })
+      .subscribe()
+  } catch (error) {
+    console.error('Failed to fetch all shipped deliveries')
   }
 }
 
