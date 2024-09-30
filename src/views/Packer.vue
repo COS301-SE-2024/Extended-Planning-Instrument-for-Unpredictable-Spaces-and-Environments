@@ -978,28 +978,46 @@ function changeView(view) {
 
   let SIZE = CONTAINER_SIZE
   if (remainingShipmentToPack.value === numberShipments.value) {
-    SIZE = truckSize
+    if (!cameraRef.value || !controlsRef.value) return
+
+    switch (view) {
+      case 'front':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] * 8)
+        break
+      case 'left':
+        cameraRef.value.position.set(-3 * SIZE[0], SIZE[1] / 3, SIZE[2] / 3)
+        break
+      case 'back':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, -3 * SIZE[2])
+        break
+      case 'right':
+        cameraRef.value.position.set(SIZE[0] * 4, SIZE[1] / 4, SIZE[2] / 4)
+        break
+    }
+
+    controlsRef.value.target.set(SIZE[0] / 2, SIZE[1] / 2, SIZE[2] / 2)
+    controlsRef.value.update()
+  } else {
+    if (!cameraRef.value || !controlsRef.value) return
+
+    switch (view) {
+      case 'front':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] * 3)
+        break
+      case 'left':
+        cameraRef.value.position.set(-2 * SIZE[0], SIZE[1] / 3, SIZE[2] / 3)
+        break
+      case 'back':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, -2 * SIZE[2])
+        break
+      case 'right':
+        cameraRef.value.position.set(SIZE[0] * 3, SIZE[1] / 3, SIZE[2] / 3)
+        break
+    }
+
+    controlsRef.value.target.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] / 3)
+    controlsRef.value.update()
   }
-
-  if (!cameraRef.value || !controlsRef.value) return
-
-  switch (view) {
-    case 'front':
-      cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] * 3)
-      break
-    case 'left':
-      cameraRef.value.position.set(-2 * SIZE[0], SIZE[1] / 3, SIZE[2] / 3)
-      break
-    case 'back':
-      cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, -2 * SIZE[2])
-      break
-    case 'right':
-      cameraRef.value.position.set(SIZE[0] * 3, SIZE[1] / 3, SIZE[2] / 3)
-      break
-  }
-
-  controlsRef.value.target.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] / 3)
-  controlsRef.value.update()
 }
 </script>
 

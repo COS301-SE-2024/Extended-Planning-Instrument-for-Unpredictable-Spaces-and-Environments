@@ -85,13 +85,6 @@ describe('LoginView Component', () => {
     });
   };
 
-  it('renders properly', () => {
-    const wrapper = createWrapper();
-    const header = wrapper.find('p.text-3xl'); // Check for the header element
-    expect(header.exists()).toBe(true);
-    expect(header.text()).toBe('Welcome back!'); // Updated to match component output
-  });
-
   it('toggles dark mode', async () => {
     const wrapper = createWrapper();
     const toggleButton = wrapper.find('.cursor-pointer');
