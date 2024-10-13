@@ -460,6 +460,22 @@ function mutate(individual: Box[], mutationRate: number): void {
   }
 }
 
+const solutionArchive = new Map()
+function createKey(containerDimensions, boxesData) {
+  const dimensionsKey = containerDimensions.join('-')
+  const boxesKey = boxesData
+    .map((box) => `${box.id}-${box.Width}-${box.Height}-${box.Length}`)
+    .join('_')
+  return `${dimensionsKey}_${boxesKey}`
+}
+
+function storeSolution(key, solution) {
+  solutionArchive.set(key, solution)
+}
+
+function getSolution(key) {
+  return solutionArchive.get(key)
+}
 export function geneticAlgorithm(
   boxesData: BoxData[],
   containerDimensions: [number, number, number],
@@ -467,12 +483,21 @@ export function geneticAlgorithm(
   numGenerations: number = 350,
   mutationRate: number = 0.01
 ): { data: { fitness: number; boxes: any[] } } {
+  const key = createKey(containerDimensions, boxesData)
+  const previousSolution = getSolution(key)
+
+  if (previousSolution) {
+    return previousSolution
+  }
+
   if (!boxesData || !Array.isArray(boxesData) || boxesData.length === 0) {
     console.error('Invalid or empty boxesData:', boxesData)
     return { data: { fitness: 0, boxes: [] } }
   }
 
   let iterations = 0
+  const eliteCount = Math.floor(popSize * 0.05)
+
   const boxes = boxesData.map((data) => new Box(data))
   let population = initializePopulation(popSize, boxes)
 
@@ -510,8 +535,14 @@ export function geneticAlgorithm(
       iterations += 1
     }
 
+    const elites = population
+      .map((individual, i) => ({ individual, fitness: fitness[i] }))
+      .sort((a, b) => b.fitness - a.fitness)
+      .slice(0, eliteCount)
+      .map((elite) => elite.individual)
+
     const parents = selectParents(population, fitness, Math.floor(popSize / 2))
-    const nextPopulation: Box[][] = []
+    const nextPopulation = [...elites]
 
     for (let i = 0; i < parents.length; i += 2) {
       const parent1 = parents[i]
@@ -522,13 +553,33 @@ export function geneticAlgorithm(
       nextPopulation.push(child1, child2)
     }
 
-    nextPopulation[0] = currentBestIndividual ? [...currentBestIndividual] : nextPopulation[0]
+    // nextPopulation[0] = currentBestIndividual ? [...currentBestIndividual] : nextPopulation[0]
 
-    population = nextPopulation
+    population = nextPopulation.slice(0, popSize)
 
     if (iterations > 100) {
       break
     }
+  }
+
+  if (globalBestContainer && globalBestIndividual) {
+    const solution = {
+      data: {
+        fitness: globalBestFitness,
+        boxes: globalBestContainer.boxes.map(([box, x, y, z]) => ({
+          id: box.id,
+          width: box.width,
+          height: box.height,
+          length: box.length,
+          weight: box.weight,
+          volume: box.volume,
+          x,
+          y,
+          z
+        }))
+      }
+    }
+    storeSolution(key, solution)
   }
 
   if (globalBestFitness > 0 && globalBestContainer && globalBestIndividual) {
