@@ -74,14 +74,17 @@ const loading = ref(false)
   <div
     :class="[
       isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
-      'w-full h-full flex flex-row shadow-lg'
+      'w-full min-h-screen flex'
     ]"
   >
-    <Sidebar />
+    <Sidebar class="w-64 flex-shrink-0 fixed h-full z-10" />
     <!-- Main Content -->
-    <div class="flex flex-col p-4 ml-2 w-full">
+    <div
+      class="flex-grow flex flex-col p-4 ml-2 w-full"
+      :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
+    >
       <!-- Search Input -->
-      <div class="w-full md:w-[300px] mb-4">
+      <div class="w-full max-w-md mb-4">
         <div
           :class="[
             isDark
@@ -97,19 +100,19 @@ const loading = ref(false)
             @input="onGlobalFilterChange"
             :class="[
               isDark ? 'bg-neutral-900 text-white' : 'bg-white text-black',
-              'focus:outline-none focus:ring-0'
+              'focus:outline-none focus:ring-0 w-full'
             ]"
           />
         </div>
       </div>
-      <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+      <h2 class="my-4 font-normal text-3xl" :class="[isDark ? ' text-white' : ' text-black']">
         <span class="font-bold">All Shipments</span>
       </h2>
 
-      <!-- Users Table -->
-      <div>
+      <!-- Shipments Table -->
+      <div class="overflow-x-auto">
         <DataTable
-          :class="[isDark ? 'dark' : '']"
+          :class="['text-white md:text-inherit', isDark ? 'dark' : '']"
           :value="shipments"
           :filters="filters"
           :globalFilterFields="[
@@ -123,13 +126,14 @@ const loading = ref(false)
           paginator
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
+          responsiveLayout="scroll"
         >
-          <Column field="id" header="Shipment ID"> </Column>
-          <Column field="Start_time" header="Start Time"></Column>
-          <Column field="Destination" header="Destination"></Column>
-          <Column field="Status" header="Status"></Column>
-          <Column field="End_time" header="End Time"></Column>
-          <Column field="Delivery_id" header="Delivery ID"></Column>
+          <Column field="id" header="Shipment ID" sortable></Column>
+          <Column field="Start_time" header="Start Time" sortable></Column>
+          <Column field="Destination" header="Destination" sortable></Column>
+          <Column field="Status" header="Status" sortable></Column>
+          <Column field="End_time" header="End Time" sortable></Column>
+          <Column field="Delivery_id" header="Delivery ID" sortable></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">
@@ -468,5 +472,13 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 }
 .dark .p-dropdown-panel.p-component.p-ripple-disabled {
   z-index: 99999999 !important;
+}
+
+.dark .p-datatable .p-sortable-column .p-sortable-column-icon {
+  color: white;
+}
+
+.p-datatable .p-sortable-column .p-sortable-column-icon {
+  color: black;
 }
 </style>

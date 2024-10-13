@@ -19,7 +19,12 @@ const password = ref('')
 const phoneNumberError = ref(false)
 const passwordError = ref(false)
 const emailDuplicate = ref(false)
+const nameError = ref(false)
 
+const isValidName = computed(() => {
+  const nameRegex = /^[a-zA-Z\s]+$/
+  return nameRegex.test(name.value.trim()) && name.value.trim().length > 0
+})
 // Cell Number validation
 const isValidPhoneNumber = computed(() => {
   const phoneRegex = /^0\d{9}$/
@@ -32,33 +37,37 @@ const isValidPassword = computed(() => {
   return passwordRegex.test(password.value)
 })
 
+const validateName = () => {
+  nameError.value = !isValidName.value
+}
+const validatePhoneNumber = () => {
+  phoneNumberError.value = !isValidPhoneNumber.value
+}
+
 const signUp = async () => {
   try {
-    if (!isValidPhoneNumber.value) {
-      phoneNumberError.value = true
+    validateName()
+    validatePhoneNumber()
+
+    if (nameError.value || phoneNumberError.value) {
       return
     }
     if (!isValidPassword.value) {
       passwordError.value = true
       return
     }
-    phoneNumberError.value = false
     passwordError.value = false
 
-    // console.log(email.value)
-    // console.log(password.value)
     const { user, error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value
     })
     if (error) {
-      console.log(error.message)
       if (error.message == 'User already registered') {
         emailDuplicate.value = true
         return
       }
     } else {
-      console.log('User signed up:', user)
       toast.add({
         severity: 'success',
         summary: 'Successfully signed up',
@@ -74,12 +83,9 @@ const signUp = async () => {
           phone: number.value
         }
       })
-      // console.log(name.value, email.value, number.value)
-      // console.log('This is data.data ' + data.data);
       if (error) {
-        console.log('API Error:', error)
+        console.error('API Error:', error)
       } else {
-        // console.log("you are reaching here")
         router.push({ name: 'home' })
       }
     }
@@ -100,7 +106,7 @@ const signUp = async () => {
     <div
       :class="[
         isDark ? 'bg-neutral-800 text-white' : 'bg-white text-neutral-800',
-        'sign-in-container w-full h-screen sm:h-auto sm:w-[500px] mx-auto p-4 sm:p-14',
+        'sign-in-container w-full min-h-screen px-4 py-8 sm:h-auto sm:w-[500px] sm:min-h-0 mx-auto sm:p-14',
         'sm:rounded-xl sm:shadow-xl',
         'flex flex-col justify-center'
       ]"
@@ -117,30 +123,23 @@ const signUp = async () => {
           v-if="isDark"
           src="@/assets/Photos/Logos/Wording-Thin-Dark.svg"
           alt="Dark Mode Image"
-          class="mb-10"
-          style="width: 15rem; height: auto"
+          class="w-36 h-auto sm:w-48"
         />
         <img
           v-else
           src="@/assets/Photos/Logos/Wording-Thin-Light.svg"
           alt="Light Mode Image"
-          class="mb-10"
-          style="width: 15rem; height: auto"
+          class="w-36 h-auto sm:w-48"
         />
       </div>
-
-      <!-- Text container -->
       <div
         :class="[
-          'flex flex-col w-full mb-6',
+          'flex flex-col w-full mb-4',
           'items-start justify-start text-left', // Align text left on smaller screens
           'sm:items-center sm:text-center' // Center text on larger screens
         ]"
       >
-        <p class="text-3xl font-bold mb-2" :class="[isDark ? 'text-white' : 'text-neutral-800']">
-          Create your new account
-        </p>
-        <p class="mb-4" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
+        <p class="mb-2 mt-2" :class="[isDark ? 'text-gray-400' : 'text-neutral-800']">
           Join us and revolutionize logistics efficiency.
         </p>
       </div>
@@ -155,7 +154,7 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
+              'mt-2  mb-4 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
             ]"
             type="text"
             id="name"
@@ -163,7 +162,12 @@ const signUp = async () => {
             required
             placeholder="eg. John Doe"
             class="form-control"
+            @input="nameError = false"
+            @blur="validateName"
           />
+          <p v-if="nameError" class="text-red-500 text-sm mb-4">
+            Please enter a valid name (only letters and spaces allowed).
+          </p>
         </div>
         <div class="form-group">
           <label
@@ -176,7 +180,7 @@ const signUp = async () => {
               isDark
                 ? 'text-white border bg-neutral-900 border-transparent'
                 : 'border border-neutral-900 bg-white text-neutral-800',
-              'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
+              'mt-2 mb-4 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500',
               { 'border-red-500 border-2': phoneNumberError }
             ]"
             type="tel"
@@ -186,11 +190,12 @@ const signUp = async () => {
             placeholder="e.g. 012 345 6789"
             class="form-control"
             @input="phoneNumberError = false"
+            @blur="validatePhoneNumber"
           />
+          <p v-if="phoneNumberError" class="text-red-500 text-sm mb-4">
+            Please enter a valid 10-digit phone number starting with 0.
+          </p>
         </div>
-        <p v-if="phoneNumberError" class="text-red-500 text-sm mb-4">
-          Please enter a valid 10-digit phone number starting with 0.
-        </p>
         <div class="form-group">
           <label
             for="email"
@@ -274,23 +279,6 @@ const signUp = async () => {
       >
         Help
       </p>
-      <!-- <div class="flex items-center justify-center">
-        <div
-          @click="toggleDark"
-          :class="[
-            isDark ? 'text-white bg-neutral-900' : 'text-neutral-800 bg-gray-200 shadow-sm',
-            'w-[200px] cursor-pointer h-[auto] rounded-lg py-4 mt-6 flex flex-row items-center justify-center hover:-translate-y-1 transition duration-300'
-          ]"
-        >
-          <p :class="['mr-4', 'text-left', isDark ? 'text-white' : 'text-neutral-800']">
-            <span v-if="isDark">Light Mode</span>
-            <span v-else>Dark Mode</span>
-          </p>
-          <button class="focus:outline-none">
-            <i :class="[isDark ? 'pi pi-sun' : 'pi pi-moon', 'text-xl']"></i>
-          </button>
-        </div>
-      </div> -->
     </div>
 
     <DialogComponent

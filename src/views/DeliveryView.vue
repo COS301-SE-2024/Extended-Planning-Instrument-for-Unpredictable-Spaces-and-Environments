@@ -13,6 +13,7 @@ import Dialog from 'primevue/dialog'
 import { toggleDialogDelivery } from '@/components/packerDialog'
 import CryptoJS from 'crypto-js'
 import { useToast } from 'primevue/usetoast'
+import Loading from '@/views/Loading.vue'
 
 const isDark = useDark()
 const toast = useToast()
@@ -113,7 +114,6 @@ const getShipmentByDeliveryId = async () => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-      console.log(data)
 
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
@@ -127,7 +127,6 @@ const getShipmentByDeliveryId = async () => {
         return data.data.find((shipment) => shipment.Destination === location)
       })
 
-      console.log('sortedShipments', sortedShipments)
       shipmentsByDelivery.value[currentDelivery.value.id] = sortedShipments
 
       if (sortedLocations.length > 0) {
@@ -159,7 +158,6 @@ const identifyPendingLocations = () => {
   if (pendingLocations.value.length > 0) {
     currentDestination.value = pendingLocations.value[0]
   }
-  console.log('pending locations')
 }
 
 const getStatusColor = (status) => {
@@ -227,6 +225,7 @@ const uploadSignature = async (signature, shipmentID) => {
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
+        shipmentID:shipmentID,
         dataURL: encryptedSignature
       }),
       method: 'POST'
@@ -604,7 +603,7 @@ export default {
         'card w-full h-screen flex flex-col justify-center items-center'
       ]"
     >
-      <img src="../assets/Photos/truck.png" alt="Truck" class="w-64 h-64 animate-bounce" />
+      <Loading></Loading>
     </div>
     <div
       v-if="!isLoading"

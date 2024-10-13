@@ -1,12 +1,16 @@
 # MP6 - Logistics Optimization System - Revolutionizing Logistics Efficiency 🚛
 
+<p align="center">
+  <img src="https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/main/src/assets/Photos/Logos/Logo-Dark.svg" alt="Logistics System Dashboard" width="500"/>
+</p>
+
 ## Project Description 📦
 
 **Logistics Optimization System** - Unlocking the potential within South Africa's logistics juggernaut: 1.5 billion tonnes of goods annually, 10% of the nation's GDP, and a million-strong workforce. In this landscape of untapped opportunities, our mission is clear – design a system that transforms inefficiency into a symphony of precision. Imagine a logistics realm where every truck is a marvel of intelligent packing and optimal space management. This project isn't just an upgrade; it's a revolution in efficiency.
 
 ### Code Quality Badges 🛡️
 ![image](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/d645989e-9147-44a0-a3fc-5b398450573f) ![Static Badge](https://img.shields.io/badge/Build-passing-brightgreen?logo=github)
-![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/unitTest.yml/badge.svg) [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)[![Netlify Status](https://api.netlify.com/api/v1/badges/a7c82b81-4286-4d5c-a508-877ae169507c/deploy-status)](https://app.netlify.com/sites/janeebsolutions/deploys)
+![Build Status](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/actions/workflows/unitTest.yml/badge.svg) [![GitHub Issues](https://img.shields.io/github/issues/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments.svg)](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/issues)[![Netlify Status](https://api.netlify.com/api/v1/badges/71e3b7b1-8057-43f8-bf0c-a4c09966a75f/deploy-status)](https://app.netlify.com/sites/janeebsolution/deploys)
 
 ## Demo Video 🎥
 [![Demo1 Thumbnail](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/7ec24e36-c321-47a7-9b28-6e699b44fad6)](https://www.youtube.com/playlist?list=PLGYYgsVv-70oToZzb5FKrY-J9i_26m-jt)

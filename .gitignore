@@ -29,3 +29,6 @@ dist
 *.sw?
 .env
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify

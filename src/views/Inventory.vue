@@ -73,14 +73,17 @@ const loading = ref(false)
   <div
     :class="[
       isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black',
-      'w-full h-full flex flex-row shadow-lg'
+      'w-full min-h-screen flex'
     ]"
   >
-    <Sidebar />
+    <Sidebar class="w-64 flex-shrink-0 fixed h-full z-10" />
     <!-- Main Content -->
-    <div class="flex flex-col p-4 ml-2 w-full">
+    <div
+      class="flex-grow flex flex-col p-4 ml-2 w-full"
+      :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
+    >
       <!-- Search Input -->
-      <div class="w-full md:w-[300px] mb-4">
+      <div class="w-full max-w-md mb-4">
         <div
           :class="[
             isDark
@@ -106,7 +109,7 @@ const loading = ref(false)
       </h2>
 
       <!-- Users Table -->
-      <div>
+      <div class="overflow-x-auto">
         <DataTable
           :class="[isDark ? 'dark' : '']"
           :value="packages"
@@ -125,14 +128,14 @@ const loading = ref(false)
           :rows="5"
           :rowsPerPageOptions="[5, 10, 20, 50]"
         >
-          <Column field="id" header="Package ID"> </Column>
-          <Column field="Shipment_id" header="Shipment ID"></Column>
-          <Column field="Weight" header="Weight"></Column>
-          <Column field="Packed_time" header="Packed Time"></Column>
-          <Column field="Width" header="Width"></Column>
-          <Column field="Length" header="Length"></Column>
-          <Column field="Height" header="Height"></Column>
-          <Column field="Volume" header="Volume"></Column>
+          <Column field="id" header="Package ID" sortable> </Column>
+          <Column field="Shipment_id" header="Shipment ID" sortable></Column>
+          <Column field="Weight" header="Weight" sortable></Column>
+          <Column field="Packed_time" header="Packed Time" sortable></Column>
+          <Column field="Width" header="Width" sortable></Column>
+          <Column field="Length" header="Length" sortable></Column>
+          <Column field="Height" header="Height" sortable></Column>
+          <Column field="Volume" header="Volume" sortable></Column>
         </DataTable>
       </div>
       <div class="mt-4 flex items-center justify-center">

@@ -30,6 +30,9 @@ const remainingShipmentToPack = ref(0)
 
 const shipments = ref([])
 
+const cameraRef = ref(null)
+const controlsRef = ref(null)
+
 const { showStartPackingOvererlay, toggleDialog } = useToggleDialog()
 
 const { loadingShipments, startLoading, stopLoading } = isLoading()
@@ -39,6 +42,8 @@ const showHelpDialog = ref(false)
 const isScannedBoxesCollapsed = ref(false)
 
 const isKeyVisible = ref(true)
+
+const currentView = ref('front')
 
 function toggleKeyVisibility() {
   isKeyVisible.value = !isKeyVisible.value
@@ -73,7 +78,7 @@ const updateShipmentStatus = async (shipmentID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -91,7 +96,7 @@ const updateDeliveryStatus = async (deliveryID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for delivery ${deliveryID}:`, error)
+      console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
@@ -111,7 +116,7 @@ const updateShipmentEndTime = async (shipmentID) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -202,7 +207,7 @@ onMounted(() => {
   }
   watch(isDark, (newValue) => {
     if (scene && renderer) {
-      renderer.setClearColor(newValue ? '#262626' : 0xffffff)
+      renderer.setClearColor(newValue ? '#171717' : 0xffffff)
 
       scene.traverse((object) => {
         if (object.type === 'LineSegments') {
@@ -222,7 +227,6 @@ onMounted(() => {
           const activePackingData = newPackingData.find(
             (data) => data.shipmentId === activeShipment.value
           )
-          console.log('This is active packing data', activePackingData)
           if (activePackingData && activePackingData.length > 0) {
             initThreeJS(`three-container-${activeShipment.value}`, isDark.value, activePackingData)
           } else {
@@ -241,14 +245,13 @@ async function getShipmentByID() {
 
     await CreateJSONBoxes(shipments.value, CONTAINER_SIZE)
     cratePacked.value = true
-    console.log('result of packing pallets', truckpackingData)
     nextTick(() => {
       cleanupThreeJS()
       initThreeJS('new-three-container', isDark.value, truckpackingData.value[0])
     })
     saveProgress()
   } else {
-    console.log('No shipments available to process.')
+    console.warn('No shipments available to process.')
   }
 }
 async function CreateJSONBoxes(data, CONTAINER_SIZE) {
@@ -266,7 +269,7 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
     Volume: volume,
     Weight: 10000
   }))
-  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 300, 0.01).data
+  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 350, 0.01).data
 }
 
 function getColorForWeight(weight, minWeight, maxWeight) {
@@ -312,11 +315,15 @@ function initThreeJS(containerId, isDark, packingDataType) {
   renderer.setClearColor(isDark ? '#171717' : 0xffffff)
   container.appendChild(renderer.domElement)
 
+  cameraRef.value = camera
+
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
   controls.dampingFactor = 0.25
   controls.screenSpacePanning = false
   controls.maxPolarAngle = Math.PI / 2
+
+  controlsRef.value = controls
 
   if (cratePacked.value) {
     createContainer(scene, truckSize, isDark)
@@ -409,7 +416,6 @@ function createContainer(scene, CONTAINER_SIZE, isDark) {
 }
 
 function createBoxesFromData(scene, boxesData, truckPacked) {
-  console.log('boxesData incoming', boxesData)
   // Check if boxesData is a Vue ref and extract the actual value
   if (boxesData && boxesData.__v_isRef) {
     boxesData = boxesData._value
@@ -431,6 +437,8 @@ function createBoxesFromData(scene, boxesData, truckPacked) {
     let color
     if (box.scanned) {
       color = '#16a34a'
+    } else if (box.unplaced) {
+      return '#3b82f6'
     } else {
       color = getColorForWeight(box.weight, minWeight, maxWeight)
     }
@@ -505,13 +513,26 @@ const onInit = (promise) => {
 }
 
 const onCameraReady = () => {
-  console.log('Camera is ready')
+  console.info('Camera is ready')
 }
 
 const onError = (error) => {
   console.error('QR code scanning error:', error)
 }
+const scannedShipments = computed(() => {
+  return shipments.value.reduce((acc, shipment) => {
+    const shipmentIndex = shipments.value.findIndex((s) => s.id === shipment.id)
+    const shipmentData = packingData.value[shipmentIndex]
 
+    if (shipmentData && Array.isArray(shipmentData)) {
+      acc[shipment.id] = shipmentData.every((box) => box.scanned)
+    } else {
+      acc[shipment.id] = false
+    }
+
+    return acc
+  }, {})
+})
 function checkAllBoxesScanned(shipmentIndex) {
   const currentSoln = packingData.value[shipmentIndex]
 
@@ -525,7 +546,7 @@ function checkAllBoxesScanned(shipmentIndex) {
     iscurrentShipmentPacked.value = true
   } else {
     iscurrentShipmentPacked.value = false
-    console.log('Not all boxes have been scanned yet or invalid data structure.')
+    console.warn('Not all boxes have been scanned yet or invalid data structure.')
   }
 }
 const checkIfBoxIdInRange = (scannedBoxId, activePackingData) => {
@@ -721,7 +742,6 @@ const handleJsonData = (json) => {
     })
     return
   }
-  console.log('Received packing data:', newPackingData)
 
   const updatedData = newPackingData.map((box) => ({
     ...box,
@@ -779,6 +799,9 @@ const scannedBoxes = computed(() => {
       (shipment) => shipment.id === activeShipment.value
     )
     if (shipmentIndex === -1) return []
+
+    if (!packingData.value[shipmentIndex]) return []
+
     return packingData.value[shipmentIndex]
       .filter((box) => box.scanned)
       .map((box) => ({
@@ -880,7 +903,7 @@ async function generateNewSolution(shipmentID) {
     })
 
     if (error) {
-      console.log(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
+      console.error(`API Error for deleting saved solution for shipment ${shipmentID}:`, error)
     }
 
     const { data, error2 } = await supabase.functions.invoke('packing', {
@@ -890,7 +913,6 @@ async function generateNewSolution(shipmentID) {
       }),
       method: 'POST'
     })
-    console.log('Successfully deleted saved solution, heres its packages', data)
     if (error2) {
       console.error('Error fetching packages for shipment: ', error)
       return
@@ -963,13 +985,60 @@ async function generateNewSolution(shipmentID) {
     stopLoading()
   }
 }
+
+function changeView(view) {
+  currentView.value = view
+
+  let SIZE = CONTAINER_SIZE
+  if (remainingShipmentToPack.value === numberShipments.value) {
+    if (!cameraRef.value || !controlsRef.value) return
+
+    switch (view) {
+      case 'front':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] * 8)
+        break
+      case 'left':
+        cameraRef.value.position.set(-3 * SIZE[0], SIZE[1] / 3, SIZE[2] / 3)
+        break
+      case 'back':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, -3 * SIZE[2])
+        break
+      case 'right':
+        cameraRef.value.position.set(SIZE[0] * 4, SIZE[1] / 4, SIZE[2] / 4)
+        break
+    }
+
+    controlsRef.value.target.set(SIZE[0] / 2, SIZE[1] / 2, SIZE[2] / 2)
+    controlsRef.value.update()
+  } else {
+    if (!cameraRef.value || !controlsRef.value) return
+
+    switch (view) {
+      case 'front':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] * 3)
+        break
+      case 'left':
+        cameraRef.value.position.set(-2 * SIZE[0], SIZE[1] / 3, SIZE[2] / 3)
+        break
+      case 'back':
+        cameraRef.value.position.set(SIZE[0] / 3, SIZE[1] / 3, -2 * SIZE[2])
+        break
+      case 'right':
+        cameraRef.value.position.set(SIZE[0] * 3, SIZE[1] / 3, SIZE[2] / 3)
+        break
+    }
+
+    controlsRef.value.target.set(SIZE[0] / 3, SIZE[1] / 3, SIZE[2] / 3)
+    controlsRef.value.update()
+  }
+}
 </script>
 
 <template>
   <div
     :class="[
       isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-100 text-black',
-      ' h-full flex flex-col shadow-lg'
+      'h-full flex flex-col shadow-lg'
     ]"
   >
     <PackerSidebar @handle-json="handleJsonData" @shipments-loaded="handleShipmentsLoaded" />
@@ -988,6 +1057,17 @@ async function generateNewSolution(shipmentID) {
         'h-[100vh] flex flex-col items-center justify-center'
       ]"
     >
+      <div class="w-full max-w-2xl px-4 mb-8">
+        <img
+          :src="
+            isDark
+              ? getAssetURL('Photos/Logos/Wording-Thin-Dark.svg')
+              : getAssetURL('Photos/Logos/Wording-Thin-Light.svg')
+          "
+          :alt="isDark ? 'Dark Logo' : 'Light Logo'"
+          class="w-full h-auto max-h-48 object-contain"
+        />
+      </div>
       <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
       <Button
         @click="startNewDelivery"
@@ -1008,7 +1088,8 @@ async function generateNewSolution(shipmentID) {
           v-for="shipment in shipments"
           :key="shipment.id"
           :class="[
-            'bg-orange-500 text-gray-200 rounded-xl p-2',
+            scannedShipments[shipment.id] ? 'bg-green-700' : 'bg-orange-500',
+            'text-gray-200 rounded-xl p-2',
             { 'opacity-50': activeShipment === shipment.id }
           ]"
           @click="toggleShipment(shipment.id)"
@@ -1019,18 +1100,41 @@ async function generateNewSolution(shipmentID) {
       <div v-if="activeShipment && !loadingShipments" class="mt-4 flex flex-row justify-center">
         <Button
           @click="generateNewSolution(activeShipment)"
-          class="mb-4 w-1/8 bg-blue-500 p-2 rounded-xl"
+          :class="[
+            isDark ? ' text-neutral-200' : ' text-neutral-200',
+            'mb-4 w-1/8 bg-blue-500 p-2 rounded-xl'
+          ]"
         >
           Generate New Solution
         </Button>
       </div>
-      <div v-if="activeShipment && !loadingShipments" class="mt-4 flex">
+      <div
+        v-if="activeShipment && !loadingShipments"
+        :class="[
+          isDark ? ' text-neutral-200' : ' text-neutral-200',
+          'flex justify-center space-x-4 p-4'
+        ]"
+      >
+        <button
+          v-for="view in ['front', 'left', 'right', 'back']"
+          :key="view"
+          @click="changeView(view)"
+          :class="[
+            'hover:bg-violet-500 text-white font-bold py-2 px-4 rounded-xl',
+            currentView === view ? 'opacity-45 bg-orange-500	' : 'bg-orange-500'
+          ]"
+        >
+          {{ view.charAt(0).toUpperCase() + view.slice(1) }}
+        </button>
+      </div>
+      <div v-if="activeShipment && !loadingShipments" class="flex">
         <div
           :class="[
             isDark ? 'bg-zinc-800 text-neutral-200' : 'bg-gray-100 text-neutral-800',
             isScannedBoxesCollapsed ? 'w-16' : 'w-1/4',
-            'transition-all duration-300   p-4 overflow-y-auto max-h-[80vh] shadow-inner'
+            'transition-all duration-300 p-4 overflow-y-auto max-h-[80vh] shadow-inner'
           ]"
+          :style="{ minWidth: isScannedBoxesCollapsed ? '4rem' : '25%' }"
         >
           <div class="flex flex-wrap flex-col justify-between items-center">
             <div
@@ -1044,14 +1148,14 @@ async function generateNewSolution(shipmentID) {
             >
               <h3
                 class="text-center sm:text-xl text-sm mb-4 font-bold"
-                :class="[isDark ? ' text-neutral-200' : 'light text-neutral-800']"
+                :class="[isDark ? ' text-neutral-200' : ' text-neutral-800']"
               >
                 {{ remainingShipmentToPack }} / {{ numberShipments }} Shipments to Pack
               </h3>
             </div>
             <button
               @click="toggleScannedBoxes"
-              class="bg-orange-500 text-white p-2 rounded w-full mb-4"
+              class="rounded-xl bg-orange-500 text-white p-2 w-full mb-4"
               :class="isScannedBoxesCollapsed ? 'rotate-180' : ''"
             >
               <i class="pi pi-chevron-left"></i>
@@ -1065,23 +1169,23 @@ async function generateNewSolution(shipmentID) {
               v-for="item in scannedBoxes"
               :key="item.id"
               @click="highlightItem(item.id, item.type)"
-              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-md p-2"
+              class="border border-gray-400 cursor-pointer hover:bg-gray-200 hover:text-black rounded-xl p-2 mb-4"
             >
               {{ item.type === 'shipment' ? 'Shipment' : 'Box' }} {{ item.id }}
             </li>
           </ul>
           <Button
-            class="sm:text-lg text-sm w-full bg-violet-500 text-white mt-2 rounded-md flex items-center justify-center"
+            v-if="!isScannedBoxesCollapsed"
+            class="w-full bg-violet-500 rounded-xl text-white mt-2 flex items-center justify-center p-2 sm:p-3"
             @click="dialogVisible = true"
-            v-if="!isScannedBoxesCollapsed && remainingShipmentToPack !== numberShipments"
           >
-            <span class="hidden sm:inline sm:p-2 sm:text-lg text-sm">Scan Barcode</span>
+            <span class="hidden sm:inline sm:text-lg sm:mr-2">Scan Barcode</span>
             <i class="pi pi-barcode"></i>
           </Button>
           <div v-if="iscurrentShipmentPacked && !isScannedBoxesCollapsed">
             <Button
               @click="resetShipment"
-              class="w-full p-2 mt-2 rounded-md justify-center bg-green-700 text-white"
+              class="w-full p-2 mt-4 rounded-xl justify-center bg-green-700 text-white"
               >Confirm Pallet</Button
             >
           </div>
@@ -1095,7 +1199,7 @@ async function generateNewSolution(shipmentID) {
             class="flex justify-center mt-4"
           >
             <Button
-              class="w-full bg-orange-500 text-gray-200 rounded-md p-2 flex items-center justify-center space-x-"
+              class="w-full bg-orange-500 text-gray-200 rounded-xl p-2 flex items-center justify-center"
               @click="getShipmentByID"
             >
               Confirm Shipment
@@ -1140,7 +1244,7 @@ async function generateNewSolution(shipmentID) {
               </div>
               <div class="flex items-center mb-1">
                 <span class="w-4 h-4 inline-block mr-2" style="background-color: #c084fc"></span>
-                <span>Newly Scanned</span>
+                <span>Last Scanned</span>
               </div>
               <div class="flex items-center mb-1">
                 <span
@@ -1156,6 +1260,13 @@ async function generateNewSolution(shipmentID) {
                 ></span>
                 <span>Highlighted</span>
               </div>
+              <div class="flex items-center mb-1">
+                <span
+                  class="w-4 h-4 inline-block mr-2"
+                  style="background-color: #3b82f6; opacity: 1"
+                ></span>
+                <span>Unplaced</span>
+              </div>
             </div>
             <button
               @click="toggleKeyVisibility"
@@ -1169,12 +1280,6 @@ async function generateNewSolution(shipmentID) {
           </div>
         </div>
       </div>
-      <p
-        @click="toggleDialogHelp"
-        class="flex items-center justify-center mt-2 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
-      >
-        Help
-      </p>
     </div>
   </div>
   <div>
@@ -1204,7 +1309,7 @@ async function generateNewSolution(shipmentID) {
       @camera-on="onCameraReady"
       class="mb-6 mt-6 rounded-lg"
     />
-    <div class="flex flex-col items-center align-center">
+    <div class="rounded-xl flex flex-col items-center align-center">
       <Button
         icon="pi pi-arrow-left"
         iconPos="left"
@@ -1218,7 +1323,6 @@ async function generateNewSolution(shipmentID) {
   <Toast />
 </template>
 <script>
-
 import { getAssetURL } from '@/assetHelper'
 export default {
   components: {
@@ -1436,5 +1540,54 @@ const images = computed(() => [
   position: relative;
   overflow: hidden;
   z-index: 99999;
+}
+
+.disabled-link {
+  pointer-events: none;
+  opacity: 1;
+}
+
+/* Common styles for both light and dark themes */
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+  transition:
+    border-bottom 0.3s ease,
+    color 0.3s ease;
+}
+
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: transparent !important;
+  cursor: pointer;
+  padding-bottom: 2px;
+}
+
+/* Light theme styles */
+.packer-sidebar .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  color: black !important;
+  border-bottom: 2px solid black !important;
+  background-color: white !important;
+}
+
+/* Dark theme styles */
+.packer-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  color: white !important;
+  border-bottom: 2px solid white !important;
+  background-color: #0a0a0a !important;
+}
+
+/* Focus styles */
+.packer-sidebar
+  .p-menubar
+  .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+  > .p-menuitem-content {
+  background-color: white !important;
+}
+
+.packer-sidebar.dark
+  .p-menubar
+  .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+  > .p-menuitem-content {
+  background-color: #0a0a0a !important;
 }
 </style>

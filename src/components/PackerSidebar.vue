@@ -10,6 +10,7 @@ import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import DialogComponent from '@/components/DialogComponent.vue'
+import { debounce } from 'lodash'
 
 const containerDimensions = [1200, 1930, 1000]
 
@@ -31,6 +32,7 @@ const filters = ref({
 const onFilterChange = (type, value) => {
   filters.value[type].value = value
 }
+const debouncedHardReload = debounce(hardReload, 300)
 
 const filteredShipments = computed(() => {
   return DeliveriesByProcessing.value.filter((shipment) => {
@@ -56,13 +58,14 @@ const { dialogVisible, showStartPackingOvererlay, toggleStartNewPacking, toggleD
 const { loadingShipments, startLoading, stopLoading } = isLoading()
 
 onMounted(() => {
+  setupSubscription()
   loadProgress()
 })
 
 async function logout() {
   const { error } = await supabase.auth.signOut()
   if (error) {
-    console.log(error)
+    console.error(error)
   } else {
     router.push({ name: 'login' })
   }
@@ -79,12 +82,25 @@ const getAllProcessing = async () => {
       method: 'POST'
     })
     if (error) {
-      console.log('API Error:', error)
+      console.error('API Error:', error)
     } else {
       DeliveriesByProcessing.value = data.data
     }
   } catch (error) {
     console.error('Error fetching data:', error)
+  }
+}
+
+async function setupSubscription() {
+  try {
+    await supabase
+      .channel('custom-all-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'Deliveries' }, () => {
+        getAllProcessing()
+      })
+      .subscribe()
+  } catch (error) {
+    console.error('Failed to fetch all shipped deliveries')
   }
 }
 
@@ -99,7 +115,7 @@ const updateShipmentStatus = async (shipmentID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -117,7 +133,7 @@ const updateDeliveryStatus = async (deliveryID, status) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Status for delivery ${deliveryID}:`, error)
+      console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for delivery ${deliveryID}:`, error)
@@ -137,7 +153,7 @@ const updateShipmentStartTime = async (shipmentID) => {
       method: 'POST'
     })
     if (error) {
-      console.log(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
+      console.error(`API Error for updating Start Time for shipment ${shipmentID}:`, error)
     }
   } catch (error) {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
@@ -182,7 +198,7 @@ const items = [
     label: 'Log Out',
     icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      console.log('Logging Out')
+      console.info('Logging Out')
       logout()
     }
   },
@@ -192,8 +208,31 @@ const items = [
     command: () => {
       showHelpDialog.value = !showHelpDialog.value
     }
+  },
+  {
+    label: 'Clear Cache',
+    icon: 'pi pi-fw pi-refresh',
+    command: () => {
+      debouncedHardReload()
+    }
   }
 ]
+
+function hardReload() {
+  const userConfirmed = window.confirm(
+    'Are you sure you want to reload the page? All current shipment progress will be lost!'
+  )
+
+  if (userConfirmed) {
+    localStorage.removeItem('packingProgress')
+    localStorage.removeItem('printingStorage')
+
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
+  }
+}
+
 function loadProgress() {
   const savedProgress = localStorage.getItem('packingProgress')
   const printingProgress = localStorage.getItem('printingStorage')
@@ -226,7 +265,6 @@ function printQRcode() {
     return
   }
   showShipmentSelection.value = true
-  console.log('packingresults', packingResults.value)
 }
 
 async function printSelectedShipment(shipmentId) {
@@ -267,7 +305,6 @@ async function fetchShipmentsFromDelivery(DeliveryID) {
 }
 
 const runPackingAlgo = async (shipmentId) => {
-  console.log('Trying shipment', shipmentId)
   try {
     const { data: response } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
@@ -276,13 +313,15 @@ const runPackingAlgo = async (shipmentId) => {
       }),
       method: 'POST'
     })
-
     if (response.error) {
-      console.error('Failed to fetch solution')
+      console.warn('No saved solution Calculating solution')
       await uploadSolution(shipmentId, containerDimensions)
     } else {
       if (response && response.data && response.data.boxes) {
         packingResults.value[shipmentId] = response.data.boxes
+        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      } else if (response && response.data && response.data.data.boxes) {
+        packingResults.value[shipmentId] = response.data.data.boxes
         emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
       } else {
         console.error('Invalid or missing data in the response')
@@ -342,8 +381,10 @@ async function uploadSolution(shipmentId, containerDimensions) {
         if (updateError) {
           console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
         }
-        console.log('Response.data', response)
-        packingResults.value[shipmentId] = response.data.boxes
+
+        const reviewedSoln = MarkUnplacedBoxes(data.data, response.data.boxes)
+
+        packingResults.value[shipmentId] = reviewedSoln
         emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
       }
     }
@@ -355,6 +396,16 @@ async function uploadSolution(shipmentId, containerDimensions) {
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
   toggleStartNewPacking()
+}
+
+function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
+  // Create a Set of placed box IDs for quick lookup
+  const placedBoxIds = new Set(SolutionBoxes.map((box) => box.id))
+
+  return SolutionBoxes.map((box) => ({
+    ...box,
+    isPlaced: placedBoxIds.has(box.id)
+  }))
 }
 
 onMounted(() => {

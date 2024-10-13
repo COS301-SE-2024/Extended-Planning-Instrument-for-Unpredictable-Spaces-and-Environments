@@ -503,4 +503,48 @@ const images = computed(() => [
     color: white !important;
   }
 }
+
+/* Common styles for both light and dark themes */
+.delivery-sidebar .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+  transition:
+    border-bottom 0.3s ease,
+    color 0.3s ease;
+}
+
+.delivery-sidebar .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  background-color: transparent !important;
+  cursor: pointer;
+  padding-bottom: 2px;
+}
+
+/* Light theme styles */
+.delivery-sidebar .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  color: black !important;
+  border-bottom: 2px solid black !important;
+  background-color: white !important;
+}
+
+/* Dark theme styles */
+.delivery-sidebar.dark .p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content {
+  color: white !important;
+  border-bottom: 2px solid white !important;
+  background-color: #0a0a0a !important;
+}
+
+/* Focus styles */
+.delivery-sidebar
+  .p-menubar
+  .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+  > .p-menuitem-content {
+  background-color: white !important;
+}
+
+.delivery-sidebar.dark
+  .p-menubar
+  .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
+  > .p-menuitem-content {
+  background-color: #0a0a0a !important;
+}
 </style>
