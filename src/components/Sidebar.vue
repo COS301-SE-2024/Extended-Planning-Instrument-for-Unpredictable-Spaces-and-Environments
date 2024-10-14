@@ -619,7 +619,12 @@ const items = computed(() => [
     route: 'tracking',
     active: activeRoute.value === 'tracking'
   },
-
+  {
+    label: 'Algorithm Simulation',
+    icon: 'pi pi-fw pi-desktop',
+    route: 'visualizer',
+    active: activeRoute.value === 'visualizer'
+  },
   {
     label: 'Manage Users',
     icon: 'pi pi-fw pi-lock',

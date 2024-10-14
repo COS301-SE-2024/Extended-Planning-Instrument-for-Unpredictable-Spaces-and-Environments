@@ -513,7 +513,7 @@ export function geneticAlgorithm(
   console.log('boxesData', boxesData)
   console.log('ContainerDimensions', containerDimensions)
   console.log('popsize', popSize)
-  console.log('numGeneratiosn', numGenerations)
+  console.log('numGenerations', numGenerations)
   console.log('mutation rate', mutationRate)
   console.log('fitnessAttributes', fitnessAttributes)
 
@@ -588,14 +588,22 @@ export function geneticAlgorithm(
       nextPopulation.push(child1, child2)
     }
 
-    // nextPopulation[0] = currentBestIndividual ? [...currentBestIndividual] : nextPopulation[0]
-
     population = nextPopulation.slice(0, popSize)
 
     if (iterations > 100) {
       break
     }
+
+    // Report progress
+    if (typeof self !== 'undefined' && 'postMessage' in self) {
+      self.postMessage({
+        type: 'progress',
+        progress: (generation + 1) / numGenerations,
+        generation: generation + 1
+      })
+    }
   }
+
   console.log('Container', globalBestContainer)
   console.log('populations', population)
 
@@ -625,7 +633,7 @@ export function geneticAlgorithm(
     )
     handleUnplacedBoxes(globalBestContainer, unplacedBoxes, containerDimensions)
 
-    return {
+    const result = {
       data: {
         fitness: globalBestFitness,
         boxes: globalBestContainer.boxes.map(([box, x, y, z]) => ({
@@ -642,13 +650,20 @@ export function geneticAlgorithm(
         }))
       }
     }
+
+    // Report final result
+    if (typeof self !== 'undefined' && 'postMessage' in self) {
+      self.postMessage({ type: 'result', result })
+    }
+
+    return result
   } else if (currentBestFitness > 0 && currentBestContainer && currentBestIndividual) {
     const unplacedBoxes = boxes.filter(
       (box) => !currentBestContainer.boxes.some(([placedBox]) => placedBox.id === box.id)
     )
     handleUnplacedBoxes(currentBestContainer, unplacedBoxes, containerDimensions)
 
-    return {
+    const result = {
       data: {
         fitness: currentBestFitness,
         boxes: currentBestContainer.boxes.map(([box, x, y, z]) => ({
@@ -665,8 +680,30 @@ export function geneticAlgorithm(
         }))
       }
     }
+
+    // Report final result
+    if (typeof self !== 'undefined' && 'postMessage' in self) {
+      self.postMessage({ type: 'result', result })
+    }
+
+    return result
   } else {
     console.error('No valid solution found.')
     return { data: { fitness: 0, boxes: [] } }
   }
+}
+
+// Add this code at the end of the file to handle Web Worker messages
+if (typeof self !== 'undefined' && 'addEventListener' in self) {
+  self.addEventListener('message', (event) => {
+    const result = geneticAlgorithm(
+      event.data.boxesData,
+      event.data.containerDimensions,
+      event.data.populationSize,
+      event.data.generations,
+      event.data.mutationRate,
+      event.data.fitnessAttributes
+    )
+    self.postMessage({ type: 'result', result })
+  })
 }

@@ -1,95 +1,113 @@
 <template>
   <div
-    :class="[
-      isDark ? 'dark bg-neutral-800 text-white' : 'bg-gray-100 text-black',
-      'min-h-screen flex flex-col shadow-lg'
-    ]"
+    class="flex h-screen overflow-hidden"
+    :class="[isDark ? 'dark bg-neutral-900 text-white' : 'bg-gray-200 text-black']"
   >
-    <div class="container mx-auto p-4">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold">Custom Container Packer</h1>
-        <button
-          @click="toggleDarkMode"
-          class="px-4 py-2 rounded-md bg-orange-500 text-white transition-colors duration-300"
-        >
-          {{ isDark ? 'Light Mode' : 'Dark Mode' }}
-        </button>
-      </div>
+    <Sidebar class="flex-shrink-0 w-64" />
 
-      <div class="flex flex-row space-x-4">
-        <div class="w-1/2 space-y-4">
-          <form
-            @submit.prevent="handleSubmit"
-            class="space-y-4 p-4 rounded-lg shadow-md"
-            :class="isDark ? 'bg-neutral-700' : 'bg-white'"
-          >
-            <h2 class="text-2xl font-bold mb-4">Container Configuration</h2>
-            <div class="grid grid-cols-3 gap-4">
-              <div v-for="dim in ['width', 'height', 'length']" :key="dim">
-                <label
-                  :for="dim"
-                  class="block text-sm font-medium mb-1"
-                  :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+    <div class="flex-1 overflow-x-hidden overflow-y-auto">
+      <div class="p-4 ml-2 w-full">
+        <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
+          <span class="font-bold">Custom Container Packer</span>
+        </h2>
+
+        <div class="flex flex-wrap mb-4">
+          <div class="justify-center w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
+            <!-- Container Configuration -->
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
+              ]"
+            >
+              <h2 class="text-xl font-bold mb-4">Container Configuration</h2>
+              <form @submit.prevent="handleSubmit" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div v-for="dim in ['width', 'height', 'length']" :key="dim">
+                    <label
+                      :for="dim"
+                      class="block text-sm font-medium mb-1"
+                      :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                    >
+                      {{ dim.charAt(0).toUpperCase() + dim.slice(1) }} (mm)
+                    </label>
+                    <input
+                      :id="dim"
+                      v-model="containerDimensions[dim]"
+                      type="number"
+                      required
+                      :placeholder="`Enter ${dim}`"
+                      class="w-full px-3 py-2 rounded-md"
+                      :class="
+                        isDark
+                          ? 'bg-neutral-800 text-white'
+                          : 'bg-gray-100 text-black border border-gray-300'
+                      "
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    for="boxCount"
+                    class="block text-sm font-medium mb-1"
+                    :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                  >
+                    Number of Boxes
+                  </label>
+                  <input
+                    id="boxCount"
+                    v-model="boxCount"
+                    type="number"
+                    required
+                    placeholder="Enter number of boxes"
+                    class="w-full px-3 py-2 rounded-md"
+                    :class="
+                      isDark
+                        ? 'bg-neutral-800 text-white'
+                        : 'bg-gray-100 text-black border border-gray-300'
+                    "
+                  />
+                </div>
+                <button
+                  type="submit"
+                  class="w-full py-2 px-4 rounded-md font-medium transition-colors duration-300 bg-orange-500 text-white hover:bg-orange-600"
                 >
-                  {{ dim.charAt(0).toUpperCase() + dim.slice(1) }} (mm)
-                </label>
-                <input
-                  :id="dim"
-                  v-model="containerDimensions[dim]"
-                  type="number"
-                  required
-                  :placeholder="`Enter ${dim}`"
-                  class="w-full px-3 py-2 rounded-md"
-                  :class="
-                    isDark
-                      ? 'bg-neutral-600 text-white'
-                      : 'bg-gray-100 text-black border border-gray-300'
-                  "
-                />
+                  Generate Packing Solution
+                </button>
+              </form>
+            </div>
+
+            <!-- Algorithm Parameters Visualization -->
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
+              ]"
+            >
+              <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
+              <div class="flex justify-center items-center w-full h-full">
+                <div class="w-[300px] h-[300px] text-white">
+                  <Chart
+                    type="polarArea"
+                    :data="chartData"
+                    :options="chartOptions"
+                    class="h-full w-full"
+                  />
+                </div>
               </div>
             </div>
-            <div>
-              <label
-                for="boxCount"
-                class="block text-sm font-medium mb-1"
-                :class="isDark ? 'text-gray-300' : 'text-gray-700'"
-              >
-                Number of Boxes
-              </label>
-              <input
-                id="boxCount"
-                v-model="boxCount"
-                type="number"
-                required
-                placeholder="Enter number of boxes"
-                class="w-full px-3 py-2 rounded-md"
-                :class="
-                  isDark
-                    ? 'bg-neutral-600 text-white'
-                    : 'bg-gray-100 text-black border border-gray-300'
-                "
-              />
-            </div>
-            <button
-              type="submit"
-              class="w-full py-2 px-4 rounded-md font-medium transition-colors duration-300 bg-orange-500 text-white hover:bg-orange-600"
-            >
-              Generate Packing Solution
-            </button>
-          </form>
-
-          <div class="p-4 rounded-lg shadow-md" :class="isDark ? 'bg-neutral-700' : 'bg-white'">
-            <h3 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h3>
-            <Chart type="polarArea" :data="chartData" :options="chartOptions" class="w-full" />
           </div>
         </div>
 
-        <div class="w-1-2">
+        <div class="flex flex-wrap mb-4 gap-4">
+          <!-- Genetic Algorithm Parameters -->
           <div
-            class="p-4 rounded-lg shadow-md mb-4"
-            :class="isDark ? 'bg-neutral-700' : 'bg-white'"
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
+            ]"
           >
-            <h3 class="text-xl font-bold mb-4">Genetic Algorithm Parameters</h3>
+            <h2 class="text-xl font-bold mb-4">Genetic Algorithm Parameters</h2>
             <div class="space-y-4">
               <div v-for="(value, key) in parameters" :key="key" class="space-y-2">
                 <label
@@ -109,7 +127,7 @@
                   class="w-full px-3 py-2 rounded-md"
                   :class="
                     isDark
-                      ? 'bg-neutral-600 text-white'
+                      ? 'bg-neutral-800 text-white'
                       : 'bg-gray-100 text-black border border-gray-300'
                   "
                 />
@@ -117,8 +135,14 @@
             </div>
           </div>
 
-          <div class="p-4 rounded-lg shadow-md" :class="isDark ? 'bg-neutral-700' : 'bg-white'">
-            <h3 class="text-xl font-bold mb-4">Algorithm Parameters</h3>
+          <!-- Fitness Attributes -->
+          <div
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
+            ]"
+          >
+            <h2 class="text-xl font-bold mb-4">Fitness Attributes</h2>
             <div class="space-y-4">
               <div v-for="(value, key, index) in fitnessAttributes" :key="key" class="space-y-2">
                 <label
@@ -146,27 +170,44 @@
             </div>
           </div>
         </div>
+
+        <!-- Packing Result and 3D Visualization -->
+        <div class="flex flex-wrap mb-4 gap-4">
+          <div
+            v-if="packingResult"
+            :class="[
+              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+              'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
+            ]"
+          >
+            <h2 class="text-xl font-bold mb-2">Packing Result</h2>
+            <p>Fitness: {{ packingResult.fitness.toFixed(4) }}</p>
+            <p>Boxes Packed: {{ packingResult.boxes.length }}</p>
+            <p>Solution Time: {{ solutionTime }} seconds</p>
+          </div>
+        </div>
+
+        <div
+          :class="[
+            isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+            'flex flex-col p-4 rounded-xl w-full mb-4'
+          ]"
+        >
+          <div class="w-full h-[400px] sm:h-[500px] lg:h-[600px]" ref="threeContainer"></div>
+        </div>
       </div>
 
-      <div
-        v-if="packingResult"
-        class="mt-4 p-4 rounded-lg shadow-md"
-        :class="isDark ? 'bg-neutral-700' : 'bg-white'"
-      >
-        <h3 class="text-xl font-bold mb-2">Packing Result</h3>
-        <p>Fitness: {{ packingResult.fitness.toFixed(4) }}</p>
-        <p>Boxes Packed: {{ packingResult.boxes.length }}</p>
-      </div>
-      <div v-if="isloading" class="mt-4 rounded-lg">
-        <Loading />
-      </div>
+      <LoadingScreen
+        :show="isLoading"
+        :progress="loadingProgress"
+        :status-message="loadingStatusMessage"
+      />
     </div>
-
-    <div class="w-full h-[600px] mt-4 rounded-lg" ref="threeContainer"></div>
   </div>
 </template>
 
 <script setup>
+import Sidebar from '@/components/Sidebar.vue'
 import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import * as THREE from 'three'
@@ -175,6 +216,7 @@ import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { supabase } from '../supabase'
 import Loading from '../views/Loading.vue'
 import Slider from 'primevue/slider'
+import LoadingScreen from '@/components/loadingPercentage.vue'
 
 let scene, camera, renderer, controls
 
@@ -189,7 +231,9 @@ const containerDimensions = reactive({
 const boxCount = ref(0)
 const packingResult = ref(null)
 const threeContainer = ref(null)
-const isloading = ref(false)
+const isLoading = ref(false)
+const loadingProgress = ref(0)
+const loadingStatusMessage = ref('')
 
 const fitnessAttributes = reactive({
   volumeUtilization: 20,
@@ -247,46 +291,43 @@ const chartData = ref({
   ]
 })
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   plugins: {
     legend: {
       position: 'left',
       labels: {
-        color: 'black',
+        color: isDark.value ? 'white' : 'black',
         font: {
           size: 12
         }
       }
-    },
-    scales: {
-      r: {
-        ticks: {
-          color: 'black',
-          font: {
-            size: 10
-          }
-        }
+    }
+  },
+  scales: {
+    r: {
+      grid: {
+        color: isDark.value ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+      },
+      angleLines: {
+        color: isDark.value ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+      },
+      ticks: {
+        color: isDark.value ? 'white' : 'black',
+        font: {
+          size: 10
+        },
+        backdropColor: 'transparent'
       }
     }
   }
-}
-
-chartOptions.plugins.legend.labels.align = 'start'
-chartOptions.plugins.legend.labels.padding = 20
-chartOptions.plugins.legend.labels.usePointStyle = true
-
-const toggleDarkMode = () => {
-  toggleDark()
-  if (scene && renderer) {
-    updateSceneColors()
-  }
-}
+}))
 
 const updateChartData = () => {
   chartData.value.labels = Object.keys(fitnessAttributes).map(formatAttributeName)
   chartData.value.datasets[0].data = Object.values(fitnessAttributes)
 }
+const solutionTime = ref(0)
 
 const handleSubmit = async () => {
   const containerSize = [
@@ -301,28 +342,75 @@ const handleSubmit = async () => {
   }
 
   try {
-    isloading.value = true
-    console.log(parameters.populationSize, parameters.generations, parameters.mutationRate)
+    isLoading.value = true
+    loadingProgress.value = 0
+    loadingStatusMessage.value = 'Generating random boxes...'
+
+    const startTime = performance.now()
+
     const randomBoxes = await generateRandomBoxes(Number(boxCount.value), containerSize)
-    const result = await geneticAlgorithm(
-      randomBoxes,
-      containerSize,
-      parameters.populationSize,
-      parameters.generations,
-      parameters.mutationRate,
-      fitnessAttributes
-    )
+
+    loadingProgress.value = 10
+    loadingStatusMessage.value = 'Initializing genetic algorithm...'
+
+    const result = await new Promise((resolve) => {
+      const worker = new Worker(
+        new URL('../../supabase/functions/packing/algorithm.ts', import.meta.url),
+        { type: 'module' }
+      )
+
+      worker.onmessage = (event) => {
+        if (event.data.type === 'progress') {
+          loadingProgress.value = 10 + event.data.progress * 90
+          loadingStatusMessage.value = `Generation ${event.data.generation} of ${parameters.generations}`
+        } else if (event.data.type === 'result') {
+          resolve(event.data.result)
+          worker.terminate()
+        }
+      }
+
+      // Ensure we're only passing cloneable data
+      const cloneableBoxesData = randomBoxes.map((box) => ({
+        id: box.id,
+        Shipment_id: box.Shipment_id,
+        Packed_time: box.Packed_time,
+        Width: box.Width,
+        Length: box.Length,
+        Height: box.Height,
+        Weight: box.Weight,
+        Volume: box.Volume
+      }))
+
+      const cloneableFitnessAttributes = Object.fromEntries(
+        Object.entries(fitnessAttributes).map(([key, value]) => [key, Number(value)])
+      )
+
+      worker.postMessage({
+        boxesData: cloneableBoxesData,
+        containerDimensions: containerSize,
+        populationSize: Number(parameters.populationSize),
+        generations: Number(parameters.generations),
+        mutationRate: Number(parameters.mutationRate),
+        fitnessAttributes: cloneableFitnessAttributes
+      })
+    })
+
+    const endTime = performance.now()
+    solutionTime.value = ((endTime - startTime) / 1000).toFixed(2) // Convert to seconds and round to 2 decimal places
+
     if (result.data) {
       packingResult.value = result.data
       initThreeJS(containerSize, result.data.boxes)
     } else {
       alert('No valid packing solution found. Try adjusting the parameters.')
     }
-    isloading.value = false
   } catch (error) {
     console.error('Error generating packing solution:', error)
     alert('Failed to generate packing solution. Please try again.')
-    isloading.value = false
+  } finally {
+    isLoading.value = false
+    loadingProgress.value = 0
+    loadingStatusMessage.value = ''
   }
 }
 

@@ -103,7 +103,8 @@ const routes = [
   {
     path: '/visualizer',
     name: 'visualizer',
-    component: AlgoVisualizer
+    component: AlgoVisualizer,
+    meta: { requiresAuth: true, requiredRole: 'Manager' }
   },
   {
     path: '/error-404',
