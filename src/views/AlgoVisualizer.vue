@@ -77,21 +77,36 @@
               </form>
             </div>
 
-            <!-- Algorithm Parameters Visualization -->
+            <!-- Genetic Algorithm Parameters (Moved here) -->
             <div
               :class="[
                 isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
                 'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
               ]"
             >
-              <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
-              <div class="flex justify-center items-center w-full h-full">
-                <div class="w-[300px] h-[300px] text-white">
-                  <Chart
-                    type="polarArea"
-                    :data="chartData"
-                    :options="chartOptions"
-                    class="h-full w-full"
+              <h2 class="text-xl font-bold mb-4">Genetic Algorithm Parameters</h2>
+              <div class="space-y-4">
+                <div v-for="(value, key) in parameters" :key="key" class="space-y-2">
+                  <label
+                    :for="key"
+                    class="block text-sm font-medium"
+                    :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                  >
+                    {{ formatParameterName(key) }}
+                  </label>
+                  <input
+                    :id="key"
+                    v-model.number="parameters[key]"
+                    type="number"
+                    :step="key === 'mutationRate' ? 0.01 : 1"
+                    :min="key === 'mutationRate' ? 0 : 1"
+                    :max="key === 'mutationRate' ? 1 : undefined"
+                    class="w-full px-3 py-2 rounded-md"
+                    :class="
+                      isDark
+                        ? 'bg-neutral-800 text-white'
+                        : 'bg-gray-100 text-black border border-gray-300'
+                    "
                   />
                 </div>
               </div>
@@ -100,36 +115,21 @@
         </div>
 
         <div class="flex flex-wrap mb-4 gap-4">
-          <!-- Genetic Algorithm Parameters -->
+          <!-- Algorithm Parameters Visualization (Moved here) -->
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
               'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
             ]"
           >
-            <h2 class="text-xl font-bold mb-4">Genetic Algorithm Parameters</h2>
-            <div class="space-y-4">
-              <div v-for="(value, key) in parameters" :key="key" class="space-y-2">
-                <label
-                  :for="key"
-                  class="block text-sm font-medium"
-                  :class="isDark ? 'text-gray-300' : 'text-gray-700'"
-                >
-                  {{ formatParameterName(key) }}
-                </label>
-                <input
-                  :id="key"
-                  v-model.number="parameters[key]"
-                  type="number"
-                  :step="key === 'mutationRate' ? 0.01 : 1"
-                  :min="key === 'mutationRate' ? 0 : 1"
-                  :max="key === 'mutationRate' ? 1 : undefined"
-                  class="w-full px-3 py-2 rounded-md"
-                  :class="
-                    isDark
-                      ? 'bg-neutral-800 text-white'
-                      : 'bg-gray-100 text-black border border-gray-300'
-                  "
+            <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
+            <div class="flex justify-center items-center w-full h-full">
+              <div class="w-[300px] h-[300px] text-white">
+                <Chart
+                  type="polarArea"
+                  :data="chartData"
+                  :options="chartOptions"
+                  class="h-full w-full"
                 />
               </div>
             </div>
@@ -201,6 +201,7 @@
         :show="isLoading"
         :progress="loadingProgress"
         :status-message="loadingStatusMessage"
+        @cancel="handleCancel"
       />
     </div>
   </div>
@@ -425,7 +426,6 @@ const generateRandomBoxes = async (count) => {
       console.error('API Error:', error)
       return []
     }
-    console.log(JSON.stringify(data.data))
 
     return data.data
   } catch (error) {
