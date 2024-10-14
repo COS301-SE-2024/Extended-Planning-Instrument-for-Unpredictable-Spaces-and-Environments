@@ -1,6 +1,6 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, reactive, onMounted, nextTick, watch, computed } from 'vue'
 import * as THREE from 'three'
 import PackerSidebar from '@/components/PackerSidebar.vue'
 import { QrcodeStream } from 'vue-qrcode-reader'
@@ -44,6 +44,16 @@ const isScannedBoxesCollapsed = ref(false)
 const isKeyVisible = ref(true)
 
 const currentView = ref('front')
+
+const fitnessAttributes = reactive({
+  volumeUtilization: 20,
+  spreadFactor: 10,
+  averageLayerUtilization: 50,
+  weightDistributionPenalty: 5,
+  packingRatio: 20,
+  compactness: 10,
+  proximityPenalty: 10
+})
 
 function toggleKeyVisibility() {
   isKeyVisible.value = !isKeyVisible.value
@@ -269,7 +279,15 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
     Volume: volume,
     Weight: 10000
   }))
-  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 350, 0.01).data
+
+  truckpackingData.value[0] = await geneticAlgorithm(
+    shipmentJson,
+    truckSize,
+    150,
+    350,
+    0.01,
+    fitnessAttributes
+  ).data
 }
 
 function getColorForWeight(weight, minWeight, maxWeight) {
@@ -925,7 +943,14 @@ async function generateNewSolution(shipmentID) {
 
     const result = data
 
-    const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
+    const response = geneticAlgorithm(
+      result.data,
+      CONTAINER_SIZE,
+      150,
+      300,
+      0.01,
+      fitnessAttributes
+    ).data
 
     const { error: errorSaving } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({

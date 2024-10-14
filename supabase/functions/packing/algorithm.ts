@@ -284,6 +284,7 @@ function calculateAverageBoxHeight(boxes: Box[]): number {
 }
 
 function evaluateFitness(
+  fitnessAttributes: Record<string, number>,
   individual: Box[],
   containerDimensions: [number, number, number]
 ): [number, Container, Box[]] {
@@ -330,7 +331,7 @@ function evaluateFitness(
       3
 
   // Layer-based compactness
-  const layerHeight = 643
+  const layerHeight = containerHeight / 2
   const layers: Box[][] = []
   for (const [box, , y] of container.boxes) {
     const layerIndex = Math.floor(y / layerHeight)
@@ -358,14 +359,25 @@ function evaluateFitness(
 
   const proximityPenalty = calculateProximityPenalty(container)
 
+  // const fitness =
+  //   volumeUtilization * 0.2 +
+  //   spreadFactor * 0.1 +
+  //   averageLayerUtilization * 0.5 +
+  //   (1 - weightDistributionPenalty) * 0.05 +
+  //   packingRatio * 0.2 +
+  //   compactness * 0.1 +
+  //   ((1 - proximityPenalty) * 0.1) / ((1 + unplacedPenalty) * 2.5)
+
   const fitness =
-    volumeUtilization * 0.2 +
-    spreadFactor * 0.1 +
-    averageLayerUtilization * 0.5 +
-    (1 - weightDistributionPenalty) * 0.05 +
-    packingRatio * 0.2 +
-    compactness * 0.1 +
-    ((1 - proximityPenalty) * 0.1) / ((1 + unplacedPenalty) * 2.5)
+    (volumeUtilization * fitnessAttributes.volumeUtilization +
+      spreadFactor * fitnessAttributes.spreadFactor +
+      averageLayerUtilization * fitnessAttributes.averageLayerUtilization +
+      (1 - weightDistributionPenalty) * fitnessAttributes.weightDistributionPenalty +
+      packingRatio * fitnessAttributes.packingRatio +
+      compactness * fitnessAttributes.compactness +
+      (1 - proximityPenalty) * fitnessAttributes.proximityPenalty) /
+    100 /
+    ((1 + unplacedPenalty) * 2.5)
 
   return [fitness, container, unplacedBoxes]
 }
@@ -461,12 +473,26 @@ function mutate(individual: Box[], mutationRate: number): void {
 }
 
 const solutionArchive = new Map()
-function createKey(containerDimensions, boxesData) {
+function createKey(
+  containerDimensions: [number, number, number],
+  boxesData: BoxData[],
+  fitnessAttributes: Record<string, number>
+): string {
+  // Key for container dimensions
   const dimensionsKey = containerDimensions.join('-')
+
+  // Key for boxes data
   const boxesKey = boxesData
     .map((box) => `${box.id}-${box.Width}-${box.Height}-${box.Length}`)
     .join('_')
-  return `${dimensionsKey}_${boxesKey}`
+
+  // Key for fitness attributes
+  const fitnessKey = Object.entries(fitnessAttributes)
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) // Sort keys to ensure consistent ordering
+    .map(([key, value]) => `${key}-${value}`)
+    .join('_')
+
+  return `${dimensionsKey}_${boxesKey}_${fitnessKey}`
 }
 
 function storeSolution(key, solution) {
@@ -481,9 +507,18 @@ export function geneticAlgorithm(
   containerDimensions: [number, number, number],
   popSize: number = 175,
   numGenerations: number = 350,
-  mutationRate: number = 0.01
+  mutationRate: number = 0.01,
+  fitnessAttributes: Record<string, number>
 ): { data: { fitness: number; boxes: any[] } } {
-  const key = createKey(containerDimensions, boxesData)
+  console.log('boxesData', boxesData)
+  console.log('ContainerDimensions', containerDimensions)
+  console.log('popsize', popSize)
+  console.log('numGeneratiosn', numGenerations)
+  console.log('mutation rate', mutationRate)
+  console.log('fitnessAttributes', fitnessAttributes)
+
+  const key = createKey(containerDimensions, boxesData, fitnessAttributes)
+
   const previousSolution = getSolution(key)
 
   if (previousSolution) {
@@ -511,7 +546,7 @@ export function geneticAlgorithm(
 
   for (let generation = 0; generation < numGenerations; generation++) {
     const fitnessResults = population.map((individual) =>
-      evaluateFitness(individual, containerDimensions)
+      evaluateFitness(fitnessAttributes, individual, containerDimensions)
     )
     const fitness = fitnessResults.map((result) => result[0])
     const containers = fitnessResults.map((result) => result[1])
@@ -561,6 +596,8 @@ export function geneticAlgorithm(
       break
     }
   }
+  console.log('Container', globalBestContainer)
+  console.log('populations', population)
 
   if (globalBestContainer && globalBestIndividual) {
     const solution = {
