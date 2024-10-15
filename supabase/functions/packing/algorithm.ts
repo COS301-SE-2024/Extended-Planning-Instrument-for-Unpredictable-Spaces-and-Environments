@@ -55,6 +55,8 @@ class Container {
   remainingSpace: [number, number, number, number, number, number][]
   totalVolume: number
   totalRemainingVolume: number
+  requiredArea: number
+  maxweightDistribution: number
 
   constructor(width: number, height: number, length: number) {
     this.width = width
@@ -64,8 +66,15 @@ class Container {
     this.remainingSpace = [[0, 0, 0, width, height, length]]
     this.totalVolume = width * height * length
     this.totalRemainingVolume = this.totalVolume
+    this.requiredArea = 85
+    this.maxweightDistribution = 20
   }
-
+  setSupportArea(supportArea: number) {
+    this.requiredArea = supportArea
+  }
+  setMaxWeightDistribution(maxWeightDist: number) {
+    this.maxweightDistribution = maxWeightDist
+  }
   canFit(box: Box, space: [number, number, number, number, number, number]): boolean {
     const [, , , w, h, l] = space
     return box.width <= w && box.height <= h && box.length <= l
@@ -97,14 +106,18 @@ class Container {
   }
 
   checkWeightDistribution(newBox: Box, x: number, y: number, z: number): boolean {
+    const MAX_WEIGHT_RATIO = 1 + this.maxweightDistribution / 100
+
     for (const [box, bx, by, bz] of this.boxes) {
       if (
         bx < x + newBox.width &&
         bx + box.width > x &&
         bz < z + newBox.length &&
-        bz + box.length > z
+        bz + box.length > z &&
+        by + box.height <= y
       ) {
-        if (by > y && newBox.density > box.density * 1.1) {
+        // If the new box is heavier than the allowed ratio, return false
+        if (newBox.weight > box.weight * MAX_WEIGHT_RATIO) {
           return false
         }
       }
@@ -175,7 +188,7 @@ class Container {
   isSupported(box: Box, x: number, y: number, z: number): boolean {
     if (y === 0) return true
     let supportArea = 0
-    const requiredArea = 0.85 * box.width * box.length
+    const calcrequiredArea = (this.requiredArea / 100) * box.width * box.length
 
     for (const [otherBox, ox, oy, oz] of this.boxes) {
       if (oy + otherBox.height === y) {
@@ -191,7 +204,7 @@ class Container {
       }
     }
 
-    return supportArea >= requiredArea
+    return supportArea >= calcrequiredArea
   }
 
   applyGravity(): void {
@@ -235,6 +248,9 @@ function evaluateFitness(
   const container = new Container(containerWidth, containerHeight, containerLength)
   const unplacedBoxes: Box[] = []
 
+  container.setSupportArea(fitnessAttributes.requiredSupportArea)
+  container.setMaxWeightDistribution(fitnessAttributes.maxWeightRatio)
+
   for (const box of individual) {
     if (!container.addBox(box)) {
       unplacedBoxes.push(box)
@@ -254,7 +270,9 @@ function evaluateFitness(
   const unplacedPenalty = (unplacedBoxes.length / individual.length) * 1.5
 
   // Combine the factors
-  let fitness = volumeUtilization / (1 + unplacedPenalty + weightDistributionPenalty)
+  let fitness =
+    (volumeUtilization * (fitnessAttributes.volumeUtilization / 100)) /
+    (1 + unplacedPenalty + weightDistributionPenalty * (fitnessAttributes.weightDistribution / 100))
   fitness -= unplacedPenalty
 
   return [fitness, container, unplacedBoxes]
@@ -346,8 +364,8 @@ function mutate(individual: Box[], mutationRate: number): void {
 export function geneticAlgorithm(
   boxesData: BoxData[],
   containerDimensions: [number, number, number],
-  popSize: number = 200,
-  numGenerations: number = 500,
+  popSize: number = 150,
+  numGenerations: number = 300,
   mutationRate: number = 0.02,
   fitnessAttributes: Record<string, number>
 ): { data: { fitness: number; boxes: any[] } } {

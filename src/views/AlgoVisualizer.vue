@@ -47,26 +47,26 @@
                   </div>
                 </div>
                 <div>
-                  <label
-                    for="boxCount"
-                    class="block text-sm font-medium mb-1"
-                    :class="isDark ? 'text-gray-300' : 'text-gray-700'"
-                  >
-                    Number of Boxes
-                  </label>
-                  <input
-                    id="boxCount"
-                    v-model="boxCount"
-                    type="number"
-                    required
-                    placeholder="Enter number of boxes"
-                    class="w-full px-3 py-2 rounded-md"
-                    :class="
-                      isDark
-                        ? 'bg-neutral-800 text-white'
-                        : 'bg-gray-100 text-black border border-gray-300'
-                    "
-                  />
+                  <h3 class="text-lg font-semibold mb-2">Box Configurations</h3>
+                  <div v-for="(box, index) in boxConfigurations" :key="index" class="mb-4">
+                    <p class="mb-2">
+                      Box {{ index + 1 }} ({{ box.width }}x{{ box.length }}x{{ box.height }} mm)
+                    </p>
+                    <input
+                      v-model.number="box.count"
+                      type="number"
+                      min="0"
+                      max="100"
+                      required
+                      :placeholder="'Enter count (max 100)'"
+                      class="w-full px-3 py-2 rounded-md"
+                      :class="
+                        isDark
+                          ? 'bg-neutral-800 text-white'
+                          : 'bg-gray-100 text-black border border-gray-300'
+                      "
+                    />
+                  </div>
                 </div>
                 <button
                   type="submit"
@@ -114,12 +114,12 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap mb-4 gap-4">
-          <!-- Algorithm Parameters Visualization (Moved here) -->
+        <div class="flex flex-wrap mb-4 gap-4 md:flex-row">
+          <!-- Algorithm Parameters Visualization -->
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
+              'flex flex-col p-4 rounded-xl w-full md:w-1/2'
             ]"
           >
             <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
@@ -139,12 +139,13 @@
           <div
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
+              'flex flex-col p-4 rounded-xl w-full md:w-1/2'
             ]"
           >
             <h2 class="text-xl font-bold mb-4">Fitness Attributes</h2>
             <div class="space-y-4">
-              <div v-for="(value, key, index) in fitnessAttributes" :key="key" class="space-y-2">
+              <!-- Volume Utilization and Weight Distribution -->
+              <div v-for="(value, key, index) in mainAttributes" :key="key" class="space-y-2">
                 <label
                   :for="key"
                   class="block text-sm font-medium"
@@ -153,20 +154,38 @@
                   {{ formatAttributeName(key) }} ({{ value.toFixed(2) }}%)
                 </label>
                 <Slider
-                  v-model="fitnessAttributes[key]"
+                  v-model="mainAttributes[key]"
                   :min="0"
                   :max="100"
                   :step="1"
-                  @change="updateAttributes(key)"
+                  @change="updateMainAttributes(key)"
                   :class="`custom-slider-${index}`"
                 />
               </div>
-            </div>
-            <div class="mt-4 text-center" :class="isDark ? 'text-gray-300' : 'text-gray-700'">
-              Total: {{ totalPercentage.toFixed(2) }}%
-              <span v-if="totalPercentage !== 100" class="text-red-500 ml-2">
-                (Adjust to reach 100%)
-              </span>
+              <div class="mt-2 text-center" :class="[isDark ? 'text-gray-300' : 'text-gray-700']">
+                Total: {{ totalMainPercentage.toFixed(2) }}%
+                <span v-if="totalMainPercentage !== 100" class="text-red-500 ml-2">
+                  (Adjust to reach 100%)
+                </span>
+              </div>
+
+              <!-- Support Area and Max Weight Ratio -->
+              <div v-for="(value, key, index) in secondaryAttributes" :key="key" class="space-y-2">
+                <label
+                  :for="key"
+                  class="block text-sm font-medium"
+                  :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                >
+                  {{ formatAttributeName(key) }} ({{ value.toFixed(2) }})
+                </label>
+                <Slider
+                  v-model="secondaryAttributes[key]"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  :class="`custom-slider-${index + Object.keys(mainAttributes).length}`"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -201,7 +220,6 @@
         :show="isLoading"
         :progress="loadingProgress"
         :status-message="loadingStatusMessage"
-        @cancel="handleCancel"
       />
     </div>
   </div>
@@ -215,7 +233,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { supabase } from '../supabase'
-import Loading from '../views/Loading.vue'
 import Slider from 'primevue/slider'
 import LoadingScreen from '@/components/loadingPercentage.vue'
 
@@ -225,26 +242,40 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 
 const containerDimensions = reactive({
-  width: '2000',
-  height: '1500',
-  length: '2500'
+  width: '1000',
+  height: '1000',
+  length: '1500'
 })
-const boxCount = ref(0)
+
+const boxConfigurations = reactive([
+  { width: 400, length: 400, height: 200, count: 0 },
+  { width: 250, length: 250, height: 250, count: 0 },
+  { width: 400, length: 250, height: 250, count: 0 }
+])
 const packingResult = ref(null)
 const threeContainer = ref(null)
 const isLoading = ref(false)
 const loadingProgress = ref(0)
 const loadingStatusMessage = ref('')
 
-const fitnessAttributes = reactive({
-  volumeUtilization: 20,
-  spreadFactor: 10,
-  averageLayerUtilization: 25,
-  weightDistributionPenalty: 5,
-  packingRatio: 20,
-  compactness: 10,
-  proximityPenalty: 10
+const mainAttributes = reactive({
+  volumeUtilization: 40,
+  weightDistribution: 60
 })
+
+const secondaryAttributes = reactive({
+  requiredSupportArea: 85,
+  maxWeightRatio: 20
+})
+
+const totalMainPercentage = computed(() => {
+  return Object.values(mainAttributes).reduce((sum, value) => sum + value, 0)
+})
+
+const fitnessAttributes = computed(() => ({
+  ...mainAttributes,
+  ...secondaryAttributes
+}))
 
 const parameters = reactive({
   populationSize: 150,
@@ -252,18 +283,17 @@ const parameters = reactive({
   mutationRate: 0.01
 })
 
-const totalPercentage = computed(() => {
-  return Object.values(fitnessAttributes).reduce((sum, value) => sum + value, 0)
-})
-
-const updateAttributes = (changedKey) => {
-  const total = totalPercentage.value
+const updateMainAttributes = (changedKey) => {
+  const total = totalMainPercentage.value
   if (total > 100) {
     const excess = total - 100
-    const changedValue = fitnessAttributes[changedKey]
-    fitnessAttributes[changedKey] = Math.max(0, changedValue - excess)
+    const otherKey = Object.keys(mainAttributes).find((key) => key !== changedKey)
+    mainAttributes[otherKey] = Math.max(0, mainAttributes[otherKey] - excess)
+  } else if (total < 100) {
+    const deficit = 100 - total
+    const otherKey = Object.keys(mainAttributes).find((key) => key !== changedKey)
+    mainAttributes[otherKey] = Math.min(100, mainAttributes[otherKey] + deficit)
   }
-  updateChartData()
 }
 
 const formatAttributeName = (key) => {
@@ -280,16 +310,99 @@ const formatParameterName = (key) => {
     .join(' ')
 }
 
-const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384']
+const handleSubmit = async () => {
+  const containerSize = [
+    Number(containerDimensions.width),
+    Number(containerDimensions.height),
+    Number(containerDimensions.length)
+  ]
+
+  if (containerSize.some(isNaN) || boxConfigurations.some((box) => isNaN(Number(box.count)))) {
+    alert('Please enter valid numbers for all fields.')
+    return
+  }
+
+  try {
+    isLoading.value = true
+    loadingProgress.value = 0
+    loadingStatusMessage.value = 'Generating boxes...'
+
+    let boxId = 1
+    const boxes = boxConfigurations.flatMap((config) =>
+      Array(config.count)
+        .fill()
+        .map(() => ({
+          id: boxId++,
+          Shipment_id: 0,
+          Packed_time: null,
+          Width: config.width,
+          Length: config.length,
+          Height: config.height,
+          Weight: Math.random() * 40 + 60,
+          Volume: config.width * config.length * config.height
+        }))
+    )
+    // const boxes = await generateRandomBoxes(10)
+
+    loadingProgress.value = 10
+    loadingStatusMessage.value = 'Initializing genetic algorithm...'
+
+    const startTime = performance.now()
+
+    const result = await new Promise((resolve) => {
+      const worker = new Worker(
+        new URL('../../supabase/functions/packing/algorithm.ts', import.meta.url),
+        { type: 'module' }
+      )
+
+      worker.onmessage = (event) => {
+        if (event.data.type === 'progress') {
+          loadingProgress.value = 10 + event.data.progress * 90
+          loadingStatusMessage.value = `Generation ${event.data.generation} of ${parameters.generations}`
+        } else if (event.data.type === 'result') {
+          resolve(event.data.result)
+          worker.terminate()
+        }
+      }
+      const fitnessAttributesPlain = {
+        ...mainAttributes,
+        ...secondaryAttributes
+      }
+
+      worker.postMessage({
+        boxesData: boxes,
+        containerDimensions: containerSize,
+        populationSize: Number(parameters.populationSize),
+        generations: Number(parameters.generations),
+        mutationRate: Number(parameters.mutationRate),
+        fitnessAttributes: fitnessAttributesPlain
+      })
+    })
+
+    const endTime = performance.now()
+    solutionTime.value = ((endTime - startTime) / 1000).toFixed(2)
+
+    if (result.data) {
+      packingResult.value = result.data
+      initThreeJS(containerSize, result.data.boxes)
+    } else {
+      alert('No valid packing solution found. Try adjusting the parameters.')
+    }
+  } catch (error) {
+    console.error('Error generating packing solution:', error)
+    alert('Failed to generate packing solution. Please try again.')
+  } finally {
+    isLoading.value = false
+    loadingProgress.value = 0
+    loadingStatusMessage.value = ''
+  }
+}
+
+const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
 
 const chartData = ref({
   labels: [],
-  datasets: [
-    {
-      data: [],
-      backgroundColor: chartColors
-    }
-  ]
+  datasets: [{ data: [], backgroundColor: chartColors }]
 })
 
 const chartOptions = computed(() => ({
@@ -325,95 +438,11 @@ const chartOptions = computed(() => ({
 }))
 
 const updateChartData = () => {
-  chartData.value.labels = Object.keys(fitnessAttributes).map(formatAttributeName)
-  chartData.value.datasets[0].data = Object.values(fitnessAttributes)
+  chartData.value.labels = Object.keys(fitnessAttributes.value).map(formatAttributeName)
+  chartData.value.datasets[0].data = Object.values(fitnessAttributes.value)
 }
+
 const solutionTime = ref(0)
-
-const handleSubmit = async () => {
-  const containerSize = [
-    Number(containerDimensions.width),
-    Number(containerDimensions.height),
-    Number(containerDimensions.length)
-  ]
-
-  if (containerSize.some(isNaN) || isNaN(Number(boxCount.value))) {
-    alert('Please enter valid numbers for all fields.')
-    return
-  }
-
-  try {
-    isLoading.value = true
-    loadingProgress.value = 0
-    loadingStatusMessage.value = 'Generating random boxes...'
-
-    const startTime = performance.now()
-
-    const randomBoxes = await generateRandomBoxes(Number(boxCount.value), containerSize)
-
-    loadingProgress.value = 10
-    loadingStatusMessage.value = 'Initializing genetic algorithm...'
-
-    const result = await new Promise((resolve) => {
-      const worker = new Worker(
-        new URL('../../supabase/functions/packing/algorithm.ts', import.meta.url),
-        { type: 'module' }
-      )
-
-      worker.onmessage = (event) => {
-        if (event.data.type === 'progress') {
-          loadingProgress.value = 10 + event.data.progress * 90
-          loadingStatusMessage.value = `Generation ${event.data.generation} of ${parameters.generations}`
-        } else if (event.data.type === 'result') {
-          resolve(event.data.result)
-          worker.terminate()
-        }
-      }
-
-      // Ensure we're only passing cloneable data
-      const cloneableBoxesData = randomBoxes.map((box) => ({
-        id: box.id,
-        Shipment_id: box.Shipment_id,
-        Packed_time: box.Packed_time,
-        Width: box.Width,
-        Length: box.Length,
-        Height: box.Height,
-        Weight: box.Weight,
-        Volume: box.Volume
-      }))
-
-      const cloneableFitnessAttributes = Object.fromEntries(
-        Object.entries(fitnessAttributes).map(([key, value]) => [key, Number(value)])
-      )
-
-      worker.postMessage({
-        boxesData: cloneableBoxesData,
-        containerDimensions: containerSize,
-        populationSize: Number(parameters.populationSize),
-        generations: Number(parameters.generations),
-        mutationRate: Number(parameters.mutationRate),
-        fitnessAttributes: cloneableFitnessAttributes
-      })
-    })
-
-    const endTime = performance.now()
-    solutionTime.value = ((endTime - startTime) / 1000).toFixed(2) // Convert to seconds and round to 2 decimal places
-
-    if (result.data) {
-      packingResult.value = result.data
-      initThreeJS(containerSize, result.data.boxes)
-    } else {
-      alert('No valid packing solution found. Try adjusting the parameters.')
-    }
-  } catch (error) {
-    console.error('Error generating packing solution:', error)
-    alert('Failed to generate packing solution. Please try again.')
-  } finally {
-    isLoading.value = false
-    loadingProgress.value = 0
-    loadingStatusMessage.value = ''
-  }
-}
 
 const generateRandomBoxes = async (count) => {
   try {
@@ -551,15 +580,17 @@ onUnmounted(() => {
 
 onMounted(() => {
   const style = document.createElement('style')
-  style.textContent = chartColors
-    .map(
-      (color, index) => `
-    .custom-slider-${index} .p-slider-range {
-      background: ${color} !important;
-    }
+  style.textContent = `
+    ${chartColors
+      .map(
+        (color, index) => `
+      .custom-slider-${index} .p-slider-range {
+        background: ${color} !important;
+      }
+    `
+      )
+      .join('\n')}
   `
-    )
-    .join('\n')
   document.head.appendChild(style)
 })
 
@@ -572,5 +603,28 @@ const handleResize = () => {
 }
 
 watch(isDark, updateSceneColors)
-watch(fitnessAttributes, updateChartData, { deep: true, immediate: true })
+watch(() => ({ ...mainAttributes, ...secondaryAttributes }), updateChartData, {
+  deep: true,
+  immediate: true
+})
 </script>
+
+<style scoped>
+.p-slider {
+  height: 0.5rem !important;
+}
+
+.p-slider .p-slider-handle {
+  height: 1.2rem !important;
+  width: 1.2rem !important;
+  top: 50% !important;
+  margin-top: -0.6rem !important;
+  background: #ffffff !important;
+  border: 2px solid #3f83f8 !important;
+}
+
+.dark .p-slider .p-slider-handle {
+  background: #4a5568 !important;
+  border-color: #718096 !important;
+}
+</style>
