@@ -273,6 +273,7 @@ function evaluateFitness(
   let fitness =
     (volumeUtilization * (fitnessAttributes.volumeUtilization / 100)) /
     (1 + unplacedPenalty + weightDistributionPenalty * (fitnessAttributes.weightDistribution / 100))
+
   fitness -= unplacedPenalty
 
   return [fitness, container, unplacedBoxes]
@@ -377,7 +378,7 @@ export function geneticAlgorithm(
   const boxes = boxesData.map((data) => new Box(data))
   let population = initializePopulation(popSize, boxes)
 
-  let globalBestFitness = 0
+  let globalBestFitness = -100000000
   let globalBestContainer: Container | undefined
   let globalBestIndividual: Box[] | undefined
 
@@ -454,67 +455,10 @@ export function geneticAlgorithm(
       }
     }
 
-    // Handle unplaced boxes
-    const unplacedBoxes = boxes.filter(
-      (box) => !globalBestContainer.boxes.some(([placedBox]) => placedBox.id === box.id)
-    )
-    handleUnplacedBoxes(globalBestContainer, unplacedBoxes, containerDimensions)
-
-    // Add unplaced boxes to the result
-    result.data.boxes.push(
-      ...unplacedBoxes.map((box) => ({
-        id: box.id,
-        width: box.width,
-        height: box.height,
-        length: box.length,
-        weight: box.weight,
-        volume: box.volume,
-        x: containerDimensions[0], // Place outside the container
-        y: 0,
-        z: 0,
-        unplaced: true
-      }))
-    )
-
-    // Report final result
-    if (typeof self !== 'undefined' && 'postMessage' in self) {
-      self.postMessage({ type: 'result', result })
-    }
-
     return result
   } else {
     console.error('No valid solution found.')
     return { data: { fitness: 0, boxes: [] } }
-  }
-}
-
-function handleUnplacedBoxes(
-  container: Container,
-  unplacedBoxes: Box[],
-  containerDimensions: [number, number, number]
-): void {
-  const [containerWidth, ,] = containerDimensions
-  const spacing = 10 // Space between boxes
-
-  let currentX = containerWidth + spacing
-  let currentY = 0
-  let currentZ = 0
-  let maxHeightInRow = 0
-
-  for (const box of unplacedBoxes) {
-    if (currentX + box.width > containerWidth * 2) {
-      // Start a new row
-      currentX = containerWidth + spacing
-      currentY += maxHeightInRow + spacing
-      maxHeightInRow = 0
-    }
-
-    // Place the box
-    container.boxes.push([box, currentX, currentY, currentZ])
-
-    // Update position for the next box
-    currentX += box.width + spacing
-    maxHeightInRow = Math.max(maxHeightInRow, box.height)
   }
 }
 

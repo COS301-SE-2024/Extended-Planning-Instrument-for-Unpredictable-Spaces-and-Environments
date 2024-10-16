@@ -528,8 +528,6 @@ const createBoxesFromData = (scene, boxesData, isDark) => {
   const maxWeight = Math.max(...weights)
 
   boxesData.forEach((box) => {
-    if (box.unplaced) return // Skip unplaced boxes
-
     const geometry = new THREE.BoxGeometry(box.width, box.height, box.length)
     const color = getColorForWeight(box.weight, minWeight, maxWeight)
     const material = new THREE.MeshBasicMaterial({
@@ -537,6 +535,7 @@ const createBoxesFromData = (scene, boxesData, isDark) => {
       transparent: true,
       opacity: 0.7
     })
+
     const mesh = new THREE.Mesh(geometry, material)
     mesh.position.set(box.x + box.width / 2, box.y + box.height / 2, box.z + box.length / 2)
     scene.add(mesh)
