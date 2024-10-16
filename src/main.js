@@ -39,11 +39,14 @@ import 'primevue/resources/themes/md-dark-indigo/theme.css'
 import 'primevue/resources/primevue.min.css'
 import 'primeicons/primeicons.css'
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from 'vue-qrcode-reader'
+import Tooltip from 'primevue/tooltip'
 
 const app = createApp(App)
 app.config.globalProperties.$supabase = supabase
 
 app.directive('ripple', Ripple)
+app.directive('tooltip', Tooltip)
+
 app.use(VueSignaturePad)
 app.use(router)
 app.use(PrimeVue)

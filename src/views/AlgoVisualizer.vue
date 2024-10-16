@@ -114,77 +114,85 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap mb-4 gap-4 md:flex-row">
-          <!-- Algorithm Parameters Visualization -->
-          <div
-            :class="[
-              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-1/2'
-            ]"
-          >
-            <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
-            <div class="flex justify-center items-center w-full h-full">
-              <div class="w-[300px] h-[300px] text-white">
-                <Chart
-                  type="polarArea"
-                  :data="chartData"
-                  :options="chartOptions"
-                  class="h-full w-full"
-                />
+        <div class="flex flex-wrap">
+          <div class="justify-center w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
+            <!-- Algorithm Parameters Visualization -->
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
+              ]"
+            >
+              <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
+              <div class="flex justify-center items-center w-full h-full">
+                <div class="w-[300px] h-[300px] text-white">
+                  <Chart
+                    type="polarArea"
+                    :data="chartData"
+                    :options="chartOptions"
+                    class="h-full w-full"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Fitness Attributes -->
-          <div
-            :class="[
-              isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-1/2'
-            ]"
-          >
-            <h2 class="text-xl font-bold mb-4">Fitness Attributes</h2>
-            <div class="space-y-4">
-              <!-- Volume Utilization and Weight Distribution -->
-              <div v-for="(value, key, index) in mainAttributes" :key="key" class="space-y-2">
-                <label
-                  :for="key"
-                  class="block text-sm font-medium"
-                  :class="isDark ? 'text-gray-300' : 'text-gray-700'"
-                >
-                  {{ formatAttributeName(key) }} ({{ value.toFixed(2) }}%)
-                </label>
-                <Slider
-                  v-model="mainAttributes[key]"
-                  :min="0"
-                  :max="100"
-                  :step="1"
-                  @change="updateMainAttributes(key)"
-                  :class="`custom-slider-${index}`"
-                />
-              </div>
-              <div class="mt-2 text-center" :class="[isDark ? 'text-gray-300' : 'text-gray-700']">
-                Total: {{ totalMainPercentage.toFixed(2) }}%
-                <span v-if="totalMainPercentage !== 100" class="text-red-500 ml-2">
-                  (Adjust to reach 100%)
-                </span>
-              </div>
+            <!-- Fitness Attributes -->
+            <div
+              :class="[
+                isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
+                'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
+              ]"
+            >
+              <h2 class="text-xl font-bold mb-4">Fitness Attributes</h2>
+              <div class="space-y-4">
+                <!-- Volume Utilization and Weight Distribution -->
+                <div v-for="(value, key, index) in mainAttributes" :key="key" class="space-y-2">
+                  <label
+                    v-tooltip.bottom="attributeDescriptions[key]"
+                    :for="key"
+                    class="block text-sm font-medium"
+                    :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                  >
+                    {{ formatAttributeName(key) }} ({{ value.toFixed(2) }}%)
+                  </label>
+                  <Slider
+                    v-model="mainAttributes[key]"
+                    :min="0"
+                    :max="100"
+                    :step="1"
+                    @change="updateMainAttributes(key)"
+                    :class="`custom-slider-${index}`"
+                  />
+                </div>
+                <div class="mt-2 text-center" :class="[isDark ? 'text-gray-300' : 'text-gray-700']">
+                  Total: {{ totalMainPercentage.toFixed(2) }}%
+                  <span v-if="totalMainPercentage !== 100" class="text-red-500 ml-2">
+                    (Adjust to reach 100%)
+                  </span>
+                </div>
 
-              <!-- Support Area and Max Weight Ratio -->
-              <div v-for="(value, key, index) in secondaryAttributes" :key="key" class="space-y-2">
-                <label
-                  :for="key"
-                  class="block text-sm font-medium"
-                  :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                <!-- Support Area and Max Weight Ratio -->
+                <div
+                  v-for="(value, key, index) in secondaryAttributes"
+                  :key="key"
+                  class="space-y-2"
                 >
-                  {{ formatAttributeName(key) }} ({{ value.toFixed(2) }})
-                </label>
-                <Slider
-                  v-model="secondaryAttributes[key]"
-                  :min="0"
-                  :max="100"
-                  :step="1"
-                  :class="`custom-slider-${index + Object.keys(mainAttributes).length}`"
-                />
+                  <label
+                    v-tooltip.bottom="attributeDescriptions[key]"
+                    :for="key"
+                    class="block text-sm font-medium"
+                    :class="isDark ? 'text-gray-300' : 'text-gray-700'"
+                  >
+                    {{ formatAttributeName(key) }} ({{ value.toFixed(2) }})
+                  </label>
+                  <Slider
+                    v-model="secondaryAttributes[key]"
+                    :min="0"
+                    :max="100"
+                    :step="1"
+                    :class="`custom-slider-${index + Object.keys(mainAttributes).length}`"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -235,6 +243,17 @@ import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { supabase } from '../supabase'
 import Slider from 'primevue/slider'
 import LoadingScreen from '@/components/loadingPercentage.vue'
+
+const attributeDescriptions = {
+  volumeUtilization:
+    'Container volume usage. Higher: tighter packing, less space waste. Lower: more gaps, easier loading.',
+  weightDistribution:
+    'Weight spread across container. Higher: more balanced load, safer. Lower: allows concentrated weight areas.',
+  requiredSupportArea:
+    'Support needed for stacked boxes. Higher: more stable stacking. Lower: allows overhang, less stable.',
+  maxWeightRatio:
+    'Weight difference between stacked boxes. Higher: allows heavier on lighter. Lower: enforces similar weights when stacked.'
+}
 
 let scene, camera, renderer, controls
 
