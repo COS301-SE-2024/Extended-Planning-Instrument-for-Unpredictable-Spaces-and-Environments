@@ -1,6 +1,6 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, computed } from 'vue'
+import { watch, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
@@ -13,7 +13,8 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { debounce } from 'lodash'
 
 const containerDimensions = [1200, 1930, 1000]
-
+const showInitialDialog = ref(true)
+const shipmentStarted = ref(false)
 const showHelpDialog = ref(false)
 const toggleDialogHelp = () => {
   showHelpDialog.value = !showHelpDialog.value
@@ -70,7 +71,11 @@ async function logout() {
     router.push({ name: 'login' })
   }
 }
-
+watch(shipmentStarted, (newValue) => {
+  if (!newValue) {
+    showInitialDialog.value = true
+  }
+})
 const emit = defineEmits(['handle-json', 'shipments-loaded'])
 
 //API CALLS FOR SHIPMENTS
@@ -159,27 +164,31 @@ const updateShipmentStartTime = async (shipmentID) => {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
   }
 }
-
+const startNewDelivery = () => {
+  showInitialDialog.value = false
+  toggleDialog()
+}
 const deliveryStarted = ref(false)
 const items = computed(() => [
   {
     label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      if (showStartPackingOvererlay.value && deliveryStarted.value) {
+      if (!shipmentStarted.value) {
+        showInitialDialog.value = true
+      } else if (showStartPackingOvererlay.value) {
         toggleDialog()
         getAllProcessing()
       } else {
         toast.add({
           severity: 'warn',
           summary: 'Action Disabled',
-          detail:
-            "You can't start a new shipment until the active shipment is complete or a delivery has been started",
+          detail: "You can't start a new shipment until the active shipment is complete",
           life: 3000
         })
       }
     },
-    disabled: !showStartPackingOvererlay.value || !deliveryStarted.value
+    disabled: !showStartPackingOvererlay.value && shipmentStarted.value
   },
   {
     label: 'Dark Mode Toggle',
@@ -410,7 +419,8 @@ async function uploadSolution(shipmentId, containerDimensions) {
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
   toggleStartNewPacking()
-  deliveryStarted.value = true
+  shipmentStarted.value = true
+  showInitialDialog.value = false
 }
 
 function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
@@ -422,9 +432,20 @@ function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
     isPlaced: placedBoxIds.has(box.id)
   }))
 }
-
 onMounted(() => {
   getAllProcessing()
+  setupSubscription()
+  loadProgress()
+
+  // Check if there's saved progress and update shipmentStarted accordingly
+  const savedProgress = localStorage.getItem('packingProgress')
+  if (savedProgress) {
+    const progressData = JSON.parse(savedProgress)
+    if (progressData.shipments && progressData.shipments.length > 0) {
+      shipmentStarted.value = true
+      showInitialDialog.value = false
+    }
+  }
 })
 </script>
 
@@ -470,6 +491,41 @@ onMounted(() => {
         </a>
       </template>
     </Menubar>
+    <div v-if="showInitialDialog" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        class="absolute inset-0 backdrop-blur-sm"
+        style="background-color: rgba(0, 0, 1, 0.5)"
+      ></div>
+      <div
+        class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
+        :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+      >
+        <h2
+          :class="[isDark ? 'bg-neutral-800 text-white ' : '  text-black']"
+          class="text-2xl font-bold mb-4"
+        >
+          Start a New Delivery
+        </h2>
+        <p :class="[isDark ? 'text-white' : 'text-black']" class="mb-6">
+          Please start a new delivery to pack.
+        </p>
+        <button
+          @click="startNewDelivery"
+          :class="[
+            isDark ? 'text-white' : 'text-black',
+            'px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300'
+          ]"
+        >
+          Start New Delivery
+        </button>
+        <p
+          @click="toggleDialogHelp"
+          class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        >
+          Help
+        </p>
+      </div>
+    </div>
     <Dialog
       v-model:visible="showShipmentSelection"
       header="Select Shipment to Print"

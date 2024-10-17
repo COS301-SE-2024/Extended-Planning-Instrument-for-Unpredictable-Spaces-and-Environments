@@ -114,7 +114,6 @@ const getShipmentByDeliveryId = async () => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
@@ -225,7 +224,7 @@ const uploadSignature = async (signature, shipmentID) => {
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
-        shipmentID:shipmentID,
+        shipmentID: shipmentID,
         dataURL: encryptedSignature
       }),
       method: 'POST'
