@@ -69,6 +69,18 @@ const updateScreenSize = () => {
 const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
 const signaturePad = ref(null)
+const addPlaceholder = () => {
+  if (signaturePad.value) {
+    const ctx = signaturePad.value.getCanvas().getContext('2d')
+    ctx.strokeStyle = isDark.value ? 'white' : 'black'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(50, 100)
+    ctx.quadraticCurveTo(100, 50, 150, 100)
+    ctx.quadraticCurveTo(200, 150, 250, 100)
+    ctx.stroke()
+  }
+}
 let google = null
 
 async function sortLocationsByDistance(origins, destinations) {
@@ -823,7 +835,7 @@ export default {
               </button>
             </div>
           </Dialog>
-          <div class="flex gap-2">
+          <div class="flex gap-2 mt-6">
             <Button
               :disabled="!isPopiAccepted"
               class="w-1/2 rounded-md justify-center py-2 px-4"
