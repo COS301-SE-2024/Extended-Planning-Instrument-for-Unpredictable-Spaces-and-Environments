@@ -254,7 +254,7 @@ function saveProgress() {
   localStorage.setItem('printingStorage', JSON.stringify(progressData))
 }
 
-function printQRcode() {
+const debouncedPrintQRcode = debounce(() => {
   if (Object.keys(packingResults.value).length === 0) {
     toast.add({
       severity: 'error',
@@ -264,13 +264,24 @@ function printQRcode() {
     })
     return
   }
+
   showShipmentSelection.value = true
+}, 300)
+
+function printQRcode() {
+  debouncedPrintQRcode()
 }
 
 async function printSelectedShipment(shipmentId) {
   const selectedResult = packingResults.value[shipmentId]
   if (selectedResult) {
     await createPDF(selectedResult, `Shipment_#${shipmentId}`)
+    toast.add({
+      severity: 'Success',
+      summary: `Shipment_#${shipmentId} list has been printed`,
+      detail: 'Please check the new tab opened or your downloads folder in your browser',
+      life: 3000
+    })
     showShipmentSelection.value = false
   } else {
     console.error(`No packing result found for shipment ${shipmentId}`)
@@ -557,7 +568,6 @@ onMounted(() => {
       @close-dialog="toggleDialogHelp"
     />
   </div>
-  
 </template>
 <script>
 import { getAssetURL } from '@/assetHelper'
