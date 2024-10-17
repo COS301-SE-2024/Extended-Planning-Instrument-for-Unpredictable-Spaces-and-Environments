@@ -160,39 +160,42 @@ const updateShipmentStartTime = async (shipmentID) => {
   }
 }
 
-const items = [
+const deliveryStarted = ref(false)
+const items = computed(() => [
   {
     label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      if (showStartPackingOvererlay.value) {
+      if (showStartPackingOvererlay.value && deliveryStarted.value) {
         toggleDialog()
         getAllProcessing()
       } else {
         toast.add({
           severity: 'warn',
           summary: 'Action Disabled',
-          detail: 'You cant start a new shipment until the active shipment is complete',
+          detail:
+            "You can't start a new shipment until the active shipment is complete or a delivery has been started",
           life: 3000
         })
       }
     },
-    disabled: !showStartPackingOvererlay.value
+    disabled: !showStartPackingOvererlay.value || !deliveryStarted.value
   },
-
   {
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      toggleDark() // Correctly call the toggle function
-    }
+      toggleDark()
+    },
+    disabled: !deliveryStarted.value
   },
   {
     label: 'Print Shipment list',
     icon: 'pi pi-fw pi-qrcode',
     command: () => {
       printQRcode()
-    }
+    },
+    disabled: !deliveryStarted.value
   },
   {
     label: 'Log Out',
@@ -216,7 +219,7 @@ const items = [
       debouncedHardReload()
     }
   }
-]
+])
 
 function hardReload() {
   const userConfirmed = window.confirm(
@@ -277,10 +280,10 @@ async function printSelectedShipment(shipmentId) {
   if (selectedResult) {
     await createPDF(selectedResult, `Shipment_#${shipmentId}`)
     toast.add({
-      severity: 'Success',
+      severity: 'success',
       summary: `Shipment_#${shipmentId} list has been printed`,
       detail: 'Please check the new tab opened or your downloads folder in your browser',
-      life: 3000
+      life: 8000
     })
     showShipmentSelection.value = false
   } else {
@@ -407,6 +410,7 @@ async function uploadSolution(shipmentId, containerDimensions) {
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
   toggleStartNewPacking()
+  deliveryStarted.value = true
 }
 
 function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
@@ -443,8 +447,8 @@ onMounted(() => {
       <template #item="{ item, props, hasSubmenu, root }">
         <a
           v-bind="props.action"
-          :class="{ 'disabled-link': !showStartPackingOvererlay }"
-          @click="item.command()"
+          :class="{ 'disabled-link': item.disabled }"
+          @click="item.disabled ? null : item.command()"
         >
           <span :class="item.icon" />
           <span class="ml-2">{{ item.label }}</span>
@@ -586,10 +590,14 @@ const images = computed(() => [
 </script>
 <style>
 /* General styles */
-
+.p-menubar.p-component:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
 .disabled-link {
   pointer-events: none;
   opacity: 0.5;
+  cursor: not-allowed;
 }
 .mobile-icon {
   display: none;
