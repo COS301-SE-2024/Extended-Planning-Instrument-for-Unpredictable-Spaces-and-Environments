@@ -191,10 +191,12 @@ const items = computed(() => [
     disabled: !showStartPackingOvererlay.value && shipmentStarted.value
   },
   {
-    label: 'Dark Mode Toggle',
-    icon: 'pi pi-fw pi-moon',
+    label: 'Log Out',
+    icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      toggleDark()
+      showHelpDialog.value = !showHelpDialog.value
+      console.info('Logging Out')
+      logout()
     },
     disabled: !deliveryStarted.value
   },
@@ -203,17 +205,16 @@ const items = computed(() => [
     icon: 'pi pi-fw pi-qrcode',
     command: () => {
       printQRcode()
-    },
-    disabled: !deliveryStarted.value
-  },
-  {
-    label: 'Log Out',
-    icon: 'pi pi-fw pi-sign-out',
-    command: () => {
-      console.info('Logging Out')
-      logout()
     }
   },
+  {
+    label: 'Dark Mode Toggle',
+    icon: 'pi pi-fw pi-moon',
+    command: () => {
+      toggleDark()
+    }
+  },
+
   {
     label: 'Help',
     icon: 'pi pi-fw pi-question',

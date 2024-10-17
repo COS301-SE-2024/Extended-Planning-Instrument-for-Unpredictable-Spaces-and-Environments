@@ -730,7 +730,7 @@ export default {
       <div
         :class="[
           isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
-          'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+          'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
         ]"
         class="flex flex-col"
       >
@@ -742,22 +742,21 @@ export default {
         </p>
 
         <div id="app" class="text-white">
-          <VueSignaturePad
-            width="100%"
-            height="500px"
-            ref="signaturePad"
-            :options="option1"
-            v-if="isDark"
-          />
-          <VueSignaturePad
-            width="100%"
-            height="500px"
-            ref="signaturePad"
-            :options="option2"
-            v-else
-          />
+          <div
+            class="signature-pad-container"
+            :class="isDark ? 'border-white' : 'border-black'"
+            style="border-width: 1px; padding: 2px; margin-bottom: 10px"
+          >
+            <VueSignaturePad
+              width="100%"
+              height="200px"
+              ref="signaturePad"
+              :options="isDark ? option1 : option2"
+            />
+          </div>
+
           <!-- Checkbox and Link -->
-          <div class="flex justify-center items-center mt-4">
+          <div class="flex justify-center items-center pt-6">
             <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2 w-5 h-5" />
             <br /><br />
             <label
@@ -824,18 +823,19 @@ export default {
               </button>
             </div>
           </Dialog>
-
-          <div>
+          <div class="flex gap-2">
             <Button
               :disabled="!isPopiAccepted"
-              class="w-full mb-2 rounded-md justify-center py-2 px-4"
-              :class="[isDark ? ' text-white ' : '   text-white', 'bg-green-900']"
+              class="w-1/2 rounded-md justify-center py-2 px-4"
+              :class="[isDark ? 'bg-green-900 text-white' : 'bg-green-900 text-white']"
               @click="save(selectedShipmentId)"
-              >Save</Button
             >
-            <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
-              >Undo</Button
-            >
+              Save
+            </Button>
+
+            <Button class="w-1/2 rounded-md bg-red-800 justify-center py-2 px-4" @click="undo">
+              Undo
+            </Button>
           </div>
         </div>
       </div>
@@ -970,5 +970,23 @@ export default {
   background-color: rgba(0, 0, 1, 0.5) !important;
   backdrop-filter: blur(4px);
   z-index: 9998 !important; /* Ensure it is above other elements */
+}
+.signature-pad-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+</style>
+
+<style scoped>
+.p-button:disabled {
+  background-color: rgba(6, 131, 12, 0.12) !important;
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1;
+}
+.p-button[data-v-434a256b]:disabled {
+  background-color: rgba(6, 131, 12, 0.12) !important;
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1;
 }
 </style>
