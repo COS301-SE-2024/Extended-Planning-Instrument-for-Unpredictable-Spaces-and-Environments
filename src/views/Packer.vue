@@ -1087,14 +1087,30 @@ async function generateNewSolution(shipmentID) {
         console.error('Reponse.data is undefined', error)
       }
     } catch (error) {
-      console.error('Error generating packing solution:', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error generating packing solution',
+        life: 6000
+      })
     }
   } catch (error) {
-    console.error('Error in generateNewSolution:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Error generating packing solution ${error}`,
+      life: 6000
+    })
   } finally {
     loadingbar.value = false
     loadingProgress.value = 0
     loadingStatusMessage.value = ''
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: `Successfully generated new solution, please click show shipment`,
+      life: 6000
+    })
   }
 }
 
