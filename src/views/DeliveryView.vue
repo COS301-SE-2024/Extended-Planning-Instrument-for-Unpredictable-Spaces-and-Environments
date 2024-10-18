@@ -5,7 +5,8 @@ import 'primevue/resources/themes/saga-blue/theme.css'
 import 'primevue/resources/primevue.min.css'
 import DeliverySidebar from '@/components/DeliverySidebar.vue'
 import Map from '@/components/Map.vue'
-import { supabase } from '@/supabase'
+import { useRouter } from 'vue-router'
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Timeline from 'primevue/timeline'
 import Card from 'primevue/card'
@@ -14,7 +15,18 @@ import { toggleDialogDelivery } from '@/components/packerDialog'
 import CryptoJS from 'crypto-js'
 import { useToast } from 'primevue/usetoast'
 import Loading from '@/views/Loading.vue'
+import { supabase } from '../supabase.js'
+const router = useRouter()
 
+async function logout() {
+  const { error } = await supabase.auth.signOut()
+  if (error) {
+    console.log(error)
+  } else {
+    router.push({ name: 'login' })
+    console.log('Log out successful')
+  }
+}
 const isDark = useDark()
 const toast = useToast()
 
@@ -69,6 +81,18 @@ const updateScreenSize = () => {
 const confirmedShipments = ref(new Set())
 const selectedShipmentId = ref(null)
 const signaturePad = ref(null)
+const addPlaceholder = () => {
+  if (signaturePad.value) {
+    const ctx = signaturePad.value.getCanvas().getContext('2d')
+    ctx.strokeStyle = isDark.value ? 'white' : 'black'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(50, 100)
+    ctx.quadraticCurveTo(100, 50, 150, 100)
+    ctx.quadraticCurveTo(200, 150, 250, 100)
+    ctx.stroke()
+  }
+}
 let google = null
 
 async function sortLocationsByDistance(origins, destinations) {
@@ -114,7 +138,6 @@ const getShipmentByDeliveryId = async () => {
     if (error) {
       console.log(`API Error for delivery ${currentDelivery.value.id}:`, error)
     } else {
-
       if (!shipmentsByDelivery.value[currentDelivery.value.id]) {
         shipmentsByDelivery.value[currentDelivery.value.id] = []
       }
@@ -225,7 +248,7 @@ const uploadSignature = async (signature, shipmentID) => {
     const { error: uploadError } = await supabase.functions.invoke('core', {
       body: JSON.stringify({
         type: 'uploadSignature',
-        shipmentID:shipmentID,
+        shipmentID: shipmentID,
         dataURL: encryptedSignature
       }),
       method: 'POST'
@@ -588,7 +611,7 @@ export default {
   <div
     :class="[
       isDark ? 'dark bg-neutral-900 text-white' : 'light bg-gray-500 text-black',
-      ' h-[auto] flex flex-col '
+      ' h-[auto] min-h-[100vh] flex flex-col '
     ]"
   >
     <DeliverySidebar
@@ -635,10 +658,10 @@ export default {
         <div v-if="tripFinished">
           <Button
             :disabled="!isPopiAccepted"
-            class="w-full mb-2 rounded-md bg-orange-500 justify-center py-2 px-4"
+            class="text-white w-full mb-2 rounded-md bg-orange-500 justify-center py-2 px-4"
             @click="Home()"
-            >Home Safe</Button
-          >
+            >I'm homesafe
+          </Button>
         </div>
         <div
           v-if="!tripFinished"
@@ -731,7 +754,7 @@ export default {
       <div
         :class="[
           isDark ? 'text-white bg-neutral-800' : ' bg-white text-neutral-800',
-          'mt-2  mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none  focus:border-orange-500' // Changes here
+          'mt-2 mb-6 form-control w-full px-3 py-2 rounded-lg focus:outline-none focus:border-orange-500'
         ]"
         class="flex flex-col"
       >
@@ -743,22 +766,21 @@ export default {
         </p>
 
         <div id="app" class="text-white">
-          <VueSignaturePad
-            width="100%"
-            height="500px"
-            ref="signaturePad"
-            :options="option1"
-            v-if="isDark"
-          />
-          <VueSignaturePad
-            width="100%"
-            height="500px"
-            ref="signaturePad"
-            :options="option2"
-            v-else
-          />
+          <div
+            class="signature-pad-container"
+            :class="isDark ? 'border-white' : 'border-black'"
+            style="border-width: 1px; padding: 2px; margin-bottom: 10px"
+          >
+            <VueSignaturePad
+              width="100%"
+              height="200px"
+              ref="signaturePad"
+              :options="isDark ? option1 : option2"
+            />
+          </div>
+
           <!-- Checkbox and Link -->
-          <div class="flex justify-center items-center mt-4">
+          <div class="flex justify-center items-center pt-6">
             <input type="checkbox" id="acceptPopi" v-model="isPopiAccepted" class="mr-2 w-5 h-5" />
             <br /><br />
             <label
@@ -825,18 +847,19 @@ export default {
               </button>
             </div>
           </Dialog>
-
-          <div>
+          <div class="flex gap-2 mt-6">
             <Button
               :disabled="!isPopiAccepted"
-              class="w-full mb-2 rounded-md justify-center py-2 px-4"
-              :class="[isDark ? ' text-white ' : '   text-white', 'bg-green-900']"
+              class="w-1/2 rounded-md justify-center py-2 px-4"
+              :class="[isDark ? 'bg-green-900 text-white' : 'bg-green-900 text-white']"
               @click="save(selectedShipmentId)"
-              >Save</Button
             >
-            <Button class="w-full rounded-md bg-red-800 justify-center py-2 px-4" @click="undo"
-              >Undo</Button
-            >
+              Save
+            </Button>
+
+            <Button class="w-1/2 rounded-md bg-red-800 justify-center py-2 px-4" @click="undo">
+              Undo
+            </Button>
           </div>
         </div>
       </div>
@@ -873,15 +896,26 @@ export default {
       <p :class="[isDark ? '  text-white ' : '  text-black']" class="mb-6">
         Please start a new delivery to begin.
       </p>
-      <button
-        @click="togglePopUpDialog()"
-        :class="[
-          isDark ? ' text-white ' : 'text-black',
-          'px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300'
-        ]"
-      >
-        Start New Delivery
-      </button>
+      <div class="flex flex-col gap-2">
+        <button
+          @click="togglePopUpDialog()"
+          :class="[
+            isDark ? ' text-white ' : 'text-black',
+            'px-6 py-3 bg-orange-600 border-orange-600 text-white border hover:text-orange-600 font-bold rounded-lg shadow-md hover:bg-transparent hover:border hover:border-orange-600 transition duration-300'
+          ]"
+        >
+          Begin
+        </button>
+        <button
+          @click="logout()"
+          :class="[
+            isDark ? ' text-white ' : 'text-white',
+            'px-6 py-3 bg-red-600 border-red-600 text-white border hover:text-red-600 font-bold rounded-lg shadow-md hover:bg-transparent hover:border hover:border-red-600 transition duration-300'
+          ]"
+        >
+          Logout
+        </button>
+      </div>
       <p
         @click="toggleDialog2()"
         class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
@@ -971,5 +1005,23 @@ export default {
   background-color: rgba(0, 0, 1, 0.5) !important;
   backdrop-filter: blur(4px);
   z-index: 9998 !important; /* Ensure it is above other elements */
+}
+.signature-pad-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+</style>
+
+<style scoped>
+.p-button:disabled {
+  background-color: rgba(6, 131, 12, 0.12) !important;
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1;
+}
+.p-button[data-v-434a256b]:disabled {
+  background-color: rgba(6, 131, 12, 0.12) !important;
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1;
 }
 </style>

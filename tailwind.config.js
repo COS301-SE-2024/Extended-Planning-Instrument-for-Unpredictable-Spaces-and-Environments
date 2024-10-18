@@ -40,5 +40,12 @@ export default {
       }
     }
   },
+  variants: {
+    extend: {
+      cursor: ['disabled'],
+      pointerEvents: ['disabled'],
+      backgroundColor: ['disabled', 'rgba(255,255,255)']
+    }
+  },
   plugins: []
 }

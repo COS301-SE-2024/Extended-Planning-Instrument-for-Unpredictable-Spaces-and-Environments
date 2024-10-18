@@ -1,7 +1,6 @@
-<!-- DELIVERYSIDEBAR.VUE -->
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, computed } from 'vue'
+import { watch, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import DialogComponent from '@/components/DialogComponent.vue'
@@ -44,9 +43,21 @@ const driverID = ref(false)
 const { showDialog, toggleDialog2 } = toggleDialogDelivery()
 
 const props = defineProps({
-  dialogPopUpVisible: Boolean
+  dialogPopUpVisible: Boolean,
+  isDeliveryInProgress: Boolean // New prop to track if a delivery is in progress
 })
 
+const isDeliveryInProgressRef = ref(props.isDeliveryInProgress)
+watch(
+  () => props.isDeliveryInProgress,
+  (newVal) => {
+    console.log('isDeliveryInProgress changed:', newVal)
+    isDeliveryInProgressRef.value = newVal
+  }
+)
+watch(isDeliveryInProgressRef, (newValue) => {
+  localStorage.setItem('isDeliveryInProgress', newValue)
+})
 const toggleDialog = () => {
   emit('update:dialogPopUpVisible', !props.dialogPopUpVisible)
 }
@@ -176,18 +187,35 @@ async function logout() {
 }
 
 onMounted(() => {
+  const storedValue = localStorage.getItem('isDeliveryInProgress')
+  isDeliveryInProgressRef.value = storedValue === 'true'
   getDeliveriesByStatus()
   setupSubscription()
 })
 
-const items = [
+const items = computed(() => [
   {
     label: 'Start New Delivery',
     icon: 'pi pi-fw pi-truck',
     command: () => {
-      toggleDialog()
-      emit('start-new-delivery')
-    }
+      if (!isDeliveryInProgressRef.value) {
+        toggleDialog()
+        emit('start-new-delivery')
+        isDeliveryInProgressRef.value = true
+      }
+    },
+    class: isDeliveryInProgressRef.value ? 'p-disabled' : ''
+  },
+
+  {
+    label: 'Log Out',
+    icon: 'pi pi-fw pi-sign-out',
+    command: () => {
+      if (!isDeliveryInProgressRef.value) {
+        logout()
+      }
+    },
+    class: isDeliveryInProgressRef.value ? 'p-disabled' : ''
   },
   {
     label: 'Dark Mode Toggle',
@@ -197,25 +225,19 @@ const items = [
     }
   },
   {
-    label: 'Log Out',
-    icon: 'pi pi-fw pi-sign-out',
-    command: () => {
-      logout()
-    }
-  },
-  {
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
       toggleDialog2()
-    }
+    },
+    class: '' // Help should always be accessible
   }
-]
+])
 </script>
 
 <template>
   <div :class="[isDark ? 'dark delivery-sidebar' : 'light delivery-sidebar', 'h-full']">
-    <Menubar :model="items" class="w-full specific-menubar">
+    <Menubar :model="items" :key="JSON.stringify(items)" class="w-full specific-menubar">
       <template #start>
         <svg
           height="40"
@@ -228,8 +250,13 @@ const items = [
           <path d="..." fill="var(--text-color)" />
         </svg>
       </template>
-      <template #item="{ item, props, hasSubmenu, root }">
-        <a class="flex items-center p-6" v-bind="props.action">
+      <template #item="{ item }">
+        <a
+          class="flex items-center p-6"
+          v-bind="props.action"
+          :class="{ 'disabled-link': item.disabled }"
+          @click="item.disabled ? null : item.command"
+        >
           <span :class="item.icon"></span>
           <span class="ml-2">{{ item.label }}</span>
           <Badge
@@ -546,5 +573,10 @@ const images = computed(() => [
   .p-menuitem:not(.p-highlight):not(.p-disabled).p-focus
   > .p-menuitem-content {
   background-color: #0a0a0a !important;
+}
+.disabled-link {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

@@ -7,6 +7,10 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
 import { getAssetURL } from '@/assetHelper'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const images = computed(() => [
   { src: getAssetURL('Photos/Help/Manager/7.png'), alt: 'Alternative Image 7' },
@@ -194,7 +198,31 @@ const isValidPhoneNumber = computed(() => {
 })
 
 const saveChanges = async () => {
-  if (!isValidEmail.value || !isValidPhoneNumber.value || !isValidName.value) {
+  if (!isValidEmail.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving user',
+      detail: `Please enter a valid email address`,
+      life: 6000
+    })
+    return
+  }
+  if (!isValidPhoneNumber.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving user',
+      detail: `Please enter a valid cellphone number`,
+      life: 6000
+    })
+    return
+  }
+  if (!isValidName.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving user',
+      detail: `Please enter a name`,
+      life: 6000
+    })
     return
   }
 
@@ -229,6 +257,12 @@ const saveChanges = async () => {
   } finally {
     loading.value = false
   }
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'User details updated successfully',
+    life: 4000
+  })
 }
 
 const nameWithYou = (user) => {
@@ -419,15 +453,22 @@ const nameWithYou = (user) => {
         </p>
       </div>
       <div class="mt-6 flex flex-col items-center align-center">
-        <Button
+        <button
           label="Save"
-          class="w-full p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
-          :loading="loading"
+          class="bg-green-800 text-white w-full rounded-lg p-2 mb-2 transition-colors duration-200"
+          :class="{
+            'text-white-500  ': !loading,
+            'text-orange-500 dark:text-gray-400 opacity-60 cursor-not-allowed bg-primary-300 dark:bg-primary-700':
+              loading
+          }"
+          :disabled="loading"
           @click="saveChanges"
-        />
+        >
+          Save
+        </button>
         <Button
           label="Delete User"
-          class="w-full p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
+          class="w-full p-button-text text-white bg-red-800 border-2 border-red-800 rounded-lg p-2 mb-2"
           :loading="loadingDel"
           @click="DelteUser"
         />
@@ -576,14 +617,40 @@ const toggleDialog = () => {
   background-color: #262626;
   color: white;
 }
+
+/* Updated dark mode styles for paginator dropdown */
 .dark .p-paginator .p-dropdown {
   background-color: #262626 !important;
-  color: #333333 !important;
-  border: 1px solid #262626 !important;
+  color: white !important;
+  border: 1px solid #444444 !important;
 }
+
+.dark .p-paginator .p-dropdown:not(.p-disabled).p-focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.4) !important;
+}
+
+.dark .p-paginator .p-dropdown-panel {
+  background: #262626 !important;
+  border: 1px solid #444444 !important;
+}
+
+.dark .p-paginator .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  color: white !important;
+  background: #262626 !important;
+}
+
+.dark .p-paginator .p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover {
+  background: #444444 !important;
+}
+
+.dark .p-paginator .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  background: #f97316 !important;
+  color: white !important;
+}
+
 .dark .p-paginator .p-dropdown .p-dropdown-trigger {
-  color: rgb(255, 145, 0);
-  background-color: #262626;
+  color: white !important;
 }
 
 .dark .p-paginator .p-inputtext {
@@ -636,12 +703,12 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
   border-bottom: 2px solid #333333;
   background-color: #f3f4f6;
   color: black;
-  text-align: center; /* Center the header text */
-  font-weight: bold; /* Use font-weight instead of just "font" */
+  text-align: center;
+  font-weight: bold;
 }
 
 .p-confirm-dialog-message {
-  text-align: center; /* Center the message text */
+  text-align: center;
 }
 
 .dark .p-dialog {
@@ -664,8 +731,8 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
   color: white;
 }
 .p-dialog-mask {
-  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 800 !important ; /* Ensure it is above other elements */
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 800 !important;
 }
 
 .p-dropdown-panel.p-component.p-ripple-disabled {
@@ -698,5 +765,44 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 .dark .p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover {
   background-color: #f97316 !important;
   color: white !important;
+} /* Scrollbar styles for light mode */
+/* Scrollbar styles for both light and dark modes */
+/* Scrollbar styles for both light and dark modes */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Light mode scrollbar */
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #c7c7c7 !important;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #f97316 !important;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #ea580c !important;
+}
+
+/* Dark mode scrollbar */
+html.dark ::-webkit-scrollbar-track {
+  background: #262626 !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #f97316 !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #ea580c !important;
+} /* Light mode horizontal scrollbar */
+html:not(.dark) ::-webkit-scrollbar-thumb:horizontal {
+  background: #f97316 !important;
+}
+
+/* Dark mode horizontal scrollbar */
+html.dark ::-webkit-scrollbar-thumb:horizontal {
+  background: #f97316 !important;
 }
 </style>
