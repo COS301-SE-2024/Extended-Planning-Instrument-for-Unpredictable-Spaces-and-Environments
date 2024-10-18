@@ -221,9 +221,7 @@ const items = computed(() => [
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
-      if (!isDeliveryInProgressRef.value) {
-        toggleDark()
-      }
+      toggleDark()
     }
   },
   {
