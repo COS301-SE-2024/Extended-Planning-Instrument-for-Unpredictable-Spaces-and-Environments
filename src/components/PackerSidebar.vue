@@ -1,6 +1,6 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, onMounted, computed } from 'vue'
+import { watch, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
@@ -13,7 +13,8 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { debounce } from 'lodash'
 
 const containerDimensions = [1200, 1930, 1000]
-
+const showInitialDialog = ref(true)
+const shipmentStarted = ref(false)
 const showHelpDialog = ref(false)
 const toggleDialogHelp = () => {
   showHelpDialog.value = !showHelpDialog.value
@@ -70,7 +71,11 @@ async function logout() {
     router.push({ name: 'login' })
   }
 }
-
+watch(shipmentStarted, (newValue) => {
+  if (!newValue) {
+    showInitialDialog.value = true
+  }
+})
 const emit = defineEmits(['handle-json', 'shipments-loaded'])
 
 //API CALLS FOR SHIPMENTS
@@ -159,64 +164,75 @@ const updateShipmentStartTime = async (shipmentID) => {
     console.error(`API Error for updating Status for shipment ${shipmentID}:`, error)
   }
 }
-
-const items = [
+const startNewDelivery = () => {
+  showInitialDialog.value = false
+  toggleDialog()
+}
+const items = computed(() => [
   {
     label: 'Start New Shipment',
     icon: 'pi pi-fw pi-clipboard',
     command: () => {
-      if (showStartPackingOvererlay.value) {
+      if (!shipmentStarted.value) {
+        showInitialDialog.value = true
+      } else if (showStartPackingOvererlay.value) {
         toggleDialog()
         getAllProcessing()
       } else {
         toast.add({
           severity: 'warn',
           summary: 'Action Disabled',
-          detail: 'You cant start a new shipment until the active shipment is complete',
+          detail: "You can't start a new shipment until the active shipment is complete",
           life: 3000
         })
       }
     },
-    disabled: !showStartPackingOvererlay.value
+    disabled: !showStartPackingOvererlay.value && shipmentStarted.value
   },
-
   {
-    label: 'Dark Mode Toggle',
-    icon: 'pi pi-fw pi-moon',
+    label: 'Log Out',
+    icon: 'pi pi-fw pi-sign-out',
     command: () => {
-      toggleDark() // Correctly call the toggle function
-    }
+      showHelpDialog.value = !showHelpDialog.value
+      console.info('Logging Out')
+      logout()
+    },
+    disabled: !showStartPackingOvererlay.value && shipmentStarted.value
   },
   {
     label: 'Print Shipment list',
     icon: 'pi pi-fw pi-qrcode',
     command: () => {
       printQRcode()
-    }
+    },
+    disabled: !shipmentStarted.value // Disabled if no shipment is started
   },
   {
-    label: 'Log Out',
-    icon: 'pi pi-fw pi-sign-out',
+    label: 'Dark Mode Toggle',
+    icon: 'pi pi-fw pi-moon',
     command: () => {
-      console.info('Logging Out')
-      logout()
-    }
+      console.log('poes')
+      toggleDark()
+    },
+    disabled: false // Always enabled
   },
   {
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
       showHelpDialog.value = !showHelpDialog.value
-    }
+    },
+    disabled: false // Always enabled
   },
   {
     label: 'Clear Cache',
     icon: 'pi pi-fw pi-refresh',
     command: () => {
       debouncedHardReload()
-    }
+    },
+    disabled: false // Always enabled
   }
-]
+])
 
 function hardReload() {
   const userConfirmed = window.confirm(
@@ -254,7 +270,7 @@ function saveProgress() {
   localStorage.setItem('printingStorage', JSON.stringify(progressData))
 }
 
-function printQRcode() {
+const debouncedPrintQRcode = debounce(() => {
   if (Object.keys(packingResults.value).length === 0) {
     toast.add({
       severity: 'error',
@@ -264,13 +280,24 @@ function printQRcode() {
     })
     return
   }
+
   showShipmentSelection.value = true
+}, 300)
+
+function printQRcode() {
+  debouncedPrintQRcode()
 }
 
 async function printSelectedShipment(shipmentId) {
   const selectedResult = packingResults.value[shipmentId]
   if (selectedResult) {
     await createPDF(selectedResult, `Shipment_#${shipmentId}`)
+    toast.add({
+      severity: 'success',
+      summary: `Shipment_#${shipmentId} list has been printed`,
+      detail: 'Please check the new tab opened or your downloads folder in your browser',
+      life: 8000
+    })
     showShipmentSelection.value = false
   } else {
     console.error(`No packing result found for shipment ${shipmentId}`)
@@ -396,6 +423,8 @@ async function uploadSolution(shipmentId, containerDimensions) {
 const handleSelectShipment = (deliveryID) => {
   fetchShipmentsFromDelivery(deliveryID)
   toggleStartNewPacking()
+  shipmentStarted.value = true
+  showInitialDialog.value = false
 }
 
 function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
@@ -407,9 +436,20 @@ function MarkUnplacedBoxes(AllBoxes, SolutionBoxes) {
     isPlaced: placedBoxIds.has(box.id)
   }))
 }
-
 onMounted(() => {
   getAllProcessing()
+  setupSubscription()
+  loadProgress()
+
+  // Check if there's saved progress and update shipmentStarted accordingly
+  const savedProgress = localStorage.getItem('packingProgress')
+  if (savedProgress) {
+    const progressData = JSON.parse(savedProgress)
+    if (progressData.shipments && progressData.shipments.length > 0) {
+      shipmentStarted.value = true
+      showInitialDialog.value = false
+    }
+  }
 })
 </script>
 
@@ -430,11 +470,7 @@ onMounted(() => {
         </svg>
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
-        <a
-          v-bind="props.action"
-          :class="{ 'disabled-link': !showStartPackingOvererlay }"
-          @click="item.command()"
-        >
+        <a v-bind="props.action">
           <span :class="item.icon" />
           <span class="ml-2">{{ item.label }}</span>
           <Badge
@@ -455,6 +491,41 @@ onMounted(() => {
         </a>
       </template>
     </Menubar>
+    <div v-if="showInitialDialog" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        class="absolute inset-0 backdrop-blur-sm"
+        style="background-color: rgba(0, 0, 1, 0.5)"
+      ></div>
+      <div
+        class="relative z-10 dark: p-8 rounded-lg shadow-lg text-center"
+        :class="[isDark ? ' bg-neutral-800 text-white ' : '  bg-white text-black']"
+      >
+        <h2
+          :class="[isDark ? 'bg-neutral-800 text-white ' : '  text-black']"
+          class="text-2xl font-bold mb-4"
+        >
+          Start a New Delivery
+        </h2>
+        <p :class="[isDark ? 'text-white' : 'text-black']" class="mb-6">
+          Please start a new delivery to pack.
+        </p>
+        <button
+          @click="startNewDelivery"
+          :class="[
+            isDark ? 'text-white' : 'text-black',
+            'px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition duration-300'
+          ]"
+        >
+          Start New Delivery
+        </button>
+        <p
+          @click="toggleDialogHelp"
+          class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"
+        >
+          Help
+        </p>
+      </div>
+    </div>
     <Dialog
       v-model:visible="showShipmentSelection"
       header="Select Shipment to Print"
@@ -575,10 +646,14 @@ const images = computed(() => [
 </script>
 <style>
 /* General styles */
-
+.p-menubar.p-component:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
 .disabled-link {
   pointer-events: none;
   opacity: 0.5;
+  cursor: not-allowed;
 }
 .mobile-icon {
   display: none;

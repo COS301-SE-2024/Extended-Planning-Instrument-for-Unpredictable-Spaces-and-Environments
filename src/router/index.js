@@ -17,6 +17,7 @@ import ConfirmPassword from '@/views/ConfirmPassword.vue'
 import Error404 from '@/views/Error404.vue'
 
 import { supabase } from '../supabase'
+import AlgoVisualizer from '@/views/AlgoVisualizer.vue'
 // import ResetPassword from '@/views/confirm-reset-password.vue'
 
 const routes = [
@@ -98,6 +99,12 @@ const routes = [
     path: '/confirm-password',
     name: 'confirm-password',
     component: ConfirmPassword
+  },
+  {
+    path: '/visualizer',
+    name: 'visualizer',
+    component: AlgoVisualizer,
+    meta: { requiresAuth: true, requiredRole: 'Manager' }
   },
   {
     path: '/error-404',

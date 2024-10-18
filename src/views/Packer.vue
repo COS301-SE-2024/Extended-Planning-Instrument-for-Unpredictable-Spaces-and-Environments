@@ -1,16 +1,16 @@
 <script setup>
 import { useDark } from '@vueuse/core'
-import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import * as THREE from 'three'
 import PackerSidebar from '@/components/PackerSidebar.vue'
 import { QrcodeStream } from 'vue-qrcode-reader'
 import { useToast } from 'primevue/usetoast'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { useToggleDialog, isLoading } from '../components/packerDialog'
 import Loading from '../views/Loading.vue'
 import { supabase } from '../supabase.js'
+import LoadingScreen from '@/components/loadingPercentage.vue'
 
 const packingData = ref([])
 const truckpackingData = ref([])
@@ -18,6 +18,15 @@ let CONTAINER_SIZE = [1200, 1930, 1000]
 const dialogVisible = ref(false)
 const activeShipment = ref(null)
 const iscurrentShipmentPacked = ref(false)
+
+const loadingProgress = ref(0)
+const loadingStatusMessage = ref('')
+
+const parameters = reactive({
+  populationSize: 150,
+  generations: 300,
+  mutationRate: 0.01
+})
 
 const toast = useToast()
 const isDark = useDark()
@@ -27,6 +36,8 @@ const truckSize = [2350, 2390, 5898]
 const isNewSceneVisible = ref(false)
 const cratePacked = ref(false)
 const remainingShipmentToPack = ref(0)
+
+const loadingbar = ref(false)
 
 const shipments = ref([])
 
@@ -44,6 +55,13 @@ const isScannedBoxesCollapsed = ref(false)
 const isKeyVisible = ref(true)
 
 const currentView = ref('front')
+
+const fitnessAttributes = reactive({
+  volumeUtilization: 40,
+  weightDistribution: 60,
+  requiredSupportArea: 85,
+  maxWeightRatio: 20
+})
 
 function toggleKeyVisibility() {
   isKeyVisible.value = !isKeyVisible.value
@@ -260,6 +278,9 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
   const length = CONTAINER_SIZE[2]
   const volume = width * height * length
 
+  loadingbar.value = true
+  loadingProgress.value = 0
+  loadingStatusMessage.value = 'Generating boxes...'
   // Generate the JSON object
   const shipmentJson = data.map((shipment) => ({
     id: shipment.id,
@@ -269,7 +290,51 @@ async function CreateJSONBoxes(data, CONTAINER_SIZE) {
     Volume: volume,
     Weight: 10000
   }))
-  truckpackingData.value[0] = await geneticAlgorithm(shipmentJson, truckSize, 150, 350, 0.01).data
+
+  try {
+    const response = await new Promise((resolve) => {
+      const worker = new Worker(
+        new URL('../../supabase/functions/packing/algorithm.ts', import.meta.url),
+        { type: 'module' }
+      )
+
+      loadingProgress.value = 10
+      loadingStatusMessage.value = 'Initializing genetic algorithm...'
+
+      worker.onmessage = (event) => {
+        if (event.data.type === 'progress') {
+          loadingProgress.value = 10 + event.data.progress * 90
+          loadingStatusMessage.value = `Generation ${event.data.generation} of ${parameters.generations}`
+        } else if (event.data.type === 'result') {
+          resolve(event.data.result)
+          worker.terminate()
+        }
+      }
+
+      const plainFitnessAttributes = { ...fitnessAttributes }
+
+      worker.postMessage({
+        boxesData: shipmentJson,
+        containerDimensions: truckSize,
+        populationSize: 150,
+        generations: 300,
+        mutationRate: 0.01,
+        fitnessAttributes: plainFitnessAttributes
+      })
+    })
+
+    if (response.data) {
+      truckpackingData.value[0] = response.data
+    } else {
+      console.error('No solution returned')
+    }
+  } catch (error) {
+    console.error('Error generating packing solution:', error)
+  } finally {
+    loadingbar.value = false
+    loadingProgress.value = 0
+    loadingStatusMessage.value = ''
+  }
 }
 
 function getColorForWeight(weight, minWeight, maxWeight) {
@@ -892,7 +957,9 @@ function resetShipment() {
 }
 
 async function generateNewSolution(shipmentID) {
-  startLoading()
+  loadingbar.value = true
+  loadingProgress.value = 0
+  loadingStatusMessage.value = 'Generating boxes...'
   try {
     const { error } = await supabase.functions.invoke('packing', {
       body: JSON.stringify({
@@ -923,66 +990,127 @@ async function generateNewSolution(shipmentID) {
       return
     }
 
-    const result = data
+    const packagesResult = data
+    try {
+      const response = await new Promise((resolve) => {
+        const worker = new Worker(
+          new URL('../../supabase/functions/packing/algorithm.ts', import.meta.url),
+          { type: 'module' }
+        )
 
-    const response = geneticAlgorithm(result.data, CONTAINER_SIZE, 150, 300, 0.01).data
+        loadingProgress.value = 10
+        loadingStatusMessage.value = 'Initializing genetic algorithm...'
 
-    const { error: errorSaving } = await supabase.functions.invoke('packing', {
-      body: JSON.stringify({
-        type: 'uploadSolution',
-        shipmentId: shipmentID,
-        jsonObject: response
-      }),
-      method: 'POST'
-    })
-    if (errorSaving) {
-      console.error('Failed to store solution')
-    } else {
-      if (response == null) {
-        console.error('Failed to upload solution', response)
-      } else {
-        const { error: updateError } = await supabase.functions.invoke('packing', {
+        worker.onmessage = (event) => {
+          if (event.data.type === 'progress') {
+            loadingProgress.value = 10 + event.data.progress * 90
+            loadingStatusMessage.value = `Generation ${event.data.generation} of ${parameters.generations}`
+          } else if (event.data.type === 'result') {
+            resolve(event.data.result)
+            worker.terminate()
+          }
+        }
+
+        const plainFitnessAttributes = { ...fitnessAttributes }
+
+        worker.postMessage({
+          boxesData: JSON.parse(JSON.stringify(packagesResult.data)),
+          containerDimensions: CONTAINER_SIZE,
+          populationSize: 150,
+          generations: 300,
+          mutationRate: 0.01,
+          fitnessAttributes: plainFitnessAttributes
+        })
+      })
+
+      if (response.data) {
+        const response2 = response.data
+        const { error: errorSaving } = await supabase.functions.invoke('packing', {
           body: JSON.stringify({
-            type: 'updateFitnessValue',
-            ShipmentId: shipmentID,
-            newFitnessValue: parseFloat(response.fitness)
+            type: 'uploadSolution',
+            shipmentId: shipmentID,
+            jsonObject: response2
           }),
           method: 'POST'
         })
-
-        if (updateError) {
-          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+        if (errorSaving) {
+          console.error('Failed to store solution')
         } else {
-          const json = response.boxes
-          const newPackingData = json._isRef ? json.value : json
-          if (!newPackingData) {
-            console.error('Invalid packing data received:', newPackingData)
-            toast.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: 'Invalid packing data received',
-              life: 3000
+          if (response2 == null) {
+            console.error('Failed to upload solution', response2)
+          } else {
+            loadingStatusMessage.value = 'uploading new Solution...'
+
+            const { error: updateError } = await supabase.functions.invoke('packing', {
+              body: JSON.stringify({
+                type: 'updateFitnessValue',
+                ShipmentId: shipmentID,
+                newFitnessValue: parseFloat(response2.fitness)
+              }),
+              method: 'POST'
             })
-            return
+
+            if (updateError) {
+              console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+            } else {
+              loadingStatusMessage.value = 'Updating fitness values...'
+
+              const json = response2.boxes
+              const newPackingData = json._isRef ? json.value : json
+              if (!newPackingData) {
+                console.error('Invalid packing data received:', newPackingData)
+                toast.add({
+                  severity: 'error',
+                  summary: 'Error',
+                  detail: 'Invalid packing data received',
+                  life: 3000
+                })
+                return
+              }
+              const shipmentIndex = shipments.value.findIndex(
+                (shipment) => shipment.id === shipmentID
+              )
+
+              const updatedData = newPackingData.map((box) => ({
+                ...box,
+                scanned: false
+              }))
+
+              packingData.value[shipmentIndex] = updatedData
+              loadingStatusMessage.value = 'anddddd...'
+              saveProgress()
+              toggleShipment(shipmentID)
+            }
           }
-          const shipmentIndex = shipments.value.findIndex((shipment) => shipment.id === shipmentID)
-
-          const updatedData = newPackingData.map((box) => ({
-            ...box,
-            scanned: false
-          }))
-
-          packingData.value[shipmentIndex] = updatedData
-
-          saveProgress()
-          toggleShipment(shipmentID)
         }
+      } else {
+        console.error('Reponse.data is undefined', error)
       }
+    } catch (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error generating packing solution',
+        life: 6000
+      })
     }
   } catch (error) {
-    console.error('Error in generateNewSolution:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Error generating packing solution ${error}`,
+      life: 6000
+    })
   } finally {
-    stopLoading()
+    loadingbar.value = false
+    loadingProgress.value = 0
+    loadingStatusMessage.value = ''
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: `Successfully generated new solution, please click show shipment`,
+      life: 6000
+    })
   }
 }
 
@@ -1049,7 +1177,11 @@ function changeView(view) {
     >
       <Loading />
     </div>
-
+    <LoadingScreen
+      :show="loadingbar"
+      :progress="loadingProgress"
+      :status-message="loadingStatusMessage"
+    />
     <div
       v-if="showStartPackingOvererlay"
       :class="[
@@ -1068,13 +1200,7 @@ function changeView(view) {
           class="w-full h-auto max-h-48 object-contain"
         />
       </div>
-      <h2 class="text-4xl text-center mb-4 p-4">Please Click To Start Packing A New Delivery</h2>
-      <Button
-        @click="startNewDelivery"
-        class="bg-orange-500 mb-4 text-white px-4 py-2 rounded-xl hover:bg-orange-600"
-      >
-        Start New Delivery
-      </Button>
+
       <p
         @click="toggleDialogHelp"
         class="flex items-center justify-center mt-4 text-orange-500 font-bold text-center hover:-translate-y-1 underline cursor-pointer transition duration-300"

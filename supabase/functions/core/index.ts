@@ -47,6 +47,7 @@ import { getMaxShipmentID } from './Shipments/getMaxShipmentID.ts'
 import { insertShipment } from './Shipments/insertShipment.ts'
 import { deleteCSV } from './Storage/deleteCSV.ts'
 import { uploadSignature } from './Deliveries/uploadSignature.ts'
+import { getXPackages } from './Packages/getXPackages.ts'
 
 const supabaseUrl = 'https://rgisazefakhdieigrylb.supabase.co'
 const supabaseKey =
@@ -114,6 +115,9 @@ Deno.serve(async (req) => {
       if (requestBody.type == 'getDeliveriesByProcessing') {
         return responseBuilder(await getDeliveriesByProcessing(supabaseUser))
       }
+      if (requestBody.type == 'getXPackages') {
+        return responseBuilder(await getXPackages(supabaseUser, requestBody.numberBoxes))
+      }
       if (requestBody.type == 'getCurrentUser') {
         return responseBuilder(await getCurrentUser(supabaseUser))
       }
@@ -121,11 +125,13 @@ Deno.serve(async (req) => {
         return responseBuilder(await getShipmentByDeliveryID(supabaseUser, requestBody.deliveryID))
       }
       if (requestBody.type == 'uploadSignature') {
-        return responseBuilder(await uploadSignature(supabaseUser, requestBody.dataURL, requestBody.shipmentID))
+        return responseBuilder(
+          await uploadSignature(supabaseUser, requestBody.dataURL, requestBody.shipmentID)
+        )
       }
       if (requestBody.type == 'getSignature') {
-        return responseBuilder(await getSignature(supabaseUser, requestBody.shipmentID));
-      }      
+        return responseBuilder(await getSignature(supabaseUser, requestBody.shipmentID))
+      }
       if (requestBody.type == 'getNameByEmail') {
         return responseBuilder(await getNameByEmail(supabaseUser, requestBody.email))
       }
