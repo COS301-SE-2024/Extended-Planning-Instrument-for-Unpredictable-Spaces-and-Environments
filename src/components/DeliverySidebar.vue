@@ -46,6 +46,7 @@ const props = defineProps({
   dialogPopUpVisible: Boolean,
   isDeliveryInProgress: Boolean // New prop to track if a delivery is in progress
 })
+
 const isDeliveryInProgressRef = ref(props.isDeliveryInProgress)
 watch(
   () => props.isDeliveryInProgress,
@@ -54,7 +55,9 @@ watch(
     isDeliveryInProgressRef.value = newVal
   }
 )
-
+watch(isDeliveryInProgressRef, (newValue) => {
+  localStorage.setItem('isDeliveryInProgress', newValue)
+})
 const toggleDialog = () => {
   emit('update:dialogPopUpVisible', !props.dialogPopUpVisible)
 }
@@ -184,6 +187,8 @@ async function logout() {
 }
 
 onMounted(() => {
+  const storedValue = localStorage.getItem('isDeliveryInProgress')
+  isDeliveryInProgressRef.value = storedValue === 'true'
   getDeliveriesByStatus()
   setupSubscription()
 })

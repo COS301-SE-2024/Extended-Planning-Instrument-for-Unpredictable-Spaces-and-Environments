@@ -168,7 +168,6 @@ const startNewDelivery = () => {
   showInitialDialog.value = false
   toggleDialog()
 }
-const deliveryStarted = ref(false)
 const items = computed(() => [
   {
     label: 'Start New Shipment',
@@ -198,36 +197,40 @@ const items = computed(() => [
       console.info('Logging Out')
       logout()
     },
-    disabled: !deliveryStarted.value
+    disabled: false // Always enabled
   },
   {
     label: 'Print Shipment list',
     icon: 'pi pi-fw pi-qrcode',
     command: () => {
       printQRcode()
-    }
+    },
+    disabled: !shipmentStarted.value // Disabled if no shipment is started
   },
   {
     label: 'Dark Mode Toggle',
     icon: 'pi pi-fw pi-moon',
     command: () => {
+      console.log('poes')
       toggleDark()
-    }
+    },
+    disabled: false // Always enabled
   },
-
   {
     label: 'Help',
     icon: 'pi pi-fw pi-question',
     command: () => {
       showHelpDialog.value = !showHelpDialog.value
-    }
+    },
+    disabled: false // Always enabled
   },
   {
     label: 'Clear Cache',
     icon: 'pi pi-fw pi-refresh',
     command: () => {
       debouncedHardReload()
-    }
+    },
+    disabled: false // Always enabled
   }
 ])
 
@@ -467,11 +470,7 @@ onMounted(() => {
         </svg>
       </template>
       <template #item="{ item, props, hasSubmenu, root }">
-        <a
-          v-bind="props.action"
-          :class="{ 'disabled-link': item.disabled }"
-          @click="item.disabled ? null : item.command()"
-        >
+        <a v-bind="props.action">
           <span :class="item.icon" />
           <span class="ml-2">{{ item.label }}</span>
           <Badge
