@@ -576,14 +576,40 @@ const toggleDialog = () => {
   background-color: #262626;
   color: white;
 }
+
+/* Updated dark mode styles for paginator dropdown */
 .dark .p-paginator .p-dropdown {
   background-color: #262626 !important;
-  color: #333333 !important;
-  border: 1px solid #262626 !important;
+  color: white !important;
+  border: 1px solid #444444 !important;
 }
+
+.dark .p-paginator .p-dropdown:not(.p-disabled).p-focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.4) !important;
+}
+
+.dark .p-paginator .p-dropdown-panel {
+  background: #262626 !important;
+  border: 1px solid #444444 !important;
+}
+
+.dark .p-paginator .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  color: white !important;
+  background: #262626 !important;
+}
+
+.dark .p-paginator .p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover {
+  background: #444444 !important;
+}
+
+.dark .p-paginator .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  background: #f97316 !important;
+  color: white !important;
+}
+
 .dark .p-paginator .p-dropdown .p-dropdown-trigger {
-  color: rgb(255, 145, 0);
-  background-color: #262626;
+  color: white !important;
 }
 
 .dark .p-paginator .p-inputtext {
@@ -636,12 +662,12 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
   border-bottom: 2px solid #333333;
   background-color: #f3f4f6;
   color: black;
-  text-align: center; /* Center the header text */
-  font-weight: bold; /* Use font-weight instead of just "font" */
+  text-align: center;
+  font-weight: bold;
 }
 
 .p-confirm-dialog-message {
-  text-align: center; /* Center the message text */
+  text-align: center;
 }
 
 .dark .p-dialog {
@@ -664,8 +690,8 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
   color: white;
 }
 .p-dialog-mask {
-  background: rgba(0, 0, 0, 0.5) !important; /* Dimmed background */
-  z-index: 800 !important ; /* Ensure it is above other elements */
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 800 !important;
 }
 
 .p-dropdown-panel.p-component.p-ripple-disabled {
