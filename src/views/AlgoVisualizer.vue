@@ -6,12 +6,12 @@
     <Sidebar class="flex-shrink-0 w-64" />
 
     <div class="flex-1 overflow-x-hidden overflow-y-auto">
-      <div class="p-4 ml-2 w-full">
+      <div class="p-4 w-full">
         <h2 :class="[isDark ? 'text-white' : 'text-black', 'my-4 font-normal text-3xl']">
           <span class="font-bold">Custom Container Packer</span>
         </h2>
 
-        <div class="flex flex-wrap mb-4">
+        <div class="flex flex-wrap">
           <div class="justify-center w-full mb-4 flex flex-wrap gap-4 md:flex-nowrap">
             <!-- Container Configuration -->
             <div
@@ -47,7 +47,7 @@
                   </div>
                 </div>
                 <div>
-                  <h3 class="text-lg font-semibold mb-2">
+                  <h3 class="text-lg font-semibold pb-2">
                     Please enter the quantity desired for each box type:
                   </h3>
                   <div v-for="(box, index) in boxConfigurations" :key="index" class="mb-4">
@@ -86,7 +86,7 @@
                 'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
               ]"
             >
-              <h2 class="text-xl font-bold mb-4">Genetic Algorithm Parameters</h2>
+              <h2 class="text-xl font-bold pb-4">Genetic Algorithm Parameters</h2>
               <div class="space-y-4">
                 <div v-for="(value, key) in parameters" :key="key" class="space-y-2">
                   <label
@@ -125,7 +125,7 @@
                 'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
               ]"
             >
-              <h2 class="text-xl font-bold mb-4">Algorithm Parameters Visualization</h2>
+              <h2 class="text-xl font-bold pb-4">Algorithm Parameters Visualization</h2>
               <div class="flex justify-center items-center w-full h-full">
                 <div class="w-[300px] h-[300px] text-white">
                   <Chart
@@ -145,7 +145,7 @@
                 'flex flex-col p-4 rounded-xl w-full md:w-[50%]'
               ]"
             >
-              <h2 class="text-xl font-bold mb-4">Fitness Attributes</h2>
+              <h2 class="text-xl font-bold pb-4">Fitness Attributes</h2>
               <div class="space-y-4">
                 <!-- Volume Utilization and Weight Distribution -->
                 <div v-for="(value, key, index) in mainAttributes" :key="key" class="space-y-2">
@@ -201,12 +201,12 @@
         </div>
 
         <!-- Packing Result and 3D Visualization -->
-        <div class="flex flex-wrap mb-4 gap-4">
+        <div class="flex flex-wrap mb-4 gap-4 w-[100%]">
           <div
             v-if="packingResult"
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
-              'flex flex-col p-4 rounded-xl w-full md:w-[calc(50%-0.5rem)]'
+              'flex flex-col p-4 rounded-xl w-full md:w-[calc(100%-0.5rem)]'
             ]"
           >
             <h2 class="text-xl font-bold mb-2">Packing Result</h2>
