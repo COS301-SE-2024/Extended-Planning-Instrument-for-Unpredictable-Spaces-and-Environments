@@ -197,7 +197,7 @@ const items = computed(() => [
       console.info('Logging Out')
       logout()
     },
-    disabled: false // Always enabled
+    disabled: !showStartPackingOvererlay.value && shipmentStarted.value
   },
   {
     label: 'Print Shipment list',
