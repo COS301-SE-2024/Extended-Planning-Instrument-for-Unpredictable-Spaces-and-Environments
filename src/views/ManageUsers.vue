@@ -765,5 +765,36 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 .dark .p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover {
   background-color: #f97316 !important;
   color: white !important;
+} /* Scrollbar styles for light mode */
+/* Scrollbar styles for both light and dark modes */
+/* Scrollbar styles for both light and dark modes */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Light mode scrollbar */
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #c7c7c7 !important;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #f97316 !important;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #ea580c !important;
+}
+
+/* Dark mode scrollbar */
+html.dark ::-webkit-scrollbar-track {
+  background: #262626 !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #f97316 !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #ea580c !important;
 }
 </style>
