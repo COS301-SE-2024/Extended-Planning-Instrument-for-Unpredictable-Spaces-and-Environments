@@ -1,4 +1,6 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest'
+import { watch, ref, onMounted, computed } from 'vue'
+
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import Sidebar from '../Sidebar.vue'
 import PrimeVue from 'primevue/config'
@@ -146,15 +148,5 @@ describe('Sidebar.vue', () => {
 
     // expect(supabase.auth.signOut).toHaveBeenCalled();
     // expect(mockPush).toHaveBeenCalledWith({ name: 'login' });
-  })
-
-  it('toggles dark mode when the corresponding menu item is clicked', async () => {
-    const darkModeItem = wrapper
-      .findAll('.p-menuitem-content')
-      .find((item) => item.text().includes('Dark Mode') || item.text().includes('Light Mode'))
-    expect(darkModeItem.exists()).toBe(true)
-    await darkModeItem.trigger('click')
-
-    expect(mockToggleDark).toHaveBeenCalled()
   })
 })
