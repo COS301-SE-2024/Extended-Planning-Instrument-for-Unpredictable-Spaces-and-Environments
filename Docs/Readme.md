@@ -16,6 +16,6 @@ Below are the links to the recently updated files in this repository:
 
 6. [Technical Installation Manual](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/c199d8f8ae1e62b5910399a37baec9f28cd66eed/Docs/Technical%20Installation%20Manual%20Final%20Version.pdf)
 
-7. [Testing Policy Document](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/c199d8f8ae1e62b5910399a37baec9f28cd66eed/Docs/Testing%20Policy%20Document%20Final%20Version.pdf)
+7. [Testing Policy Document](https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/8e9551f2d7bd073a979ca1cdc7358325283e851a/Docs/Testing%20Policy%20Document%20V3.pdf)
 
 8. [Coding Standards Document]()
