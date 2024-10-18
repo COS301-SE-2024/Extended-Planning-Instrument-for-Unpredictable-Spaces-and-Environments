@@ -245,6 +245,9 @@ import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import { supabase } from '../supabase'
 import Slider from 'primevue/slider'
 import LoadingScreen from '@/components/loadingPercentage.vue'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const attributeDescriptions = {
   volumeUtilization:
@@ -406,8 +409,20 @@ const handleSubmit = async () => {
     if (result.data) {
       packingResult.value = result.data
       initThreeJS(containerSize, result.data.boxes)
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Packing solution generated, please see below',
+        life: 6000
+      })
     } else {
-      alert('No valid packing solution found. Try adjusting the parameters.')
+      alert('')
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No valid packing solution found. Try adjusting the parameters.',
+        life: 6000
+      })
     }
   } catch (error) {
     console.error('Error generating packing solution:', error)
