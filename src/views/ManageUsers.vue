@@ -8,6 +8,9 @@ import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
 import { getAssetURL } from '@/assetHelper'
 import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const images = computed(() => [
   { src: getAssetURL('Photos/Help/Manager/7.png'), alt: 'Alternative Image 7' },
@@ -195,7 +198,31 @@ const isValidPhoneNumber = computed(() => {
 })
 
 const saveChanges = async () => {
-  if (!isValidEmail.value || !isValidPhoneNumber.value || !isValidName.value) {
+  if (!isValidEmail.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving user',
+      detail: `Please enter a valid email address`,
+      life: 6000
+    })
+    return
+  }
+  if (!isValidPhoneNumber.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving user',
+      detail: `Please enter a valid cellphone number`,
+      life: 6000
+    })
+    return
+  }
+  if (!isValidName.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving user',
+      detail: `Please enter a name`,
+      life: 6000
+    })
     return
   }
 
@@ -233,7 +260,7 @@ const saveChanges = async () => {
   toast.add({
     severity: 'success',
     summary: 'Success',
-    detail: 'Shipments and packages inserted successfully',
+    detail: 'User details updated successfully',
     life: 4000
   })
 }
