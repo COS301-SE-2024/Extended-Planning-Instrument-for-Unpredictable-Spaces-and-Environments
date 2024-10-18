@@ -20,9 +20,9 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/71e3b7b1-8057-43f8-bf0c-a4c09966a75f/deploy-status)](https://app.netlify.com/sites/janeebsolution/deploys)
 
 ## Demo Video 🎥
-<p align="center">
+<p align="left">
   <a href="https://www.youtube.com/playlist?list=PLGYYgsVv-70oToZzb5FKrY-J9i_26m-jt" target="_blank">
-    <img src="https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/assets/130755249/7ec24e36-c321-47a7-9b28-6e699b44fad6" alt="Demo Video" width="600"/>
+    <img src="https://github.com/COS301-SE-2024/Extended-Planning-Instrument-for-Unpredictable-Spaces-and-Environments/blob/main/src/assets/Photos/Logos/Logo-Light.svg" alt="Demo Video" width="300"/>
   </a>
 </p>
 
