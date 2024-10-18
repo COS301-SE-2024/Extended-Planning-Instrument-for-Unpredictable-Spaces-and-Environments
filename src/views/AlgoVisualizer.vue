@@ -47,7 +47,9 @@
                   </div>
                 </div>
                 <div>
-                  <h3 class="text-lg font-semibold mb-2">Box Configurations</h3>
+                  <h3 class="text-lg font-semibold mb-2">
+                    Please enter the quantity desired for each box type:
+                  </h3>
                   <div v-for="(box, index) in boxConfigurations" :key="index" class="mb-4">
                     <p class="mb-2">
                       Box {{ index + 1 }} ({{ box.width }}x{{ box.length }}x{{ box.height }} mm)
