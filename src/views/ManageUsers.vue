@@ -769,7 +769,7 @@ p-dialog-mask p-component-overlay p-component-overlay-enter {
 /* Scrollbar styles for both light and dark modes */
 /* Scrollbar styles for both light and dark modes */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 5px;
 }
 
 /* Light mode scrollbar */
@@ -796,5 +796,13 @@ html.dark ::-webkit-scrollbar-thumb {
 
 html.dark ::-webkit-scrollbar-thumb:hover {
   background: #ea580c !important;
+} /* Light mode horizontal scrollbar */
+html:not(.dark) ::-webkit-scrollbar-thumb:horizontal {
+  background: #f97316 !important;
+}
+
+/* Dark mode horizontal scrollbar */
+html.dark ::-webkit-scrollbar-thumb:horizontal {
+  background: #f97316 !important;
 }
 </style>
