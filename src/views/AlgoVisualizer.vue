@@ -201,9 +201,8 @@
         </div>
 
         <!-- Packing Result and 3D Visualization -->
-        <div class="flex flex-wrap mb-4 gap-4 w-[100%]">
+        <div class="flex flex-wrap gap-4 mb-4 w-[100%]" v-if="packingResult">
           <div
-            v-if="packingResult"
             :class="[
               isDark ? 'bg-neutral-950 text-white' : 'bg-white text-black',
               'flex flex-col p-4 rounded-xl w-full md:w-[calc(100%-0.5rem)]'
