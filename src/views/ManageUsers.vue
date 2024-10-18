@@ -7,6 +7,7 @@ import DialogComponent from '@/components/DialogComponent.vue'
 import { FilterMatchMode } from 'primevue/api'
 import { supabase } from '@/supabase.js' // Import the Supabase client
 import { getAssetURL } from '@/assetHelper'
+import Toast from 'primevue/toast'
 
 const images = computed(() => [
   { src: getAssetURL('Photos/Help/Manager/7.png'), alt: 'Alternative Image 7' },
@@ -229,6 +230,12 @@ const saveChanges = async () => {
   } finally {
     loading.value = false
   }
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'Shipments and packages inserted successfully',
+    life: 4000
+  })
 }
 
 const nameWithYou = (user) => {
@@ -419,15 +426,22 @@ const nameWithYou = (user) => {
         </p>
       </div>
       <div class="mt-6 flex flex-col items-center align-center">
-        <Button
+        <button
           label="Save"
-          class="w-full p-button-text text-white bg-green-800 rounded-lg p-2 mb-2"
-          :loading="loading"
+          class="bg-green-800 text-white w-full rounded-lg p-2 mb-2 transition-colors duration-200"
+          :class="{
+            'text-white-500  ': !loading,
+            'text-orange-500 dark:text-gray-400 opacity-60 cursor-not-allowed bg-primary-300 dark:bg-primary-700':
+              loading
+          }"
+          :disabled="loading"
           @click="saveChanges"
-        />
+        >
+          Save
+        </button>
         <Button
           label="Delete User"
-          class="w-full p-button-text text-white bg-red-800 rounded-lg p-2 mb-2"
+          class="w-full p-button-text text-white bg-red-800 border-2 border-red-800 rounded-lg p-2 mb-2"
           :loading="loadingDel"
           @click="DelteUser"
         />
