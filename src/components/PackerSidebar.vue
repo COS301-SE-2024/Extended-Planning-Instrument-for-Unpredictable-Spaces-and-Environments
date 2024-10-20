@@ -1,6 +1,6 @@
 <script setup>
 import { useDark, useToggle } from '@vueuse/core'
-import { watch, ref, onMounted, computed } from 'vue'
+import { watch, ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 import { createPDF } from '@/QRcodeGenerator'
@@ -22,6 +22,13 @@ const toggleDialogHelp = () => {
 const packingResults = ref({})
 const shipmentsToPack = ref(null)
 const showShipmentSelection = ref(false)
+
+const fitnessAttributes = reactive({
+  volumeUtilization: 40,
+  weightDistribution: 60,
+  requiredSupportArea: 85,
+  maxWeightRatio: 20
+})
 
 const toast = useToast()
 
@@ -380,40 +387,67 @@ async function uploadSolution(shipmentId, containerDimensions) {
       return
     }
 
-    const response = geneticAlgorithm(data.data, containerDimensions, 150, 300, 0.01)
-    if (response.data.boxes.length == 0) {
-      console.error('Failed to calculate solution')
-      return
-    } else {
-      const { error: errorSaving } = await supabase.functions.invoke('packing', {
-        body: JSON.stringify({
-          type: 'uploadSolution',
-          shipmentId: shipmentId,
-          jsonObject: response
-        }),
-        method: 'POST'
+    try {
+      const response = await new Promise((resolve) => {
+        const worker = new Worker(
+          new URL('../../supabase/functions/packing/algorithm.ts', import.meta.url),
+          { type: 'module' }
+        )
+
+        worker.onmessage = (event) => {
+          if (event.data.type === 'result') {
+            resolve(event.data.result)
+            worker.terminate()
+          }
+        }
+
+        const plainFitnessAttributes = { ...fitnessAttributes }
+
+        worker.postMessage({
+          boxesData: data.data,
+          containerDimensions: containerDimensions,
+          populationSize: 150,
+          generations: 300,
+          mutationRate: 0.01,
+          fitnessAttributes: plainFitnessAttributes
+        })
       })
-      if (errorSaving) {
-        console.error('Failed to store solution')
-      } else {
-        const { error: updateError } = await supabase.functions.invoke('packing', {
+
+      if (response.data) {
+        const { error: errorSaving } = await supabase.functions.invoke('packing', {
           body: JSON.stringify({
-            type: 'updateFitnessValue',
-            ShipmentId: parseInt(shipmentId),
-            newFitnessValue: parseFloat(response.fitness)
+            type: 'uploadSolution',
+            shipmentId: shipmentId,
+            jsonObject: response
           }),
           method: 'POST'
         })
+        if (errorSaving) {
+          console.error('Failed to store solution')
+        } else {
+          const { error: updateError } = await supabase.functions.invoke('packing', {
+            body: JSON.stringify({
+              type: 'updateFitnessValue',
+              ShipmentId: parseInt(shipmentId),
+              newFitnessValue: parseFloat(response.fitness)
+            }),
+            method: 'POST'
+          })
 
-        if (updateError) {
-          console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+          if (updateError) {
+            console.error('ERROR UPDATING FITNESS VALUE: ', updateError)
+          }
+
+          const reviewedSoln = MarkUnplacedBoxes(data.data, response.data.boxes)
+
+          packingResults.value[shipmentId] = reviewedSoln
+          emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
         }
-
-        const reviewedSoln = MarkUnplacedBoxes(data.data, response.data.boxes)
-
-        packingResults.value[shipmentId] = reviewedSoln
-        emit('handle-json', JSON.parse(JSON.stringify(packingResults.value[shipmentId])))
+      } else {
+        console.error('No solution returned')
       }
+    } catch (error) {
+      console.error('Error generating packing solution:', error)
     }
   } catch (error) {
     console.error('Error in getSolution:', error)
