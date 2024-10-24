@@ -12,7 +12,7 @@ import { geneticAlgorithm } from '../../supabase/functions/packing/algorithm'
 import DialogComponent from '@/components/DialogComponent.vue'
 import { debounce } from 'lodash'
 
-const containerDimensions = [1200, 1930, 1000]
+const containerDimensions = [600, 1000, 575]
 const showInitialDialog = ref(true)
 const shipmentStarted = ref(false)
 const showHelpDialog = ref(false)

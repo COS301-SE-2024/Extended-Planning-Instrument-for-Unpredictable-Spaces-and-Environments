@@ -14,7 +14,7 @@ import LoadingScreen from '@/components/loadingPercentage.vue'
 
 const packingData = ref([])
 const truckpackingData = ref([])
-let CONTAINER_SIZE = [1200, 1930, 1000]
+let CONTAINER_SIZE = [600, 1000, 575]
 const dialogVisible = ref(false)
 const activeShipment = ref(null)
 const iscurrentShipmentPacked = ref(false)
@@ -25,7 +25,7 @@ const loadingStatusMessage = ref('')
 const parameters = reactive({
   populationSize: 150,
   generations: 300,
-  mutationRate: 0.01
+  mutationRate: 0.02
 })
 
 const toast = useToast()
@@ -1018,7 +1018,7 @@ async function generateNewSolution(shipmentID) {
           containerDimensions: CONTAINER_SIZE,
           populationSize: 150,
           generations: 300,
-          mutationRate: 0.01,
+          mutationRate: 0.02,
           fitnessAttributes: plainFitnessAttributes
         })
       })

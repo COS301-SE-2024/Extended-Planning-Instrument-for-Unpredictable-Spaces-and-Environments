@@ -52,7 +52,9 @@
                   </h3>
                   <div v-for="(box, index) in boxConfigurations" :key="index" class="mb-4">
                     <p class="mb-2">
-                      Box {{ index + 1 }} ({{ box.width }}x{{ box.length }}x{{ box.height }} mm)
+                      {{ ['Small', 'Medium', 'Large'][index] }} Box ({{ box.width }}x{{
+                        box.length
+                      }}x{{ box.height }} mm)
                     </p>
                     <input
                       v-model.number="box.count"
@@ -265,15 +267,15 @@ const isDark = useDark()
 const toggleDark = useToggle(isDark)
 
 const containerDimensions = reactive({
-  width: '1000',
+  width: '600',
   height: '1000',
-  length: '1500'
+  length: '575'
 })
 
 const boxConfigurations = reactive([
-  { width: 400, length: 400, height: 200, count: 0 },
-  { width: 250, length: 250, height: 250, count: 0 },
-  { width: 400, length: 250, height: 250, count: 0 }
+  { width: 260, length: 255, height: 145, count: 10 },
+  { width: 460, length: 260, height: 130, count: 1 },
+  { width: 390, length: 520, height: 590, count: 1 }
 ])
 const packingResult = ref(null)
 const threeContainer = ref(null)
@@ -302,7 +304,7 @@ const fitnessAttributes = computed(() => ({
 
 const parameters = reactive({
   populationSize: 150,
-  generations: 300,
+  generations: 200,
   mutationRate: 0.01
 })
 
