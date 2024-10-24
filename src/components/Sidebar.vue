@@ -304,11 +304,11 @@ const validateCSV = (file) => {
 
           // Check dimension restrictions
           if (
-            width < 200 ||
+            width < 50 ||
             width > 1200 ||
-            length < 200 ||
+            length < 50 ||
             length > 1200 ||
-            height < 200 ||
+            height < 50 ||
             height > 1200 ||
             weight < 0 ||
             weight > 2500
